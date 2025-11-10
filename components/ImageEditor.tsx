@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { editImage, analyzeImage, suggestCameraAngles, type AnalysisResult } from '../services/geminiService';
 import ImageDisplay, { type ImageDisplayHandle } from './ImageDisplay';
@@ -33,12 +32,12 @@ import { TextureIcon } from './icons/TextureIcon';
 import { SearchIcon } from './icons/SearchIcon';
 import Spinner from './Spinner';
 import { PhotoIcon } from './icons/PhotoIcon';
-import { Icon1x1 } from './icons/Icon1x1';
-import { Icon16x9 } from './icons/Icon16x9';
-import { Icon9x16 } from './icons/Icon9x16';
-import { Icon4x3 } from './icons/Icon4x3';
-import { Icon3x4 } from './icons/Icon3x4';
 import { CropIcon } from './icons/CropIcon';
+import { IconPreview1x1 } from './icons/IconPreview1x1';
+import { IconPreview16x9 } from './icons/IconPreview16x9';
+import { IconPreview9x16 } from './icons/IconPreview9x16';
+import { IconPreview4x3 } from './icons/IconPreview4x3';
+import { IconPreview3x4 } from './icons/IconPreview3x4';
 
 
 interface ImageState {
@@ -56,274 +55,276 @@ interface ImageState {
 }
 
 const styleOptions = [
-    { name: 'ภาพยนตร์' },
-    { name: 'วินเทจ' },
-    { name: 'สีน้ำ' },
-    { name: '3D' },
-    { name: 'พิกเซลอาร์ต' },
-    { name: 'นีออนพังก์' },
-    { name: 'สเก็ตช์' },
-    { name: 'ป๊อปอาร์ต' }
+    { name: 'Cinematic' },
+    { name: 'Vintage' },
+    { name: 'Watercolor' },
+    { name: '3D Render' },
+    { name: 'Pixel Art' },
+    { name: 'Neon Punk' },
+    { name: 'Sketch' },
+    { name: 'Pop Art' }
 ];
 
 const cameraAngleOptions = [
-    { name: 'มุมกล้องเดิม (ไม่แก้ไข)', prompt: '' },
-    { name: 'มุมระดับสายตา', prompt: 'from an eye-level angle' },
-    { name: 'มุมสูง', prompt: 'from a high angle' },
-    { name: 'มุมต่ำ', prompt: 'from a low angle' },
-    { name: 'ระยะใกล้', prompt: 'as a close-up shot' },
-    { name: 'ภาพมุมกว้าง', prompt: 'as a wide shot' },
-    { name: 'ไอโซเมตริก', prompt: 'in an isometric view' },
-    { name: 'มุมมองนก', prompt: 'from a bird\'s eye view' },
-    { name: 'มุมดัตช์', prompt: 'with a Dutch angle tilt' },
-    { name: 'ภาพระยะไกล', prompt: 'as a long shot' },
-    { name: 'ข้ามไหล่', prompt: 'as an over-the-shoulder shot' },
+    { name: 'Original Angle (No Change)', prompt: '' },
+    { name: 'Eye-Level', prompt: 'from an eye-level angle' },
+    { name: 'High Angle', prompt: 'from a high angle' },
+    { name: 'Low Angle', prompt: 'from a low angle' },
+    { name: 'Close-up', prompt: 'as a close-up shot' },
+    { name: 'Wide Shot', prompt: 'as a wide shot' },
+    { name: 'Isometric', prompt: 'in an isometric view' },
+    { name: 'Bird\'s Eye View', prompt: 'from a bird\'s eye view' },
+    { name: 'Dutch Angle', prompt: 'with a Dutch angle tilt' },
+    { name: 'Long Shot', prompt: 'as a long shot' },
+    { name: 'Over-the-Shoulder', prompt: 'as an over-the-shoulder shot' },
 ];
 
 const gardenStyleOptions = [
-    { name: 'สวนไทย', description: 'ศาลา, สระบัว, และพรรณไม้เขตร้อนที่สงบและงดงาม' },
-    { name: 'สวนญี่ปุ่น', description: 'บ่อปลาคาร์ป, หิน, และต้นไม้ที่สะท้อนปรัชญาเซ็น' },
-    { name: 'สวนอังกฤษ', description: 'ดอกไม้บานสะพรั่ง, ทางเดินคดเคี้ยว, บรรยากาศโรแมนติก' },
-    { name: 'สวนไม้ทรอปิคอล', description: 'พืชใบใหญ่, ดอกไม้สีสด, ให้ความรู้สึกเหมือนป่าเขียวชอุ่ม' },
-    { name: 'สวนดอกไม้', description: 'ทุ่งดอกไม้นานาพันธุ์ สีสันสดใสเหมือนสวนพฤกษศาสตร์' },
-    { name: 'สวนมหัศจรรย์', description: 'สวนในเทพนิยาย มีหมอก, แสงลอดใบไม้, และปลาคาร์ป' },
-    { name: 'สวนโมเดิร์นทรอปิคัล', description: 'ผสมผสานความเขียวชอุ่มกับเส้นสายที่เฉียบคมแบบโมเดิร์น' },
-    { name: 'สวนสไตล์ฟอร์มัล', description: 'สมมาตร, ตัดแต่งเป็นระเบียบ, เน้นความสง่างามแบบคลาสสิค' },
-    { name: 'สวนโมเดิร์นผสมธรรมชาติ', description: 'เรียบง่าย, สะอาดตา, ทางเดินลายตารางหมากรุก' },
-    { name: 'สวนทางเดินทรอปิคอล', description: 'ทางเดินท่ามกลางพรรณไม้เขตร้อนหนาแน่นเหมือนรีสอร์ท' },
-    { name: 'สวนไทย ลำธาร น้ำตก', description: 'ลำธารใสไหลผ่านโขดหินและต้นไม้ใหญ่ ร่มรื่นและสงบ' },
+    { name: 'Thai Garden', description: 'Serene and beautiful with salas, lotus ponds, and tropical flora.' },
+    { name: 'Japanese Garden', description: 'Reflects Zen philosophy with koi ponds, rocks, and carefully placed trees.' },
+    { name: 'English Garden', description: 'A romantic atmosphere with blooming flowers and winding paths.' },
+    { name: 'Tropical Garden', description: 'Lush and jungle-like with large-leafed plants and vibrant flowers.' },
+    { name: 'Flower Garden', description: 'A field of various flowers with vibrant colors, like a botanical garden.' },
+    { name: 'Magical Garden', description: 'A fairytale garden with mist, light rays, and koi fish.' },
+    { name: 'Modern Tropical Garden', description: 'Combines lush greenery with sharp, modern lines.' },
+    { name: 'Formal Garden', description: 'Symmetrical, orderly, and emphasizes classical elegance.' },
+    { name: 'Modern Natural Garden', description: 'Simple, clean, with a checkerboard path and natural feel.' },
+    { name: 'Tropical Pathway Garden', description: 'A dense, resort-style pathway through tropical plants.' },
+    { name: 'Thai Stream Garden', description: 'A clear stream flows through rocks and large, shady trees.' },
 ];
 
 const architecturalStyleOptions = [
-    { name: 'โมเดิร์น', description: 'เส้นสายสะอาดตา, รูปทรงเรขาคณิต, ใช้วัสดุอย่างคอนกรีตและกระจก' },
-    { name: 'ลอฟท์', description: 'ผนังอิฐเปลือย, โครงเหล็ก, เพดานสูง, ได้แรงบันดาลใจจากโรงงาน' },
-    { name: 'คลาสสิค', description: 'สมมาตร, เป็นระเบียบ, มีการตกแต่งด้วยเสาและบัวอย่างสง่างาม' },
-    { name: 'มินิมอล', description: 'เรียบง่ายถึงขีดสุด, ตัดทอนสิ่งที่ไม่จำเป็น, ใช้โทนสีขาว-เทา' },
-    { name: 'ร่วมสมัย', description: 'ผสมผสานหลายสไตล์, เส้นสายโค้งมน, ใช้วัสดุจากธรรมชาติ' },
-    { name: 'ไทยประยุกต์', description: 'ผสมผสานองค์ประกอบไทย เช่นหลังคาทรงจั่วสูงกับความทันสมัย' },
+    { name: 'Modern', description: 'Clean lines, geometric shapes, and materials like concrete and glass.' },
+    { name: 'Loft', description: 'Exposed brick, steel structures, high ceilings, inspired by factories.' },
+    { name: 'Classic', description: 'Symmetrical, orderly, with elegant columns and moldings.' },
+    { name: 'Minimalist', description: 'Extreme simplicity, reducing elements to their essentials, using white/gray tones.' },
+    { name: 'Contemporary', description: 'A mix of styles, curved lines, and use of natural materials.' },
+    { name: 'Modern Thai', description: 'Combines Thai elements like high gabled roofs with modernism.' },
 ];
 
 const interiorStyleOptions = [
-    { name: 'คอนเทมโพราลี', description: 'เส้นสายสะอาด, โทนสีกลาง, พื้นที่โปร่งโล่ง, เน้นแสงธรรมชาติ' },
-    { name: 'สแกนดิเนเวีย', description: 'เรียบง่าย, เน้นประโยชน์ใช้สอย, ใช้ไม้สีอ่อนและผ้าจากธรรมชาติ' },
-    { name: 'ญี่ปุ่น', description: 'สงบ, เรียบง่าย, ใกล้ชิดธรรมชาติ, ใช้วัสดุอย่างไม้ไผ่และกระดาษ' },
-    { name: 'ไทย', description: 'ใช้ไม้สัก, ลวดลายแกะสลัก, ผ้าไหมไทย, ให้ความรู้สึกอบอุ่นและหรูหรา' },
-    { name: 'จีน', description: 'เฟอร์นิเจอร์ไม้เคลือบเงา, ฉากกั้น, ใช้สีแดงและทองเพื่อความเป็นสิริมงคล' },
-    { name: 'โมรอคโค', description: 'สีสันสดใส, กระเบื้องโมเสก, โคมไฟโลหะฉลุลาย, บรรยากาศอบอุ่น' },
-    { name: 'คลาสสิค', description: 'สง่างาม, เป็นทางการ, ใช้วัสดุคุณภาพสูง, เฟอร์นิเจอร์แกะสลัก' },
-    { name: 'โมเดิร์น', description: 'เส้นสายเฉียบคม, รูปทรงเรขาคณิต, พื้นผิวขัดมัน, ไม่มีลวดลายตกแต่ง' },
+    { name: 'Contemporary', description: 'Clean lines, neutral colors, open spaces, and emphasis on natural light.' },
+    { name: 'Scandinavian', description: 'Simple, functional, using light-colored woods and natural fabrics.' },
+    { name: 'Japanese', description: 'Serene, simple, close to nature, using materials like bamboo and paper.' },
+    { name: 'Thai', description: 'Uses teak wood, intricate carvings, and Thai silk for a warm, luxurious feel.' },
+    { name: 'Chinese', description: 'Lacquered wood furniture, screens, and use of red and gold for prosperity.' },
+    { name: 'Moroccan', description: 'Vibrant colors, mosaic tiles, metal lanterns, creating a warm atmosphere.' },
+    { name: 'Classic', description: 'Elegant, formal, using high-quality materials and carved furniture.' },
+    { name: 'Modern', description: 'Sharp lines, geometric shapes, polished surfaces, and no decorative patterns.' },
 ];
 
 
-const backgrounds = ["วิวตึกสูงกรุงเทพ", "วิวภูเขา", "วิวถนนการจราจรกรุงเทพ", "วิวท้องนาสวนเกษตร", "วิวโครงการหมู่บ้านจัดสรร", "วิว แม่น้ำเจ้าพระยา", "ป่า", "ชายหาด", "วิวเมือง", "อวกาศ"];
-const foregrounds = ["ถนนระยะหน้า", "ต้นไม้ใหญ่ระยะหน้า", "แม่น้ำระยะหน้า", "ใบไม้ที่มุมจอบน", "พุ่มไม้ดอกมุมล่างจอ"];
-const filters = ['ไม่มี', 'ขาว-ดำ', 'ซีเปีย', 'กลับสี', 'สีเทา', 'วินเทจ', 'โทนเย็น', 'โทนอุ่น', 'HDR'];
+const backgrounds = ["Bangkok High-rise View", "Mountain View", "Bangkok Traffic View", "Farmland View", "Housing Estate View", "Chao Phraya River View", "Forest", "Public Park", "Beach", "Cityscape", "Outer Space"];
+const foregrounds = ["Foreground Road", "Foreground Large Tree", "Foreground River", "Top Corner Leaves", "Bottom Corner Bush"];
+const filters = ['None', 'Black & White', 'Sepia', 'Invert', 'Grayscale', 'Vintage', 'Cool Tone', 'Warm Tone', 'HDR'];
 
 // --- New Time/Weather Controls ---
-const timeOfDayOptions = ['รุ่งเช้า', 'กลางวัน', 'บ่ายคล้อย', 'พลบค่ำ', 'กลางคืน'];
-const weatherOptions = ['แดดจัด', 'มีเมฆมาก', 'ฝนตก (พื้นเปียก)', 'มีหมอก'];
-const interiorLightingOptions = ['แสงธรรมชาติกลางวัน', 'แสงเย็นอบอุ่น', 'แสงสตูดิโอ', 'แสงแบบภาพยนตร์'];
+const timeOfDayOptions = ['Dawn', 'Daytime', 'Afternoon', 'Dusk', 'Night'];
+const weatherOptions = ['Sunny', 'Overcast', 'Rainy (Wet Ground)', 'Misty'];
+const interiorLightingOptions = ['Natural Daylight', 'Warm Evening Light', 'Studio Light', 'Cinematic Light'];
 
 // --- New Material Quick Prompts for Object Mode ---
 const materialQuickPrompts = [
-    { name: 'อิฐขาว', prompt: 'white brick' },
-    { name: 'คอนกรีตขัดมัน', prompt: 'polished concrete' },
-    { name: 'ไม้สีเข้ม', prompt: 'dark wood paneling' },
-    { name: 'หินอ่อน', prompt: 'marble texture' },
-    { name: 'โลหะดำ', prompt: 'black matte metal' },
+    { name: 'White Brick', prompt: 'white brick' },
+    { name: 'Polished Concrete', prompt: 'polished concrete' },
+    { name: 'Dark Wood', prompt: 'dark wood paneling' },
+    { name: 'Marble', prompt: 'marble texture' },
+    { name: 'Black Metal', prompt: 'black matte metal' },
 ];
 
 const qualityOptions = [
-    { label: 'สูง (100%)', value: 1.0 },
-    { label: 'ดี (92%)', value: 0.92 },
-    { label: 'ปานกลาง (75%)', value: 0.75 },
-    { label: 'ต่ำ (50%)', value: 0.50 },
+    { label: 'High (100%)', value: 1.0 },
+    { label: 'Good (92%)', value: 0.92 },
+    { label: 'Medium (75%)', value: 0.75 },
+    { label: 'Low (50%)', value: 0.50 },
 ];
 
 const aspectRatioOptions = [
-  { value: 'ต้นฉบับ', label: 'ต้นฉบับ', icon: PhotoIcon },
-  { value: '1:1 สี่เหลี่ยมจัตุรัส', label: '1:1', icon: Icon1x1 },
-  { value: '16:9 จอกว้าง', label: '16:9', icon: Icon16x9 },
-  { value: '9:16 แนวตั้ง', label: '9:16', icon: Icon9x16 },
-  { value: '4:3 แนวนอน', label: '4:3', icon: Icon4x3 },
-  { value: '3:4 แนวตั้ง', label: '3:4', icon: Icon3x4 },
+  { value: 'Original', label: 'Original', icon: PhotoIcon },
+  { value: '1:1 Square', label: '1:1', icon: IconPreview1x1 },
+  { value: '16:9 Widescreen', label: '16:9', icon: IconPreview16x9 },
+  { value: '9:16 Portrait', label: '9:16', icon: IconPreview9x16 },
+  { value: '4:3 Landscape', label: '4:3', icon: IconPreview4x3 },
+  { value: '3:4 Portrait', label: '3:4', icon: IconPreview3x4 },
 ];
 
 // --- Plan to 3D Options ---
-const roomTypeOptions = ['ห้องนั่งเล่น', 'ห้องนอน', 'ห้องครัว', 'ห้องน้ำ', 'ออฟฟิศ', 'ห้องทานอาหาร'];
+const roomTypeOptions = ['Living Room', 'Bedroom', 'Kitchen', 'Bathroom', 'Office', 'Dining Room'];
 
 const planViewOptions = [
-    { name: 'มุมมองบุคคล', prompt: 'a realistic eye-level interior photo' },
-    { name: 'ไอโซเมตริก', prompt: 'a 3D isometric cutaway view' },
-    { name: 'มุมบน', prompt: 'a 3D top-down view' },
-    { name: 'มุมกว้าง', prompt: 'a realistic wide-angle interior photo' },
+    { name: 'Eye-Level View', prompt: 'a realistic eye-level interior photo' },
+    { name: 'Isometric View', prompt: 'a 3D isometric cutaway view' },
+    { name: 'Top-Down View', prompt: 'a 3D top-down view' },
+    { name: 'Wide-Angle View', prompt: 'a realistic wide-angle interior photo' },
 ];
 
-const planLightingOptions = ['แสงธรรมชาติกลางวัน', 'แสงเย็นอบอุ่น', 'แสงสตูดิโอ', 'แสงแบบภาพยนตร์'];
-const planMaterialsOptions = ['ไม้และคอนกรีตโมเดิร์น', 'หินอ่อนและทองคลาสสิค', 'สีขาวและเทามินิมอล', 'เส้นใยธรรมชาติอบอุ่น'];
+const planLightingOptions = ['Natural Daylight', 'Warm Evening Light', 'Studio Light', 'Cinematic Light'];
+const planMaterialsOptions = ['Modern Wood & Concrete', 'Classic Marble & Gold', 'Minimalist White & Gray', 'Warm Natural Fibers'];
 
-const decorativeItemOptions = ['ภาพวาดบนผนัง', 'แจกันดอกไม้', 'พรมบนพื้น', 'โคมไฟตั้งพื้น', 'ต้นไม้ในกระถาง', 'กองหนังสือ'];
+const decorativeItemOptions = ['Wall Art', 'Flower Vase', 'Rug on Floor', 'Floor Lamp', 'Potted Plant', 'Stack of Books'];
 
 type EditingMode = 'default' | 'object';
 type SceneType = 'exterior' | 'interior' | 'plan';
 
 // --- Prompt Constants ---
 const ROOM_TYPE_PROMPTS: Record<string, string> = {
-    'ห้องนั่งเล่น': 'a living room',
-    'ห้องนอน': 'a bedroom',
-    'ห้องครัว': 'a kitchen',
-    'ห้องน้ำ': 'a bathroom',
-    'ออฟฟิศ': 'an office space',
-    'ห้องทานอาหาร': 'a dining room',
+    'Living Room': 'a living room',
+    'Bedroom': 'a bedroom',
+    'Kitchen': 'a kitchen',
+    'Bathroom': 'a bathroom',
+    'Office': 'an office space',
+    'Dining Room': 'a dining room',
 };
 
 const PLAN_VIEW_PROMPTS: Record<string, string> = {
-    'มุมมองบุคคล': 'a realistic eye-level interior photo',
-    'ไอโซเมตริก': 'a 3D isometric cutaway view',
-    'มุมบน': 'a 3D top-down view',
-    'มุมกว้าง': 'a realistic wide-angle interior photo',
+    'Eye-Level View': 'a realistic eye-level interior photo',
+    'Isometric View': 'a 3D isometric cutaway view',
+    'Top-Down View': 'a 3D top-down view',
+    'Wide-Angle View': 'a realistic wide-angle interior photo',
 };
 
 const PLAN_LIGHTING_PROMPTS: Record<string, string> = {
-    'แสงธรรมชาติกลางวัน': 'bright, natural daylight streaming through large windows, creating soft shadows and a fresh, airy atmosphere.',
-    'แสงเย็นอบอุ่น': 'warm, inviting evening light from multiple sources like floor lamps, recessed ceiling lights, and accent lighting, creating a cozy and intimate mood.',
-    'แสงสตูดิโอ': 'clean, bright, and even studio-style lighting that clearly illuminates the entire space, minimizing shadows and highlighting the design details.',
-    'แสงแบบภาพยนตร์': 'dramatic and moody cinematic lighting, with high contrast between light and shadow, volumetric light rays, and a sophisticated, atmospheric feel.',
+    'Natural Daylight': 'bright, natural daylight streaming through large windows, creating soft shadows and a fresh, airy atmosphere.',
+    'Warm Evening Light': 'warm, inviting evening light from multiple sources like floor lamps, recessed ceiling lights, and accent lighting, creating a cozy and intimate mood.',
+    'Studio Light': 'clean, bright, and even studio-style lighting that clearly illuminates the entire space, minimizing shadows and highlighting the design details.',
+    'Cinematic Light': 'dramatic and moody cinematic lighting, with high contrast between light and shadow, volumetric light rays, and a sophisticated, atmospheric feel.',
 };
 
 const INTERIOR_LIGHTING_PROMPTS: Record<string, string> = {
-    'แสงธรรมชาติกลางวัน': 'change the lighting to bright, natural daylight streaming through large windows, creating soft shadows and a fresh, airy atmosphere.',
-    'แสงเย็นอบอุ่น': 'change the lighting to warm, inviting evening light from multiple sources like floor lamps, recessed ceiling lights, and accent lighting, creating a cozy and intimate mood.',
-    'แสงสตูดิโอ': 'change the lighting to clean, bright, and even studio-style lighting that clearly illuminates the entire space, minimizing shadows and highlighting the design details.',
-    'แสงแบบภาพยนตร์': 'change the lighting to dramatic and moody cinematic lighting, with high contrast between light and shadow, volumetric light rays, and a sophisticated, atmospheric feel.',
+    'Natural Daylight': 'change the lighting to bright, natural daylight streaming through large windows, creating soft shadows and a fresh, airy atmosphere.',
+    'Warm Evening Light': 'change the lighting to warm, inviting evening light from multiple sources like floor lamps, recessed ceiling lights, and accent lighting, creating a cozy and intimate mood.',
+    'Studio Light': 'change the lighting to clean, bright, and even studio-style lighting that clearly illuminates the entire space, minimizing shadows and highlighting the design details.',
+    'Cinematic Light': 'change the lighting to dramatic and moody cinematic lighting, with high contrast between light and shadow, volumetric light rays, and a sophisticated, atmospheric feel.',
 };
 
 const PLAN_MATERIALS_PROMPTS: Record<string, string> = {
-    'ไม้และคอนกรีตโมเดิร์น': 'a modern material palette dominated by light-toned wood, polished concrete floors, black metal accents, and large glass panes.',
-    'หินอ่อนและทองคลาสสิค': 'a classic and luxurious material palette featuring white marble with grey veining, polished gold or brass fixtures, dark wood furniture, and rich textiles.',
-    'สีขาวและเทามินิมอล': 'a minimalist material palette with a focus on shades of white and light gray, matte finishes, simple textures, and light wood accents for warmth.',
-    'เส้นใยธรรมชาติอบอุ่น': 'a cozy and warm material palette that emphasizes natural fibers like linen and wool textiles, rattan or wicker furniture, light-colored woods, and numerous indoor plants.',
+    'Modern Wood & Concrete': 'a modern material palette dominated by light-toned wood, polished concrete floors, black metal accents, and large glass panes.',
+    'Classic Marble & Gold': 'a classic and luxurious material palette featuring white marble with grey veining, polished gold or brass fixtures, dark wood furniture, and rich textiles.',
+    'Minimalist White & Gray': 'a minimalist material palette with a focus on shades of white and light gray, matte finishes, simple textures, and light wood accents for warmth.',
+    'Warm Natural Fibers': 'a cozy and warm material palette that emphasizes natural fibers like linen and wool textiles, rattan or wicker furniture, light-colored woods, and numerous indoor plants.',
 };
 
 const DECORATIVE_ITEM_PROMPTS: Record<string, string> = {
-    'ภาพวาดบนผนัง': 'Add a suitable piece of abstract or modern art in a frame on a prominent wall.',
-    'แจกันดอกไม้': 'Place an elegant vase with fresh flowers on a table or surface.',
-    'พรมบนพื้น': 'Add a stylish, textured rug on the floor that complements the room\'s design.',
-    'โคมไฟตั้งพื้น': 'Incorporate a modern, stylish floor lamp in a corner or next to a sofa.',
-    'ต้นไม้ในกระถาง': 'Add a large, healthy indoor plant in a beautiful pot to a corner of the room.',
-    'กองหนังสือ': 'Place a small, artfully arranged stack of books on a coffee table or shelf.'
+    'Wall Art': 'Add a suitable piece of abstract or modern art in a frame on a prominent wall.',
+    'Flower Vase': 'Place an elegant vase with fresh flowers on a table or surface.',
+    'Rug on Floor': 'Add a stylish, textured rug on the floor that complements the room\'s design.',
+    'Floor Lamp': 'Incorporate a modern, stylish floor lamp in a corner or next to a sofa.',
+    'Potted Plant': 'Add a large, healthy indoor plant in a beautiful pot to a corner of the room.',
+    'Stack of Books': 'Place a small, artfully arranged stack of books on a coffee table or shelf.'
 };
 
-const magicalGardenPrompt = "ปรับภาพให้สมจริงในระดับสูง ราวกับเป็นภาพโฆษณาที่ถ่ายขึ้นในนิตยสารออกแบบบ้าน โดยคงรูปแบบของภาพไว้ ไม่แก้ไขงานออกแบบ ไม่แก้ไขมุมกล้อง เปิดไฟ แรนดอม บรรยากาศภายนอกเหมือนอยู่ในสวนต้นไม้ใหญ่ ท้องฟ้าสดใส สวนสวยขนาดใหญ่ถูกจัดอย่างเป็นธรรมชาติ มีน้ำใสไหลสร้างบ่อใหญ่ ที่มีปลาคาร์ปคอยแหวกว่ายอยู่ มีต้นไม้ใหญ่และพุ่มไม้หนาแน่นล้อมรอบพื้นที่ ช่วยเพิ่มร่มเงาและความร่มรื่น ทางเดินหินโค้งอ้อมผ่านพุ่มไม้เขตร้อนสีเขียว เชื่อมต่อกับลานไม้ที่ตั้งเก้าอี้สีขาวและโต๊ะไว้ให้พักผ่อนริมบ่อน้ำ พื้นที่นี้ดูสงบเงียบและเหมาะแก่การนั่งพักผ่อนท่ามกลางธรรมชาติอย่างแท้จริง มีพืชพันธุ์เขียวชอุ่มและหลากหลาย รายล้อมไปด้วยต้นไม้ลีลาวดีมีขนาดใหญ่ ไม้ค้ำยัน เฟิร์น ต้นบอนและพุ่มไม้บนทางเดินหินที่ซ่อนตัวอยู่ท่ามกลางหมอกสีขาวๆ แสงแดดที่ส่องลอดผ่านร่มไม้ลงมาสร้างลำแสงสวยงาม บรรยากาศดูสงบ ร่มรื่น และเป็นธรรมชาติ หลังฝนตก";
+const magicalGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Turn on the lights. Randomize the exterior atmosphere to be like a large, beautiful, naturally landscaped garden. There is a clear stream creating a large pond where koi fish swim. Large trees and dense bushes surround the area, providing shade and lushness. A curved stone path winds through green tropical bushes, connecting to a wooden deck with a white chair and table for relaxing by the pond. The area looks serene and perfect for relaxing in nature. The vegetation is lush and diverse, surrounded by large plumeria trees, supports, ferns, caladiums, and bushes on the stone path, hidden in a white mist. Sunlight filtering through the canopy creates beautiful light rays. The atmosphere is calm, shady, and natural after a rain.";
 
-const modernTropicalGardenPrompt = "ปรับภาพให้สมจริงในระดับสูง ราวกับเป็นภาพโฆษณาที่ถ่ายขึ้นในนิตยสารออกแบบบ้าน โดยคงรูปแบบของภาพไว้ ไม่แก้ไขงานออกแบบ ไม่แก้ไขมุมกล้อง สถานที่เป็นบ้านในโครงการหมู่บ้านจัดสรร เปิดไฟแบบสุ่มภายในห้องนั่งเล่นและห้องทานอาหาร ผนังภายนอกของบ้านอาจมีคราบเก่าๆ อยู่บ้าง ท้องฟ้าควรจะสดใสมีเมฆน้อย และมองเห็นบ้านหลังอื่นและต้นไม้ในโครงการเป็นพื้นหลัง จุดสนใจหลักคือการเปลี่ยนสวนให้เป็นสวนโมเดิร์นทรอปิคัลที่ได้รับการออกแบบอย่างพิถีพิถัน หรูหรา และร่วมสมัย พร้อมรายละเอียดดังนี้: - องค์ประกอบหลัก: ใช้พืชใบใหญ่เขตร้อน เช่น ปาล์มและฟิโลเดนดรอน เพื่อให้ความรู้สึกหนาแน่นและเขียวชอุ่ม ใช้แผ่นหินสีดำขนาดใหญ่ที่จัดเรียงอย่างเป็นระเบียบสำหรับปูพื้นเพื่อสร้างคอนทราสต์แบบมินิมอลที่ทันสมัย ผสมผสานหินรูปทรงอิสระเสมือนงานประติมากรรมเพื่อเป็นองค์ประกอบทางศิลปะหรือที่นั่ง ใช้ไฟส่องขึ้นจากพื้นและไฟซ่อนเพื่อเน้นพืชและสถาปัตยกรรม สร้างบรรยากาศที่สงบและลึกลับในยามค่ำคืน - ความรู้สึกโดยรวม: การออกแบบควรผสมผสานความเขียวชอุ่มของเขตร้อนเข้ากับเส้นสายที่เฉียบคมและทันสมัย สร้างบรรยากาศที่สงบ เงียบ เย็นสบาย และเป็นส่วนตัวเหมือนรีสอร์ทระดับไฮเอนด์ - องค์ประกอบแนวตั้ง: ใช้ผนังระแนงสีดำเพื่อความเป็นส่วนตัวและเป็นฉากหลังที่ตัดกับใบไม้สีเขียว";
+const modernTropicalGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. The setting is a house in a housing estate. Randomly turn on lights in the living and dining rooms. The exterior walls of the house may have some old stains. The sky should be clear with few clouds, showing other houses and trees in the estate in the background. The main focus is to change the garden into a meticulously designed, luxurious, and contemporary modern tropical garden with the following details: - Key elements: Use large-leafed tropical plants like palms and philodendrons to create a dense, lush feel. Use large, neatly arranged black stone slabs for the flooring to create a modern, minimalist contrast. Incorporate free-form stones as sculptural elements or seating. Use uplighting from the ground and hidden lights to highlight plants and architecture, creating a calm and mysterious atmosphere at night. - Overall feel: The design should blend tropical lushness with sharp, modern lines, creating a serene, quiet, cool, and private atmosphere like a high-end resort. - Vertical elements: Use black slatted walls for privacy and as a backdrop that contrasts with the green foliage.";
 
-const formalGardenPrompt = "ปรับภาพให้สมจริงในระดับสูง ราวกับเป็นภาพโฆษณาที่ถ่ายขึ้นในนิตยสารออกแบบบ้าน โดยคงรูปแบบของภาพไว้ ไม่แก้ไขงานออกแบบ ไม่แก้ไขมุมกล้อง บรรยากาศภายในห้องรับแขกห้องทานอาหาร เปิดไฟ แรนดอม บรรยากาศภายนอกเหมือนอยู่ในโครงการหมู่บ้านจัดสรร ท้องฟ้าสดใสมีเมฆน้อย ต้นไม้ในโครงการเห็นบ้านในโครงการ เปลี่ยนสวนให้เป็นสวนสไตล์ฟอร์มัล (Formal Garden) ที่ออกแบบอย่างเป็นระเบียบ มีความสมมาตร และเน้นความสวยงามแบบคลาสสิก มีองค์ประกอบหลักคือ ต้นไม้ตัดแต่งรูปทรงเรขาคณิต เช่น พุ่มไม้สี่เหลี่ยมจัตุรัส พุ่มกลม และแนวรั้วต้นไม้เตี้ยๆ ที่ถูกตัดแต่งอย่างประณีต, มีน้ำพุหินอ่อนคลาสสิกหลายชั้นเป็นจุดศูนย์กลางของสวน, มีทางเดินโค้งด้วยอิฐหรือคอนกรีตลากผ่านสนามหญ้า, และมีต้นไม้ใหญ่ให้ร่มเงาปลูกกระจายรอบสวน การออกแบบเน้นการจัดวางพืชพรรณแบบสมมาตรและความสมดุลของเส้นทางเดิน ทำให้ดูเป็นระเบียบเรียบร้อย สร้างความรู้สึกโอ่อ่า สง่างาม เหมาะแก่การพักผ่อน";
+const formalGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Inside the living and dining rooms, randomly turn on the lights. The exterior atmosphere is like a housing estate with a clear sky, few clouds, and trees from the project visible. Change the garden to a Formal Garden, designed with order, symmetry, and a focus on classic beauty. Key elements include geometrically shaped topiary, such as square and round bushes, and meticulously trimmed low hedges. A multi-tiered classic marble fountain serves as the garden's centerpiece. A curved brick or concrete path runs through the lawn, and large shade trees are scattered around the garden. The design emphasizes symmetrical planting and balanced pathways, creating an orderly and elegant look suitable for relaxation.";
 
-const modernNaturalGardenPrompt = "ปรับภาพให้สมจริงในระดับสูง ราวกับเป็นภาพโฆษณาที่ถ่ายขึ้นในนิตยสารออกแบบบ้าน โดยคงรูปแบบของภาพไว้ ไม่แก้ไขงานออกแบบ ไม่แก้ไขมุมกล้อง บรรยากาศภายในห้องรับแขกห้องทานอาหาร เปิดไฟ แรนดอม บรรยากาศภายนอกเหมือนอยู่ในโครงการหมู่บ้านจัดสรร ท้องฟ้าสดใสมีเมฆน้อย ต้นไม้ในโครงการเห็นบ้านในโครงการ เปลี่ยนสวนให้เป็นสวนสไตล์โมเดิร์นผสมธรรมชาติ (Modern Natural Garden) ที่ตกแต่งอย่างเรียบง่าย สะอาดตา และใช้งานได้จริง มีองค์ประกอบสำคัญคือทางเดินลายตารางหมากรุกที่ปูด้วยแผ่นหินสีเทาตัดกับหญ้าเขียว, มีต้นไม้ใหญ่พร้อมโครงไม้ค้ำยันและพุ่มไม้หลากชนิด รวมถึงต้นหลิวใบย้อยสวยงามเพิ่มความร่มรื่น, มีพื้นที่นั่งเล่นกลางสวนพร้อมม้านั่งไม้, และตกแต่งด้วยกระถางต้นไม้หลากหลายแบบ การออกแบบเป็นสไตล์กึ่งฟอร์มัลผสมธรรมชาติที่เน้นแสงแดดอ่อนๆ และโทนสีเขียวเป็นหลัก สร้างบรรยากาศผ่อนคลายและเป็นส่วนตัว เหมาะสำหรับบ้านพักอาศัย";
+const modernNaturalGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Inside the living and dining rooms, randomly turn on the lights. The exterior atmosphere is like a housing estate with a clear sky, few clouds, and trees from the project visible. Change the garden to a Modern Natural Garden, decorated simply, cleanly, and functionally. Key elements include a checkerboard path paved with gray stone slabs contrasting with green grass, a large tree with a wooden support frame and various shrubs, including a beautiful weeping willow for shade. There is a seating area in the garden with a wooden bench, and it is decorated with various potted plants. The design is a semi-formal, natural style that emphasizes soft sunlight and green tones, creating a relaxing and private atmosphere suitable for a residence.";
 
-const tropicalPathwayGardenPrompt = "ปรับภาพให้สมจริงในระดับสูง ราวกับเป็นภาพโฆษณาที่ถ่ายขึ้นในนิตยสารออกแบบบ้าน โดยคงรูปแบบของภาพไว้ ไม่แก้ไขงานออกแบบ ไม่แก้ไขมุมกล้อง บรรยากาศภายในห้องรับแขกห้องทานอาหาร เปิดไฟ แรนดอม บรรยากาศภายนอกเหมือนอยู่ในโครงการหมู่บ้านจัดสรร ท้องฟ้าสดใสมีเมฆน้อย ต้นไม้ในโครงการเห็นบ้านในโครงการ ทางเดินอิฐที่ลัดเลาะเข้าไปยังประตูของบ้าน ซึ่งถูกล้อมรอบไปด้วยพืชพรรณเขตร้อนอย่างหนาแน่น เช่น ต้นลีลาวดีขนาดใหญ่ ใบบอนขนาดใหญ่ เฟิร์น กล้วยไม้ และพืชใบใหญ่เขียวชอุ่มอื่น ๆ บรรยากาศดูร่มรื่นและเป็นธรรมชาติ ให้ความรู้สึกเหมือนเดินเข้าไปในสวนป่าหรือรีสอร์ทสไตล์ทรอปิคอล ภาพนี้สื่อถึงความสงบ ร่มเย็น และการออกแบบที่กลมกลืนกับธรรมชาติอย่างลงตัว";
+const tropicalPathwayGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Inside the living and dining rooms, randomly turn on the lights. The exterior atmosphere is like a housing estate with a clear sky, few clouds, and trees from the project visible. A brick pathway winds towards the house's door, surrounded by dense tropical vegetation such as large plumeria trees, large caladium leaves, ferns, orchids, and other lush green plants. The atmosphere is shady and natural, giving the feeling of walking into a forest garden or a tropical-style resort. This image conveys tranquility, coolness, and a design that harmonizes perfectly with nature.";
 
-const thaiStreamGardenPrompt = "ปรับภาพให้สมจริงในระดับสูง ราวกับเป็นภาพโฆษณาที่ถ่ายขึ้นในนิตยสารออกแบบบ้าน โดยคงรูปแบบของภาพไว้ ไม่แก้ไขงานออกแบบ ไม่แก้ไขมุมกล้อง บรรยากาศภายในห้องรับแขกห้องทานอาหาร เปิดไฟ แรนดอม บรรยากาศภายนอกเหมือนอยู่ในโครงการหมู่บ้านจัดสรร ท้องฟ้าสดใสมีเมฆน้อย ต้นไม้ในโครงการเห็นบ้านในโครงการ ภาพนี้แสดงให้เห็นถึงสวนธรรมชาติที่ร่มรื่นและสงบเงียบ มีลำธารน้ำใสไหลผ่านท่ามกลางก้อนหินธรรมชาติที่วางอย่างลงตัว สองข้างลำธารเต็มไปด้วยต้นไม้ขนาดใหญ่ที่ให้ร่มเงา และพืชคลุมดิน เช่น เฟิร์น พืชใบเขียว และพืชพรรณเขตร้อนอื่น ๆ ที่แผ่ขยายไปทั่วพื้นที่ บรรยากาศในภาพให้ความรู้สึกเย็นสบาย สดชื่น และผ่อนคลาย เหมาะกับการพักผ่อนหรือทำสมาธิ เป็นการจัดสวนสไตล์ธรรมชาติที่เลียนแบบป่าดิบชื้นได้อย่างกลมกลืน และอาจเป็นส่วนหนึ่งของบ้านพักหรือรีสอร์ทก็ได้";
+const thaiStreamGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Inside the living and dining rooms, randomly turn on the lights. The exterior atmosphere is like a housing estate with a clear sky, few clouds, and trees from the project visible. The image shows a shady and serene natural garden. A clear stream flows among naturally placed rocks. Both sides of the stream are filled with large, shady trees and ground cover plants like ferns, green-leafed plants, and other tropical vegetation spreading across the area. The atmosphere feels cool, fresh, and relaxing, suitable for rest or meditation. It's a natural-style garden that beautifully mimics a rainforest and could be part of a residence or resort.";
 
 const QUICK_ACTION_PROMPTS: Record<string, string> = {
-    proPhotoFinish: "Transform the image into a photorealistic, 8k resolution, hyper-detailed photograph with tack-sharp focus, intricate lifelike textures, and cinematic lighting, mimicking a professional DSLR camera shot with a prime lens (f/1.8 aperture, ISO 100).",
+    proPhotoFinish: "Transform the image into a high-quality, photorealistic architectural photograph, as if it was captured with a professional DSLR camera. Enhance all materials and textures to be hyper-realistic (e.g., realistic wood grain, concrete texture, reflections on glass). The lighting should be soft, natural daylight, creating believable shadows and a sense of realism. It is absolutely crucial that the final image is indistinguishable from a real photograph and has no outlines, cartoonish features, or any sketch-like lines whatsoever. The final image should be 8k resolution and hyper-detailed.",
     luxuryHomeDusk: "Transform this architectural photo to have the atmosphere of a luxury modern home at dusk, shortly after a light rain. The ground and surfaces should be wet, creating beautiful reflections from the lighting. The lighting should be a mix of warm, inviting interior lights glowing from the windows and strategically placed exterior architectural up-lights. The overall mood should be sophisticated, warm, and serene, mimicking a high-end real estate photograph.",
     morningHousingEstate: "Transform this architectural photo to capture the serene atmosphere of an early morning in a modern housing estate. The lighting should be soft, warm, and golden, characteristic of the hour just after sunrise, casting long, gentle shadows. The air should feel fresh and clean, with a hint of morning dew on the manicured lawns. The overall mood should be peaceful, pristine, and inviting, typical of a high-end, well-maintained residential village.",
     urbanSketch: "Transform this image into a beautiful urban watercolor sketch. It should feature loose, expressive ink linework combined with soft, atmospheric watercolor washes. The style should capture the gritty yet vibrant energy of a bustling city street, similar to the work of a professional urban sketch artist. Retain the core composition but reinterpret it in this artistic, hand-drawn style.",
     architecturalSketch: "Transform the image into a sophisticated architectural concept sketch. The main subject should be rendered with a blend of clean linework and artistic, semi-realistic coloring, showcasing materials like wood, concrete, and glass. Superimpose this rendering over a background that resembles a technical blueprint or a working draft, complete with faint construction lines, dimensional annotations, and handwritten notes. The final result should look like a page from an architect's sketchbook, merging a polished design with the raw, creative process.",
-    highriseNaturalView: "Transform the image into a photorealistic, high-resolution photograph of a modern high-rise building under clear natural daylight. The background should feature a distant city skyline. The surrounding area should be filled with other buildings, houses, trees, and roads, creating a dense suburban or city landscape. A clean road should encircle the building's base, and the foreground should show a typical bustling Bangkok street with traffic. The overall mood should be bright, vibrant, and showcase a bustling urban environment.",
-    sketchToPhoto: "แปลงภาพสเก็ตช์/ลายเส้นสถาปัตยกรรมนี้ให้เป็นภาพถ่ายที่สมจริงคมชัดระดับ 8K ตีความลายเส้นเพื่อสร้างอาคารที่มีรายละเอียดและพื้นผิวที่สมจริงพร้อมวัสดุที่เหมาะสม แสงต้องเป็นแสงธรรมชาติในเวลากลางวันที่นุ่มนวล สร้างเงาที่อ่อนโยนและให้ความรู้สึกสมจริง ภาพสุดท้ายควรดูเหมือนภาพถ่ายสถาปัตยกรรมระดับมืออาชีพ โดยยังคงรักษามุมมองและองค์ประกอบดั้งเดิมของภาพสเก็ตช์ไว้",
+    pristineShowHome: "Transform the image into a high-quality, photorealistic photograph of a modern house, as if it were brand new. Meticulously arrange the landscape to be neat and tidy, featuring a perfectly manicured lawn, a clean driveway and paths, and well-placed trees. Add a neat, green hedge fence around the property. The lighting should be bright, natural daylight, creating a clean and inviting atmosphere typical of a show home in a housing estate. Ensure the final result looks like a professional real estate photo, maintaining the original architecture.",
+    highriseNature: "Transform the image into a hyper-detailed, 8k resolution photorealistic masterpiece, as if captured by a professional architectural photographer. The core concept is a harmonious blend of sleek, modern architecture with a lush, organic, and natural landscape. The building should be seamlessly integrated into its verdant surroundings. In the background, establish a dynamic and slightly distant city skyline, creating a powerful visual contrast between the tranquility of nature and the energy of urban life. The lighting must be bright, soft, natural daylight that accentuates the textures of both the building materials and the foliage, casting believable, gentle shadows. The final image should be a striking composition that feels both sophisticated and serene.",
+    sketchToPhoto: "Transform this architectural sketch/line drawing into a photorealistic, 8K resolution image. Interpret the lines to create a building with realistic details, textures, and appropriate materials. The lighting must be soft, natural daylight, creating gentle shadows and a realistic feel. The final image should look like a professional architectural photograph, strictly maintaining the original perspective and composition of the sketch.",
     sketchupToPhotoreal: "Transform this SketchUp rendering into a high-quality, photorealistic architectural render, as if it was created using 3ds Max and V-Ray. Enhance all materials and textures to be hyper-realistic (e.g., wood grain, fabric textures, reflections on metal and glass). The lighting should be natural and cinematic, creating a believable and inviting atmosphere. Strictly maintain the original camera angle, composition, and design elements. It is absolutely crucial that the final image looks like a professional 3D render and has no outlines or sketch-like lines whatsoever.",
 };
 
 const GARDEN_STYLE_PROMPTS: Record<string, string> = {
-    'สวนญี่ปุ่น': "ปรับภาพให้สมจริงในระดับสูง ราวกับเป็นภาพโฆษณาที่ถ่ายขึ้นในนิตยสารออกแบบบ้าน โดยคงรูปแบบของภาพไว้ ไม่แก้ไขงานออกแบบ ไม่แก้ไขมุมกล้อง บรรยากาศภายในห้องรับแขกห้องทานอาหาร เปิดไฟ แรนดอม บรรยากาศภายนอกเหมือนอยู่ในโครงการหมู่บ้านจัดสรร ท้องฟ้าสดใสมีเมฆน้อย ต้นไม้ในโครงการเห็นบ้านในโครงการ ภาพนี้แสดงให้เห็นถึงสวนญี่ปุ่นแบบดั้งเดิมที่มีความสงบและงดงามเป็นพิเศษใจกลางภาพคือบ่อปลาขนาดย่อมที่มีปลาคาร์ปหลากสีว่ายน้ำอย่างสง่างามน้ำใสสะอาดไหลผ่านท่ามกลางโขดหินและพืชพรรณธรรมชาติที่ได้รับการจัดวางอย่างพิถีพิถันตามสไตล์ญี่ปุ่น สวนด้านนอก บรรยากาศโดยรอบเงียบสงบ แวดล้อมด้วยต้นไม้สน ต้นไม้ใบเล็ก และพุ่มไม้ที่ถูกตัดแต่งอย่างเป็นระเบียบ สะท้อนถึงความเรียบง่าย กลมกลืน และความเคารพในธรรมชาติแบบปรัชญาเซ็นของชาวญี่ปุ่น ภาพนี้ให้ความรู้สึกผ่อนคลาย อบอุ่น และเหมาะกับการนั่งจิบชา เงียบ ๆ เพื่อดื่มด่ำกับธรรมชาติในยามเช้าหรือเย็น",
-    'สวนอังกฤษ': "ปรับภูมิทัศน์ให้เป็นสวนสไตล์คอทเทจอังกฤษคลาสสิก โดดเด่นด้วยดีไซน์ที่ไม่เป็นทางการและโรแมนติก ประกอบด้วยแปลงดอกไม้ที่บานสะพรั่ง กุหลาบเลื้อย ทางเดินอิฐหรือกรวดที่คดเคี้ยว การผสมผสานของไม้ล้มลุก ไม้ดอกประจำปี และไม้พุ่ม สร้างความรู้สึกมีเสน่ห์และความอุดมสมบูรณ์ตามธรรมชาติ",
-    'สวนไม้ทรอปิคอล': "ปรับภูมิทัศน์ให้เป็นสวนทรอปิคอลที่หนาแน่นและมีชีวิตชีวา เติมเต็มด้วยพืชใบใหญ่อย่างมอนสเตอร่าและฟิโลเดนดรอน ดอกไม้ต่างแดนสีสันสดใส เช่น ชบาและปักษาสวรรค์ ต้นปาล์มสูงตระหง่าน และบรรยากาศที่ชื้นและเขียวชอุ่ม ภาพควรให้ความรู้สึกเป็นธรรมชาติ เขียวขจี และเต็มไปด้วยชีวิตชีวา",
-    'สวนดอกไม้': "ปรับภูมิทัศน์ให้เป็นสวนดอกไม้ที่งดงามและมีสีสันสดใส ภาพควรเต็มไปด้วยดอกไม้นานาพันธุ์ที่กำลังเบ่งบานในสีสัน รูปทรง และขนาดต่างๆ สร้างสรรค์เป็นภาพที่สวยงามตระการตา ควรมีลักษณะเหมือนสวนพฤกษศาสตร์มืออาชีพที่ดอกไม้กำลังบานเต็มที่",
-    'สวนมหัศจรรย์': magicalGardenPrompt,
-    'สวนโมเดิร์นทรอปิคัล': modernTropicalGardenPrompt,
-    'สวนสไตล์ฟอร์มัล': formalGardenPrompt,
-    'สวนโมเดิร์นผสมธรรมชาติ': modernNaturalGardenPrompt,
-    'สวนทางเดินทรอปิคอล': tropicalPathwayGardenPrompt,
-    'สวนไทย ลำธาร น้ำตก': thaiStreamGardenPrompt,
+    'Japanese Garden': "Transform the image to be highly realistic, like an ad in a home design magazine. Maintain original design and camera angle. Turn on lights in living/dining rooms. Exterior is a housing estate with a clear sky. The image shows a particularly serene and beautiful traditional Japanese garden. At the center is a small koi pond with colorful carp swimming gracefully. Clear water flows among carefully placed rocks and natural vegetation arranged in the Japanese style. The surrounding atmosphere is quiet, with pine trees, small-leafed trees, and neatly trimmed bushes, reflecting the simplicity, harmony, and respect for nature of Japanese Zen philosophy. The image evokes a relaxing, warm feeling, perfect for sipping tea quietly while enjoying nature in the morning or evening.",
+    'English Garden': "Transform the landscape into a classic English cottage garden, characterized by an informal, romantic design. It should feature overflowing flowerbeds, climbing roses, and winding brick or gravel paths. A mix of perennials, annuals, and shrubs should create a charming and abundant natural feel.",
+    'Tropical Garden': "Transform the landscape into a dense and vibrant tropical garden. Fill it with large-leafed plants like monstera and philodendron, colorful exotic flowers like hibiscus and bird of paradise, towering palm trees, and a humid, lush atmosphere. The scene should feel natural, verdant, and full of life.",
+    'Flower Garden': "Transform the landscape into a magnificent and colorful flower garden. The scene should be filled with a wide variety of flowers in full bloom, showcasing different colors, shapes, and sizes, creating a stunning visual tapestry. It should look like a professional botanical garden at its peak.",
+    'Magical Garden': magicalGardenPrompt,
+    'Modern Tropical Garden': modernTropicalGardenPrompt,
+    'Formal Garden': formalGardenPrompt,
+    'Modern Natural Garden': modernNaturalGardenPrompt,
+    'Tropical Pathway Garden': tropicalPathwayGardenPrompt,
+    'Thai Stream Garden': thaiStreamGardenPrompt,
 };
 
 const ARCHITECTURAL_STYLE_PROMPTS: Record<string, string> = {
-    'โมเดิร์น': "เปลี่ยนอาคารให้เป็นสถาปัตยกรรมสไตล์โมเดิร์น ซึ่งมีลักษณะเด่นคือเส้นสายที่สะอาดตา รูปทรงเรขาคณิตที่เรียบง่าย ปราศจากการตกแต่ง และหน้าต่างกระจกบานใหญ่ ใช้วัสดุเช่น คอนกรีต เหล็ก และกระจก",
-    'ลอฟท์': "เปลี่ยนอาคารให้เป็นสถาปัตยกรรมสไตล์ลอฟท์อุตสาหกรรม โดดเด่นด้วยผนังอิฐเปลือย คานเหล็ก พื้นที่เปิดโล่งขนาดใหญ่ เพดานสูง และหน้าต่างสไตล์โรงงาน",
-    'คลาสสิค': "เปลี่ยนอาคารให้เป็นสถาปัตยกรรมสไตล์คลาสสิก โดยได้รับแรงบันดาลใจจากหลักการของกรีกและโรมัน เน้นความสมมาตร ความเป็นระเบียบ และความเป็นทางการ ผสมผสานองค์ประกอบต่างๆ เช่น เสา หน้าจั่ว และบัวตกแต่ง",
-    'มินิมอล': "เปลี่ยนอาคารให้เป็นสถาปัตยกรรมสไตล์มินิมอล เน้นความเรียบง่ายสูงสุด โดยตัดทอนองค์ประกอบที่ไม่จำเป็นออกไปทั้งหมด ใช้ชุดสีโทนเดียว เส้นสายที่สะอาดตา และมุ่งเน้นไปที่รูปทรงเรขาคณิตบริสุทธิ์",
-    'ร่วมสมัย': "เปลี่ยนอาคารให้เป็นสถาปัตยกรรมสไตล์ร่วมสมัยแห่งศตวรรษที่ 21 ควรมีการผสมผสานสไตล์ที่หลากหลาย เส้นสายโค้งมน รูปทรงที่ไม่ธรรมดา เน้นความยั่งยืน และการใช้วัสดุจากธรรมชาติ",
-    'ไทยประยุกต์': "เปลี่ยนอาคารให้เป็นสถาปัตยกรรมสไตล์ไทยประยุกต์ ผสมผสานองค์ประกอบไทยดั้งเดิม เช่น หลังคาทรงจั่วสูงและรายละเอียดอันประณีต เข้ากับเทคนิคและวัสดุก่อสร้างสมัยใหม่ ผลลัพธ์ที่ได้ควรมีความสง่างาม มีรากฐานทางวัฒนธรรม แต่ยังคงประโยชน์ใช้สอยสำหรับการใช้ชีวิตสมัยใหม่",
+    'Modern': "Change the building to a modern architectural style, characterized by clean lines, simple geometric shapes, a lack of ornamentation, and large glass windows. Use materials like concrete, steel, and glass.",
+    'Loft': "Change the building to an industrial loft architectural style, featuring exposed brick walls, steel beams, large open spaces, high ceilings, and factory-style windows.",
+    'Classic': "Change the building to a classic architectural style, inspired by Greek and Roman principles. It should emphasize symmetry, order, and formality, incorporating elements like columns, pediments, and decorative moldings.",
+    'Minimalist': "Change the building to a minimalist architectural style, focusing on extreme simplicity. Strip away all non-essential elements. Use a monochromatic color palette, clean lines, and a focus on pure geometric forms.",
+    'Contemporary': "Change the building to a 21st-century contemporary architectural style. It should feature a mix of styles, curved lines, unconventional forms, a focus on sustainability, and the use of natural materials.",
+    'Modern Thai': "Change the building to a Modern Thai architectural style, blending traditional Thai elements like high-gabled roofs and ornate details with modern construction techniques and materials. The result should be elegant, culturally rooted, yet functional for modern living.",
 };
 
 const INTERIOR_STYLE_PROMPTS: Record<string, string> = {
-    'คอนเทมโพราลี': "เปลี่ยนการตกแต่งภายในของพื้นที่นี้ให้เป็นสไตล์คอนเทมโพราลี ควรมีเส้นสายที่สะอาดตา ชุดสีกลางพร้อมการเน้นสีที่โดดเด่นเป็นครั้งคราว พื้นที่ไม่รก และเน้นแสงธรรมชาติ ใช้วัสดุเช่น โลหะ แก้ว และหิน พร้อมเฟอร์นิเจอร์ที่เรียบง่ายและไม่มีการตกแต่ง",
-    'สแกนดิเนเวีย': "ออกแบบภายในใหม่ให้สะท้อนสไตล์สแกนดิเนเวีย เน้นความเรียบง่าย ประโยชน์ใช้สอย และความเรียบง่าย ใช้ชุดสีสว่างและเป็นกลาง (ขาว เทา ฟ้าอ่อน) องค์ประกอบจากไม้ธรรมชาติ (โดยเฉพาะไม้สีอ่อน เช่น เบิร์ชและไพน์) สิ่งทอที่ให้ความรู้สึกสบาย (ขนสัตว์ ลินิน) และแสงธรรมชาติที่อุดมสมบูรณ์ ทำให้พื้นที่ดูโปร่งและไม่รก",
-    'ญี่ปุ่น': "เปลี่ยนการตกแต่งภายในให้เป็นสไตล์ญี่ปุ่น โดยเน้นหลักการของเซนในเรื่องความเรียบง่ายและความกลมกลืนกับธรรมชาติ ผสมผสานองค์ประกอบต่างๆ เช่น ประตูโชจิเลื่อน เสื่อทาทามิ เฟอร์นิเจอร์เตี้ยติดพื้น วัสดุจากธรรมชาติ เช่น ไม้ไผ่และไม้สีอ่อน และชุดสีที่เป็นกลางและสงบ พื้นที่ควรให้ความรู้สึกสงบ เป็นระเบียบ และเชื่อมต่อกับภายนอก",
-    'ไทย': "ออกแบบภายในใหม่ในสไตล์ไทยดั้งเดิม ใช้วัสดุที่ให้ความรู้สึกอบอุ่นและหรูหรา เช่น ไม้สัก การแกะสลักลวดลายที่ประณีตบนเฟอร์นิเจอร์และแผงผนัง และผ้าไหมไทยที่หรูหราสำหรับสิ่งทอ ผสมผสานองค์ประกอบต่างๆ เช่น ที่นั่งเตี้ยพร้อมหมอนอิงสามเหลี่ยม (หมอนขวาน) ลวดลายไทย และอาจมีการตกแต่งด้วยทองคำเปลว บรรยากาศควรมีความสง่างาม อบอุ่น และน่าอยู่",
-    'จีน': "เปลี่ยนการตกแต่งภายในให้เป็นสไตล์จีนคลาสสิก โดดเด่นด้วยเฟอร์นิเจอร์ไม้เคลือบเงาสีเข้มที่หรูหรา ฉากกั้นและงานฉลุที่ประณีต และสีที่เป็นสัญลักษณ์ เช่น สีแดงเพื่อความโชคดีและสีทองเพื่อความมั่งคั่ง ผสมผสานลวดลายดั้งเดิม เช่น มังกร ดอกโบตั๋น และไม้ไผ่ ความรู้สึกโดยรวมควรเป็นความสมดุล ความหรูหรา และมรดกทางวัฒนธรรมที่เข้มข้น",
-    'โมรอคโค': "ออกแบบภายในใหม่ด้วยสไตล์โมร็อกโกที่มีชีวิตชีวา ใช้สีสันที่โดดเด่นและเข้มข้น เช่น สีน้ำเงินเข้ม สีแดง และสีส้ม กระเบื้องโมเสกลวดลายเรขาคณิตที่ซับซ้อน (Zellige) ประตูโค้ง โคมไฟโลหะฉลุลาย และสิ่งทอที่นุ่มนวล เช่น พรมที่ปูซ้อนกันและเบาะรองนั่ง บรรยากาศควรมีความแปลกตา อบอุ่น และเต็มไปด้วยรายละเอียด",
-    'คลาสสิค': "เปลี่ยนการตกแต่งภายในให้เป็นสไตล์ยุโรปคลาสสิก ควรมีความสง่างามและเป็นทางการ โดยเน้นความเป็นระเบียบ ความสมมาตร และรายละเอียดที่หรูหรา ใช้วัสดุคุณภาพสูง เช่น หินอ่อนและไม้เนื้อดี เฟอร์นิเจอร์ที่มีรายละเอียดการแกะสลักและเบาะที่หรูหรา บัวตกแต่ง และอาจมีโคมระย้าคริสตัล สไตล์นี้ควรปลุกความรู้สึกของความซับซ้อนที่ไร้กาลเวลา",
-    'โมเดิร์น': "ออกแบบภายในใหม่ด้วยสุนทรียศาสตร์การออกแบบที่ทันสมัย เน้นเส้นสายที่คมชัดและสะอาด รูปทรงเรขาคณิตที่เรียบง่าย และปราศจากการตกแต่ง ใช้ชุดสีที่เป็นกลาง พื้นผิวขัดมัน และวัสดุเช่น โลหะ โครเมียม และแก้ว เฟอร์นิเจอร์ควรมีลักษณะเพรียวบางและคล่องตัว พื้นที่ควรให้ความรู้สึกโปร่งและไม่รก",
+    'Contemporary': "Change the interior of this space to a contemporary style. It should feature clean lines, a neutral color palette with occasional bold accents, uncluttered spaces, and an emphasis on natural light. Use materials like metal, glass, and stone with simple, unadorned furniture.",
+    'Scandinavian': "Redesign the interior to reflect Scandinavian style. Emphasize simplicity, utility, and minimalism. Use a light and neutral color palette (whites, grays, light blues), natural wood elements (especially light woods like birch and pine), cozy textiles (wool, linen), and abundant natural light. The space should feel airy and uncluttered.",
+    'Japanese': "Transform the interior into a Japanese style, focusing on Zen principles of simplicity and harmony with nature. Incorporate elements like sliding shoji screens, tatami mats, low-to-the-ground furniture, natural materials like bamboo and light wood, and a calm, neutral color palette. The space should feel serene, orderly, and connected to the outdoors.",
+    'Thai': "Redesign the interior in a traditional Thai style. Use warm and rich materials like teak wood, intricate carvings on furniture and wall panels, and luxurious Thai silk for textiles. Incorporate elements like low seating with triangular cushions (mon khwan), traditional Thai patterns, and perhaps gold leaf accents. The ambiance should be elegant, warm, and inviting.",
+    'Chinese': "Change the interior to a classic Chinese style. Feature ornate, dark lacquered wood furniture, intricate screens and latticework, and symbolic colors like red for good fortune and gold for wealth. Incorporate traditional motifs such as dragons, peonies, and bamboo. The overall feel should be one of balance, opulence, and rich cultural heritage.",
+    'Moroccan': "Redesign the interior with a vibrant Moroccan style. Use bold, rich colors like deep blues, reds, and oranges. Incorporate complex geometric tilework (Zellige), arched doorways, pierced metal lanterns, and plush textiles like layered rugs and floor cushions. The atmosphere should be exotic, warm, and richly detailed.",
+    'Classic': "Change the interior to a classic European style. It should be elegant and formal, emphasizing order, symmetry, and ornate details. Use high-quality materials like marble and fine woods, furniture with detailed carvings and luxurious upholstery, decorative moldings, and perhaps a crystal chandelier. The style should evoke a sense of timeless sophistication.",
+    'Modern': "Redesign the interior with a modern design aesthetic. Emphasize sharp, clean lines, simple geometric shapes, and a lack of ornamentation. Use a neutral color palette, polished surfaces, and materials like metal, chrome, and glass. Furniture should be sleek and streamlined. The space should feel open and uncluttered.",
 };
 
 const FILTER_PROMPTS: Record<string, string> = {
-    'ขาว-ดำ': 'apply a Black and White filter.',
-    'ซีเปีย': 'apply a Sepia filter.',
-    'กลับสี': 'apply an Inverted Color filter.',
-    'สีเทา': 'apply a Grayscale filter.',
-    'วินเทจ': 'apply a Vintage filter.',
-    'โทนเย็น': 'apply a Cool Tone filter.',
-    'โทนอุ่น': 'apply a Warm Tone filter.',
+    'Black & White': 'apply a Black and White filter.',
+    'Sepia': 'apply a Sepia filter.',
+    'Invert': 'apply an Inverted Color filter.',
+    'Grayscale': 'apply a Grayscale filter.',
+    'Vintage': 'apply a Vintage filter.',
+    'Cool Tone': 'apply a Cool Tone filter.',
+    'Warm Tone': 'apply a Warm Tone filter.',
     'HDR': 'apply a High Dynamic Range (HDR) filter, enhancing details in both shadows and highlights, increasing local contrast, and making the colors more vibrant and saturated to create a dramatic and detailed look.',
 };
 
 const STYLE_PROMPTS: Record<string, string> = {
-    'ภาพยนตร์': 'in a Cinematic style',
-    'วินเทจ': 'in a Vintage style',
-    'สีน้ำ': 'in a Watercolor style',
-    '3D': 'in a 3D Render style',
-    'พิกเซลอาร์ต': 'in a Pixel Art style',
-    'นีออนพังก์': 'in a Neon Punk style',
-    'สเก็ตช์': 'in a Sketch style',
-    'ป๊อปอาร์ต': 'in a Pop Art style'
+    'Cinematic': 'in a Cinematic style',
+    'Vintage': 'in a Vintage style',
+    'Watercolor': 'in a Watercolor style',
+    '3D Render': 'in a 3D Render style',
+    'Pixel Art': 'in a Pixel Art style',
+    'Neon Punk': 'in a Neon Punk style',
+    'Sketch': 'in a Sketch style',
+    'Pop Art': 'in a Pop Art style'
 };
 
 const BACKGROUND_PROMPTS: Record<string, string> = {
-    "ป่า": "with a Forest background",
-    "ชายหาด": "with a Beach background",
-    "วิวเมือง": "with a Cityscape background",
-    "อวกาศ": "with an Outer Space background",
-    "วิวภูเขา": "with a majestic mountain range in the background",
-    "วิวถนนการจราจรกรุงเทพ": "with a bustling Bangkok street with heavy traffic in the background",
-    "วิวท้องนาสวนเกษตร": "with a lush green farmland and agricultural fields in the background",
-    "วิวโครงการหมู่บ้านจัดสรร": "with a modern, landscaped housing estate project in the background",
-    "วิว แม่น้ำเจ้าพระยา": "with a scenic view of the Chao Phraya River in Bangkok in the background",
+    "Forest": "with a Forest background",
+    "Public Park": "with a beautifully composed public park in the background. The park should feature a lush green lawn, large shady trees, benches for relaxation, and winding pathways. The atmosphere should be peaceful and serene, with natural daylight.",
+    "Beach": "with a Beach background",
+    "Cityscape": "with a Cityscape background",
+    "Outer Space": "with an Outer Space background",
+    "Mountain View": "with a majestic mountain range in the background",
+    "Bangkok Traffic View": "with a bustling Bangkok street with heavy traffic in the background",
+    "Farmland View": "with a lush green farmland and agricultural fields in the background",
+    "Housing Estate View": "with a modern, landscaped housing estate project in the background",
+    "Chao Phraya River View": "with a scenic view of the Chao Phraya River in Bangkok in the background",
 };
 
 const FOREGROUND_PROMPTS: Record<string, string> = {
-    "ถนนระยะหน้า": "with a road in the foreground",
-    "แม่น้ำระยะหน้า": "with a river in the foreground",
-    "ใบไม้ที่มุมจอบน": "with out-of-focus leaves framing the top corner of the view, creating a natural foreground bokeh effect",
-    "พุ่มไม้ดอกมุมล่างจอ": "with a flowering bush in the bottom corner of the view, adding a touch of nature to the foreground",
+    "Foreground Road": "with a road in the foreground",
+    "Foreground River": "with a river in the foreground",
+    "Top Corner Leaves": "with out-of-focus leaves framing the top corner of the view, creating a natural foreground bokeh effect",
+    "Bottom Corner Bush": "with a flowering bush in the bottom corner of the view, adding a touch of nature to the foreground",
 };
 
 const TIME_OF_DAY_PROMPTS: Record<string, string> = {
-    'รุ่งเช้า': 'Change the time of day to early morning, with soft, warm, golden sunrise light and long gentle shadows.',
-    'กลางวัน': 'Change the time of day to midday, with bright, clear, natural daylight.',
-    'บ่ายคล้อย': 'Change the time of day to afternoon, with warm, slightly angled sunlight.',
-    'พลบค่ำ': 'Change the atmosphere to dusk or sunset, with dramatic, colorful lighting and a mix of natural and artificial light.',
-    'กลางคืน': 'Change the scene to nighttime, illuminated by moonlight and artificial light sources.'
+    'Dawn': 'Change the time of day to early morning, with soft, warm, golden sunrise light and long gentle shadows.',
+    'Daytime': 'Change the time of day to midday, with bright, clear, natural daylight.',
+    'Afternoon': 'Change the time of day to afternoon, with warm, slightly angled sunlight.',
+    'Dusk': 'Change the atmosphere to dusk or sunset, with dramatic, colorful lighting and a mix of natural and artificial light.',
+    'Night': 'Change the scene to nighttime, illuminated by moonlight and artificial light sources.'
 };
 
 const WEATHER_PROMPTS: Record<string, string> = {
-    'แดดจัด': 'Change the weather to a clear, sunny day with sharp shadows.',
-    'มีเมฆมาก': 'Change the weather to a bright but overcast day with soft, diffused lighting and minimal shadows.',
-    'ฝนตก (พื้นเปียก)': 'Change the scene to be during or just after a light rain, with wet, reflective surfaces on the ground and building.',
-    'มีหมอก': 'Change the weather to a misty or foggy day, creating a soft, atmospheric, and mysterious mood.',
+    'Sunny': 'Change the weather to a clear, sunny day with sharp shadows.',
+    'Overcast': 'Change the weather to a bright but overcast day with soft, diffused lighting and minimal shadows.',
+    'Rainy (Wet Ground)': 'Change the scene to be during or just after a light rain, with wet, reflective surfaces on the ground and building.',
+    'Misty': 'Change the weather to a misty or foggy day, creating a soft, atmospheric, and mysterious mood.',
 };
 
 
@@ -346,104 +347,104 @@ const getIntensityDescriptor = (intensity: number, descriptors: [string, string,
 
 const adjustableOptions: Record<string, { label: string; default: number }> = {
     // Garden
-    'สวนไทย': { label: 'ปริมาณต้นไม้', default: 50 },
-    'สวนดอกไม้': { label: 'ปริมาณดอกไม้', default: 50 },
-    'สวนอังกฤษ': { label: 'ความหนาแน่นดอกไม้', default: 50 },
-    'สวนไม้ทรอปิคอล': { label: 'ความหนาแน่นของป่า', default: 60 },
+    'Thai Garden': { label: 'Tree Amount', default: 50 },
+    'Flower Garden': { label: 'Flower Amount', default: 50 },
+    'English Garden': { label: 'Flower Density', default: 50 },
+    'Tropical Garden': { label: 'Jungle Density', default: 60 },
     // Backgrounds
-    'วิวตึกสูงกรุงเทพ': { label: 'ความหนาแน่นของตึก', default: 50 },
-    'วิวภูเขา': { label: 'ความยิ่งใหญ่', default: 50 },
-    'วิวถนนการจราจรกรุงเทพ': { label: 'ความหนาแน่นจราจร', default: 50 },
-    'วิวท้องนาสวนเกษตร': { label: 'ความอุดมสมบูรณ์', default: 60 },
-    'วิวโครงการหมู่บ้านจัดสรร': { label: 'ความหนาแน่นบ้าน', default: 40 },
-    'วิว แม่น้ำเจ้าพระยา': { label: 'ความกว้างแม่น้ำ', default: 50 },
-    'ป่า': { label: 'ความหนาแน่นของป่า', default: 70 },
-    'ชายหาด': { label: 'ความกว้างของหาด', default: 50 },
-    'วิวเมือง': { label: 'ความหนาแน่นของตึก', default: 50 },
-    'อวกาศ': { label: 'ความหนาแน่นของดาว', default: 50 },
+    'Bangkok High-rise View': { label: 'Building Density', default: 50 },
+    'Mountain View': { label: 'Grandeur', default: 50 },
+    'Bangkok Traffic View': { label: 'Traffic Density', default: 50 },
+    'Farmland View': { label: 'Lushness', default: 60 },
+    'Housing Estate View': { label: 'House Density', default: 40 },
+    'Chao Phraya River View': { label: 'River Width', default: 50 },
+    'Forest': { label: 'Forest Density', default: 70 },
+    'Beach': { label: 'Beach Width', default: 50 },
+    'Cityscape': { label: 'Building Density', default: 50 },
+    'Outer Space': { label: 'Star Density', default: 50 },
     // Foregrounds
-    'ต้นไม้ใหญ่ระยะหน้า': { label: 'ปริมาณต้นไม้', default: 30 },
-    "ถนนระยะหน้า": { label: 'สภาพถนน', default: 50 },
-    "แม่น้ำระยะหน้า": { label: 'ความกว้างแม่น้ำ', default: 50 },
-    "ใบไม้ที่มุมจอบน": { label: 'ปริมาณใบไม้', default: 40 },
-    "พุ่มไม้ดอกมุมล่างจอ": { label: 'ขนาดพุ่มไม้', default: 50 },
+    'Foreground Large Tree': { label: 'Tree Amount', default: 30 },
+    "Foreground Road": { label: 'Road Condition', default: 50 },
+    "Foreground River": { label: 'River Width', default: 50 },
+    "Top Corner Leaves": { label: 'Leaf Amount', default: 40 },
+    "Bottom Corner Bush": { label: 'Bush Size', default: 50 },
 };
 
 
 const ADJUSTABLE_PROMPT_GENERATORS: Record<string, (intensity: number) => string> = {
-    'สวนไทย': (intensity) => {
+    'Thai Garden': (intensity) => {
         const amount = getIntensityDescriptor(intensity, ['a very small amount of', 'a few', 'a moderate amount of', 'many', 'a very large amount of']);
         return `Transform the landscape into a traditional Thai garden, featuring elements like salas (pavilions), water features such as ponds with lotus flowers, intricate stone carvings, and lush tropical plants like banana trees and orchids, with ${amount} trees. The atmosphere should be serene and elegant.`;
     },
-    'วิวตึกสูงกรุงเทพ': (intensity) => {
+    'Bangkok High-rise View': (intensity) => {
         const density = getIntensityDescriptor(intensity, ['very sparse', 'sparse', 'a standard density of', 'dense', 'very dense']);
         return `with a ${density}, modern Bangkok skyscraper cityscape in the background`;
     },
-    'สวนดอกไม้': (intensity) => {
+    'Flower Garden': (intensity) => {
         const density = getIntensityDescriptor(intensity, ['with a few scattered flowers', 'with patches of flowers', 'filled with a moderate amount of flowers', 'densely packed with many flowers', 'completely overflowing with a vast amount of flowers']);
         return `Transform the landscape into a magnificent and colorful flower garden. The scene should be ${density}, creating a stunning visual tapestry. It should look like a professional botanical garden in full bloom.`;
     },
-    'ต้นไม้ใหญ่ระยะหน้า': (intensity) => {
+    'Foreground Large Tree': (intensity) => {
         const amount = getIntensityDescriptor(intensity, ['a single, small tree', 'a single large tree', 'a couple of trees', 'a small grove of trees', 'a dense cluster of trees']);
         return `with ${amount} in the foreground`;
     },
-    'สวนอังกฤษ': (intensity) => {
+    'English Garden': (intensity) => {
         const density = getIntensityDescriptor(intensity, ['with sparse flowerbeds', 'with neatly arranged flowers', 'with overflowing flowerbeds', 'with densely packed flowers', 'with a charmingly chaotic and overgrown abundance of flowers']);
         return `Transform the landscape into a classic English cottage garden, characterized by an informal, romantic design ${density}, climbing roses, and winding paths.`;
     },
-    'สวนไม้ทรอปิคอล': (intensity) => {
+    'Tropical Garden': (intensity) => {
         const density = getIntensityDescriptor(intensity, ['a sparse', 'a moderately lush', 'a dense', 'a very dense and overgrown', 'an impenetrable jungle-like']);
         return `Transform the landscape into ${density} and vibrant tropical garden. Fill it with large-leafed plants, colorful exotic flowers, and towering palm trees.`;
     },
-    'วิวภูเขา': (intensity) => {
+    'Mountain View': (intensity) => {
         const grandeur = getIntensityDescriptor(intensity, ['rolling hills', 'medium-sized mountains', 'a high mountain range', 'a majestic, towering mountain range', 'an epic, cinematic mountain landscape']);
         return `with ${grandeur} in the background`;
     },
-    'วิวถนนการจราจรกรุงเทพ': (intensity) => {
+    'Bangkok Traffic View': (intensity) => {
         const traffic = getIntensityDescriptor(intensity, ['light traffic', 'moderate traffic', 'heavy traffic', 'a traffic jam', 'a complete gridlock with bumper-to-bumper traffic']);
         return `with a bustling Bangkok street with ${traffic} in the background`;
     },
-    'วิวท้องนาสวนเกษตร': (intensity) => {
+    'Farmland View': (intensity) => {
         const lushness = getIntensityDescriptor(intensity, ['dry and sparse fields', 'newly planted fields', 'lush green fields', 'fields ripe for harvest', 'extremely abundant and verdant fields']);
         return `with ${lushness} and agricultural fields in the background`;
     },
-    'วิวโครงการหมู่บ้านจัดสรร': (intensity) => {
+    'Housing Estate View': (intensity) => {
         const density = getIntensityDescriptor(intensity, ['a few scattered houses', 'a low-density', 'a medium-density', 'a high-density', 'a very crowded']);
         return `with ${density}, modern, landscaped housing estate project in the background`;
     },
-    'วิว แม่น้ำเจ้าพระยา': (intensity) => {
-        const width = getIntensityDescriptor(intensity, ['a narrow canal-like view of', 'a medium-width view of', 'a wide view of', 'a very wide, expansive view of', 'a panoramic, almost sea-like view of']);
-        return `with ${width} the Chao Phraya River in Bangkok in the background`;
+    'Chao Phraya River View': (intensity) => {
+        const width = getIntensityDescriptor(intensity, ['a narrow, scenic view of', 'a medium-width view of', 'a wide view of', 'a very wide, expansive view of', 'a panoramic, almost sea-like view of']);
+        return `with ${width} the Chao Phraya River in Bangkok as the background. The scene should be dynamic, featuring various boats such as long-tail boats, ferries, and yachts on the water in the foreground, with the bustling Bangkok cityscape and temples visible along the riverbanks.`;
     },
-    'ป่า': (intensity) => {
+    'Forest': (intensity) => {
         const density = getIntensityDescriptor(intensity, ['a sparse', 'a moderately dense', 'a dense', 'a very dense', 'an ancient, overgrown']);
         return `with ${density} forest background`;
     },
-    'ชายหาด': (intensity) => {
+    'Beach': (intensity) => {
         const width = getIntensityDescriptor(intensity, ['a narrow strip of sand', 'a medium-sized', 'a wide', 'a very wide, expansive', 'an endless']);
         return `with ${width} beach background`;
     },
-    'วิวเมือง': (intensity) => {
+    'Cityscape': (intensity) => {
         const density = getIntensityDescriptor(intensity, ['a small town', 'a sparse city skyline', 'a standard city skyline', 'a dense, sprawling metropolis', 'a futuristic, hyper-dense megacity']);
         return `with ${density} cityscape background`;
     },
-    'อวกาศ': (intensity) => {
+    'Outer Space': (intensity) => {
         const density = getIntensityDescriptor(intensity, ['a few distant stars', 'a clear night sky with constellations', 'a sky full of stars and a faint milky way', 'a vibrant, star-filled nebula', 'an intensely colorful and complex galactic core']);
         return `with ${density} background`;
     },
-    "ถนนระยะหน้า": (intensity) => {
+    "Foreground Road": (intensity) => {
         const type = getIntensityDescriptor(intensity, ['a simple dirt path', 'a single-lane paved road', 'a two-lane road', 'a multi-lane highway', 'a massive, complex freeway interchange']);
         return `with ${type} in the foreground`;
     },
-    "แม่น้ำระยะหน้า": (intensity) => {
+    "Foreground River": (intensity) => {
         const width = getIntensityDescriptor(intensity, ['a small stream', 'a medium-sized river', 'a wide river', 'a very wide, expansive river', 'a massive, flowing river']);
         return `with ${width} in the foreground`;
     },
-    "ใบไม้ที่มุมจอบน": (intensity) => {
+    "Top Corner Leaves": (intensity) => {
         const amount = getIntensityDescriptor(intensity, ['a few scattered leaves', 'a small branch with leaves', 'several branches', 'a thick canopy of leaves', 'a view almost completely obscured by leaves']);
         return `with ${amount} framing the top corner of the view, creating a natural foreground bokeh effect`;
     },
-    "พุ่มไม้ดอกมุมล่างจอ": (intensity) => {
+    "Bottom Corner Bush": (intensity) => {
         const size = getIntensityDescriptor(intensity, ['a small flowering bush', 'a medium-sized flowering bush', 'a large, dense flowering bush', 'multiple large bushes', 'an entire foreground filled with flowering bushes']);
         return `with ${size} in the bottom corner of the view, adding a touch of nature to the foreground`;
     },
@@ -451,10 +452,10 @@ const ADJUSTABLE_PROMPT_GENERATORS: Record<string, (intensity: number) => string
 
 
 const brushColors = [
-  { name: 'แดง', value: 'rgba(255, 59, 48, 0.7)', css: 'bg-red-500' },
-  { name: 'น้ำเงิน', value: 'rgba(0, 122, 255, 0.7)', css: 'bg-blue-500' },
-  { name: 'เขียว', value: 'rgba(52, 199, 89, 0.7)', css: 'bg-green-500' },
-  { name: 'เหลือง', value: 'rgba(255, 204, 0, 0.7)', css: 'bg-yellow-400' },
+  { name: 'Red', value: 'rgba(255, 59, 48, 0.7)', css: 'bg-red-500' },
+  { name: 'Blue', value: 'rgba(0, 122, 255, 0.7)', css: 'bg-blue-500' },
+  { name: 'Green', value: 'rgba(52, 199, 89, 0.7)', css: 'bg-green-500' },
+  { name: 'Yellow', value: 'rgba(255, 204, 0, 0.7)', css: 'bg-yellow-400' },
 ];
 
 // --- Helper Components ---
@@ -606,23 +607,23 @@ const ImageToolbar: React.FC<{
   <div className="bg-gray-800/50 p-3 rounded-xl border border-gray-700 flex flex-wrap items-center justify-center gap-3">
     {/* History */}
     <div className="flex items-center gap-2 p-1 bg-gray-900/50 rounded-full">
-      <ActionButton onClick={onUndo} disabled={!canUndo || isLoading} title="ย้อนกลับ"><UndoIcon className="w-5 h-5" /></ActionButton>
-      <ActionButton onClick={onRedo} disabled={!canRedo || isLoading} title="ทำซ้ำ"><RedoIcon className="w-5 h-5" /></ActionButton>
+      <ActionButton onClick={onUndo} disabled={!canUndo || isLoading} title="Undo"><UndoIcon className="w-5 h-5" /></ActionButton>
+      <ActionButton onClick={onRedo} disabled={!canRedo || isLoading} title="Redo"><RedoIcon className="w-5 h-5" /></ActionButton>
     </div>
     
     {/* Transformations */}
     <div className="flex items-center gap-2 p-1 bg-gray-900/50 rounded-full">
-      <ActionButton onClick={() => onTransform('rotateLeft')} disabled={!canUpscaleAndSave || isLoading} title="หมุนซ้าย 90°"><RotateLeftIcon className="w-5 h-5" /></ActionButton>
-      <ActionButton onClick={() => onTransform('rotateRight')} disabled={!canUpscaleAndSave || isLoading} title="หมุนขวา 90°"><RotateRightIcon className="w-5 h-5" /></ActionButton>
-      <ActionButton onClick={() => onTransform('flipHorizontal')} disabled={!canUpscaleAndSave || isLoading} title="พลิกแนวนอน"><FlipHorizontalIcon className="w-5 h-5" /></ActionButton>
-      <ActionButton onClick={() => onTransform('flipVertical')} disabled={!canUpscaleAndSave || isLoading} title="พลิกแนวตั้ง"><FlipVerticalIcon className="w-5 h-5" /></ActionButton>
+      <ActionButton onClick={() => onTransform('rotateLeft')} disabled={!canUpscaleAndSave || isLoading} title="Rotate Left 90°"><RotateLeftIcon className="w-5 h-5" /></ActionButton>
+      <ActionButton onClick={() => onTransform('rotateRight')} disabled={!canUpscaleAndSave || isLoading} title="Rotate Right 90°"><RotateRightIcon className="w-5 h-5" /></ActionButton>
+      <ActionButton onClick={() => onTransform('flipHorizontal')} disabled={!canUpscaleAndSave || isLoading} title="Flip Horizontal"><FlipHorizontalIcon className="w-5 h-5" /></ActionButton>
+      <ActionButton onClick={() => onTransform('flipVertical')} disabled={!canUpscaleAndSave || isLoading} title="Flip Vertical"><FlipVerticalIcon className="w-5 h-5" /></ActionButton>
     </div>
 
     {/* Main Actions */}
     <div className="flex items-center gap-3">
-      <ActionButton onClick={onUpscale} disabled={!canUpscaleAndSave || isLoading} title="เพิ่มความละเอียดของภาพที่เลือก" color="purple"><UpscaleIcon className="w-5 h-5" /><span>เพิ่มความละเอียด</span></ActionButton>
-      <ActionButton onClick={onOpenSaveModal} disabled={!canUpscaleAndSave || isLoading} title="ดาวน์โหลดภาพที่เลือก" color="blue"><DownloadIcon className="w-5 h-5" /><span>ดาวน์โหลด</span></ActionButton>
-      <ActionButton onClick={onReset} disabled={!canReset || isLoading} title="รีเซ็ตการแก้ไขทั้งหมด" color="red"><ResetEditsIcon className="w-5 h-5" /><span>รีเซ็ต</span></ActionButton>
+      <ActionButton onClick={onUpscale} disabled={!canUpscaleAndSave || isLoading} title="Upscale selected image" color="purple"><UpscaleIcon className="w-5 h-5" /><span>Upscale</span></ActionButton>
+      <ActionButton onClick={onOpenSaveModal} disabled={!canUpscaleAndSave || isLoading} title="Download selected image" color="blue"><DownloadIcon className="w-5 h-5" /><span>Download</span></ActionButton>
+      <ActionButton onClick={onReset} disabled={!canReset || isLoading} title="Reset all edits" color="red"><ResetEditsIcon className="w-5 h-5" /><span>Reset</span></ActionButton>
     </div>
   </div>
 );
@@ -674,7 +675,7 @@ const ImageEditor: React.FC = () => {
   const [selectedTimeOfDay, setSelectedTimeOfDay] = useState<string>('');
   const [selectedWeather, setSelectedWeather] = useState<string>('');
   const [selectedCameraAngle, setSelectedCameraAngle] = useState<string>('');
-  const [selectedFilter, setSelectedFilter] = useState<string>('ไม่มี');
+  const [selectedFilter, setSelectedFilter] = useState<string>('None');
   const [selectedQuickAction, setSelectedQuickAction] = useState<string>('');
   const [photorealisticIntensity, setPhotorealisticIntensity] = useState<number>(100);
   const [isAddLightActive, setIsAddLightActive] = useState<boolean>(false);
@@ -682,7 +683,7 @@ const ImageEditor: React.FC = () => {
   const [lightingTemperature, setLightingTemperature] = useState<number>(50);
   const [harmonizeIntensity, setHarmonizeIntensity] = useState<number>(100);
   const [sketchIntensity, setSketchIntensity] = useState<number>(100);
-  const [generationAspectRatio, setGenerationAspectRatio] = useState<string>('ต้นฉบับ');
+  const [generationAspectRatio, setGenerationAspectRatio] = useState<string>('Original');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [showPromptHistory, setShowPromptHistory] = useState<boolean>(false);
@@ -844,10 +845,10 @@ const ImageEditor: React.FC = () => {
     setSelectedTimeOfDay('');
     setSelectedWeather('');
     setSelectedCameraAngle('');
-    setSelectedFilter('ไม่มี');
+    setSelectedFilter('None');
     setSelectedQuickAction('');
     setIsAddLightActive(false);
-    setGenerationAspectRatio('ต้นฉบับ');
+    setGenerationAspectRatio('Original');
     setEditingMode('default');
     setSceneType(null);
     setBrightness(100);
@@ -924,7 +925,7 @@ const ImageEditor: React.FC = () => {
           }
       } catch (err) {
           if (mountedRef.current) {
-              setError("ไม่สามารถโหลดรูปภาพบางส่วนหรือทั้งหมดได้");
+              setError("Could not load some or all of the images.");
           }
       }
     }
@@ -991,11 +992,11 @@ const ImageEditor: React.FC = () => {
   };
 
   const hasTextPrompt = prompt.trim() !== '';
-  const hasOtherOptions = selectedStyle !== '' || selectedBackgrounds.length > 0 || selectedForegrounds.length > 0 || selectedDecorativeItems.length > 0 || selectedTimeOfDay !== '' || selectedWeather !== '' || (treeAge !== 50) || (season !== 50) || selectedQuickAction !== '' || selectedFilter !== 'ไม่มี' || selectedGardenStyle !== '' || selectedArchStyle !== '' || isAddLightActive || selectedInteriorStyle !== '' || selectedInteriorLighting !== '' || selectedCameraAngle !== '' || (sceneType === 'interior' && selectedRoomType !== '') || isCoveLightActive || isSpotlightActive;
+  const hasOtherOptions = selectedStyle !== '' || selectedBackgrounds.length > 0 || selectedForegrounds.length > 0 || selectedDecorativeItems.length > 0 || selectedTimeOfDay !== '' || selectedWeather !== '' || (treeAge !== 50) || (season !== 50) || selectedQuickAction !== '' || selectedFilter !== 'None' || selectedGardenStyle !== '' || selectedArchStyle !== '' || isAddLightActive || selectedInteriorStyle !== '' || selectedInteriorLighting !== '' || selectedCameraAngle !== '' || (sceneType === 'interior' && selectedRoomType !== '') || isCoveLightActive || isSpotlightActive;
   const isEditingWithMask = editingMode === 'object' && !isMaskEmpty;
   const hasColorAdjustments = brightness !== 100 || contrast !== 100 || saturation !== 100 || sharpness !== 100;
   const isPlanModeReady = sceneType === 'plan' && !!selectedRoomType && !!selectedInteriorStyle;
-  const hasAspectRatioChange = generationAspectRatio !== 'ต้นฉบับ' && editingMode !== 'object';
+  const hasAspectRatioChange = generationAspectRatio !== 'Original' && editingMode !== 'object';
   const hasEditInstruction = isEditingWithMask ? hasTextPrompt : (hasTextPrompt || hasOtherOptions || hasColorAdjustments || isPlanModeReady || hasAspectRatioChange);
 
   const cleanPrompt = (p: string) => {
@@ -1023,7 +1024,7 @@ const ImageEditor: React.FC = () => {
   }
 
   const handleRandomArchStyle = () => {
-    const stylesToChooseFrom = ['โมเดิร์น', 'คลาสสิค', 'มินิมอล', 'ร่วมสมัย'];
+    const stylesToChooseFrom = ['Modern', 'Classic', 'Minimalist', 'Contemporary'];
     const randomStyle = stylesToChooseFrom[Math.floor(Math.random() * stylesToChooseFrom.length)];
     setSelectedArchStyle(randomStyle);
   };
@@ -1033,7 +1034,7 @@ const ImageEditor: React.FC = () => {
   }
   
   const handleFilterChange = (filter: string) => {
-      setSelectedFilter(prev => prev === filter ? 'ไม่มี' : filter);
+      setSelectedFilter(prev => prev === filter ? 'None' : filter);
   };
   
   const handleArtStyleChange = (style: string) => {
@@ -1088,7 +1089,7 @@ const ImageEditor: React.FC = () => {
       : activeImage.dataUrl;
 
     if (!sourceDataUrl) {
-      setError('กรุณาเลือกรูปภาพเพื่อสร้างรูปแบบต่างๆ');
+      setError('Please select an image to generate variations.');
       return;
     }
     
@@ -1112,7 +1113,7 @@ const ImageEditor: React.FC = () => {
         const stylesToGenerate = [...styleOptions].sort(() => 0.5 - Math.random()).slice(0, 4);
         labelsForResults = stylesToGenerate.map(s => s.name);
         promptForHistory = 'Generated 4 style variations';
-        promptsToGenerate = stylesToGenerate.map(style => `Transform the entire image to be ${STYLE_PROMPTS[style.name]}.`);
+        promptsToGenerate = stylesToGenerate.map(style => `Transform the entire image to be ${STYLE_PROMPTS[style.name as keyof typeof STYLE_PROMPTS]}.`);
 
     } else { // angle
         const anglesToGenerate = [...cameraAngleOptions.filter(opt => opt.prompt)].sort(() => 0.5 - Math.random()).slice(0, 4);
@@ -1175,7 +1176,7 @@ const ImageEditor: React.FC = () => {
       : activeImage.dataUrl;
 
     if (!sourceDataUrl) {
-      setError('กรุณาเลือกรูปภาพ');
+      setError('Please select an image.');
       return;
     }
 
@@ -1186,7 +1187,7 @@ const ImageEditor: React.FC = () => {
     if (editingMode === 'object') {
         maskBase64 = await imageDisplayRef.current?.exportMask() ?? null;
         if (!maskBase64) {
-            setError("ไม่สามารถสร้างมาสก์จากภาพวาดของคุณได้ กรุณาลองอีกครั้ง");
+            setError("Could not export mask from your drawing. Please try again.");
             setIsLoading(false);
             return;
         }
@@ -1194,8 +1195,8 @@ const ImageEditor: React.FC = () => {
 
     const roomPrompt = ROOM_TYPE_PROMPTS[selectedRoomType];
     const stylePrompt = interiorStyleOptions.find(o => o.name === selectedInteriorStyle)?.name + ' style' || 'modern style';
-    const lightingPrompt = selectedPlanLighting ? PLAN_LIGHTING_PROMPTS[selectedPlanLighting] : '';
-    const materialsPrompt = selectedPlanMaterials ? PLAN_MATERIALS_PROMPTS[selectedPlanMaterials] : '';
+    const lightingPrompt = selectedPlanLighting ? PLAN_LIGHTING_PROMPTS[selectedPlanLighting as keyof typeof PLAN_LIGHTING_PROMPTS] : '';
+    const materialsPrompt = selectedPlanMaterials ? PLAN_MATERIALS_PROMPTS[selectedPlanMaterials as keyof typeof PLAN_MATERIALS_PROMPTS] : '';
     const furnitureLayoutPrompt = furniturePrompt.trim() ? `Crucially, follow this specific furniture layout: "${furniturePrompt.trim()}".` : '';
 
     const sourceMimeType = sourceDataUrl.substring(5, sourceDataUrl.indexOf(';'));
@@ -1204,7 +1205,7 @@ const ImageEditor: React.FC = () => {
     const viewsToGenerate = planViewOptions;
 
     const labelsForResults = viewsToGenerate.map(v => v.name);
-    const promptForHistory = `สร้างมุมมอง 3D 4 แบบสำหรับ ${selectedRoomType}, สไตล์ ${selectedInteriorStyle}`;
+    const promptForHistory = `Generated 4 3D views for ${selectedRoomType}, ${selectedInteriorStyle} style`;
 
     try {
       const generatedImagesBase64: string[] = [];
@@ -1259,7 +1260,7 @@ const ImageEditor: React.FC = () => {
     const sourceDataUrl = selectedImageUrl || activeImage.dataUrl;
 
     if (!sourceDataUrl) {
-      setError('กรุณาเลือกรูปภาพเพื่อวิเคราะห์');
+      setError('Please select an image to analyze.');
       return;
     }
 
@@ -1278,7 +1279,7 @@ const ImageEditor: React.FC = () => {
 
     } catch (err) {
       if (!mountedRef.current) return;
-      const errorMessage = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดที่ไม่รู้จักระหว่างการวิเคราะห์';
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred during analysis.';
       setError(errorMessage);
     } finally {
       if (mountedRef.current) {
@@ -1293,7 +1294,7 @@ const ImageEditor: React.FC = () => {
     const sourceDataUrl = selectedImageUrl || activeImage.dataUrl;
 
     if (!sourceDataUrl) {
-      setError('กรุณาเลือกรูปภาพเพื่อรับคำแนะนำ');
+      setError('Please select an image to get suggestions.');
       return;
     }
 
@@ -1312,7 +1313,7 @@ const ImageEditor: React.FC = () => {
 
     } catch (err) {
       if (!mountedRef.current) return;
-      const errorMessage = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดที่ไม่รู้จักระหว่างการรับคำแนะนำ';
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred while getting suggestions.';
       setError(errorMessage);
     } finally {
       if (mountedRef.current) {
@@ -1329,7 +1330,7 @@ const ImageEditor: React.FC = () => {
     if (editingMode === 'object') {
       maskBase64 = await imageDisplayRef.current?.exportMask() ?? null;
       if (!maskBase64) {
-        setError("ไม่สามารถสร้างมาสก์จากภาพวาดของคุณได้ กรุณาลองอีกครั้ง");
+        setError("Could not export mask from your drawing. Please try again.");
         return;
       }
     }
@@ -1339,7 +1340,7 @@ const ImageEditor: React.FC = () => {
       : activeImage.dataUrl;
 
     if (!sourceDataUrl) {
-      setError('กรุณาเลือกรูปภาพและระบุคำสั่งแก้ไข');
+      setError('Please select an image and provide an edit instruction.');
       return;
     }
 
@@ -1379,7 +1380,7 @@ const ImageEditor: React.FC = () => {
               historyIndex: newIndex,
               selectedResultIndex: 0,
               promptHistory: newPromptHistory,
-              lastGeneratedLabels: ['แก้ไขแล้ว'],
+              lastGeneratedLabels: ['Edited'],
               generationTypeHistory: newGenerationTypeHistory,
           };
       });
@@ -1401,7 +1402,7 @@ const ImageEditor: React.FC = () => {
       setSelectedCameraAngle('');
       setSelectedQuickAction('');
       setIsAddLightActive(false);
-      setSelectedFilter('ไม่มี');
+      setSelectedFilter('None');
       setPhotorealisticIntensity(100);
       setLightingBrightness(50);
       setLightingTemperature(50);
@@ -1409,7 +1410,7 @@ const ImageEditor: React.FC = () => {
       setSketchIntensity(100);
       setTreeAge(50);
       setSeason(50);
-      setGenerationAspectRatio('ต้นฉบับ');
+      setGenerationAspectRatio('Original');
       setEditingMode(sceneType === 'interior' ? 'default' : (sceneType === 'plan' ? 'default' : 'default'));
       setBrightness(100);
       setContrast(100);
@@ -1437,7 +1438,7 @@ const ImageEditor: React.FC = () => {
     event.preventDefault();
     if (!activeImage || !hasEditInstruction) {
       if (activeImage && !hasEditInstruction) {
-        setError('กรุณาระบุคำสั่งแก้ไขหรือเลือกตัวเลือก');
+        setError('Please provide an edit instruction or select an option.');
       }
       return;
     }
@@ -1445,19 +1446,19 @@ const ImageEditor: React.FC = () => {
     // --- Plan to 3D Generation Logic ---
     if (sceneType === 'plan') {
         if (!selectedRoomType || !selectedInteriorStyle) {
-            setError('กรุณาเลือกประเภทห้องและสไตล์การตกแต่ง');
+            setError('Please select a room type and interior style.');
             return;
         }
         
         const roomPrompt = ROOM_TYPE_PROMPTS[selectedRoomType];
         const stylePrompt = interiorStyleOptions.find(o => o.name === selectedInteriorStyle)?.name + ' style' || 'modern style';
         const viewPrompt = PLAN_VIEW_PROMPTS[selectedPlanView];
-        const lightingPrompt = selectedPlanLighting ? PLAN_LIGHTING_PROMPTS[selectedPlanLighting] : '';
-        const materialsPrompt = selectedPlanMaterials ? PLAN_MATERIALS_PROMPTS[selectedPlanMaterials] : '';
+        const lightingPrompt = selectedPlanLighting ? PLAN_LIGHTING_PROMPTS[selectedPlanLighting as keyof typeof PLAN_LIGHTING_PROMPTS] : '';
+        const materialsPrompt = selectedPlanMaterials ? PLAN_MATERIALS_PROMPTS[selectedPlanMaterials as keyof typeof PLAN_MATERIALS_PROMPTS] : '';
         const furnitureLayoutPrompt = furniturePrompt.trim() ? `Crucially, follow this specific furniture layout: "${furniturePrompt.trim()}".` : '';
 
         const finalPrompt = `Critically interpret this 2D floor plan and transform it into a high-quality, photorealistic 3D architectural visualization. The view should be ${viewPrompt}. The space is ${roomPrompt}, designed in a ${stylePrompt}. Furnish the room with appropriate and modern furniture. ${furnitureLayoutPrompt} ${lightingPrompt ? `Set the lighting to be as follows: ${lightingPrompt}` : ''} ${materialsPrompt ? `Use a material palette of ${materialsPrompt}` : ''} Pay close attention to materials, textures, and realistic lighting to create a cohesive and inviting atmosphere. Ensure the final image is 8k resolution and hyper-detailed.`;
-        const promptForHistory = `มุมมอง 3D: ${selectedPlanView}, ${selectedRoomType}, สไตล์ ${selectedInteriorStyle}`;
+        const promptForHistory = `3D View: ${selectedPlanView}, ${selectedRoomType}, ${selectedInteriorStyle} Style`;
         
         executeGeneration(finalPrompt, promptForHistory);
         return; 
@@ -1484,29 +1485,29 @@ const ImageEditor: React.FC = () => {
           const generator = ADJUSTABLE_PROMPT_GENERATORS[selectedGardenStyle];
           if (generator) {
               promptParts.push(generator(optionIntensities[selectedGardenStyle]));
-          } else if (GARDEN_STYLE_PROMPTS[selectedGardenStyle]) {
-              promptParts.push(GARDEN_STYLE_PROMPTS[selectedGardenStyle]);
+          } else if (GARDEN_STYLE_PROMPTS[selectedGardenStyle as keyof typeof GARDEN_STYLE_PROMPTS]) {
+              promptParts.push(GARDEN_STYLE_PROMPTS[selectedGardenStyle as keyof typeof GARDEN_STYLE_PROMPTS]);
           }
       }
 
       // Architectural Style
-      if (selectedArchStyle && ARCHITECTURAL_STYLE_PROMPTS[selectedArchStyle]) {
-          promptParts.push(ARCHITECTURAL_STYLE_PROMPTS[selectedArchStyle]);
+      if (selectedArchStyle && ARCHITECTURAL_STYLE_PROMPTS[selectedArchStyle as keyof typeof ARCHITECTURAL_STYLE_PROMPTS]) {
+          promptParts.push(ARCHITECTURAL_STYLE_PROMPTS[selectedArchStyle as keyof typeof ARCHITECTURAL_STYLE_PROMPTS]);
       }
       
       // Interior Style
-      if (selectedInteriorStyle && INTERIOR_STYLE_PROMPTS[selectedInteriorStyle]) {
-          promptParts.push(INTERIOR_STYLE_PROMPTS[selectedInteriorStyle]);
+      if (selectedInteriorStyle && INTERIOR_STYLE_PROMPTS[selectedInteriorStyle as keyof typeof INTERIOR_STYLE_PROMPTS]) {
+          promptParts.push(INTERIOR_STYLE_PROMPTS[selectedInteriorStyle as keyof typeof INTERIOR_STYLE_PROMPTS]);
       }
 
-      if (selectedInteriorLighting && INTERIOR_LIGHTING_PROMPTS[selectedInteriorLighting]) {
-        promptParts.push(INTERIOR_LIGHTING_PROMPTS[selectedInteriorLighting]);
+      if (selectedInteriorLighting && INTERIOR_LIGHTING_PROMPTS[selectedInteriorLighting as keyof typeof INTERIOR_LIGHTING_PROMPTS]) {
+        promptParts.push(INTERIOR_LIGHTING_PROMPTS[selectedInteriorLighting as keyof typeof INTERIOR_LIGHTING_PROMPTS]);
       }
 
       // Decorative Items
       selectedDecorativeItems.forEach(item => {
-        if (DECORATIVE_ITEM_PROMPTS[item]) {
-            promptParts.push(DECORATIVE_ITEM_PROMPTS[item]);
+        if (DECORATIVE_ITEM_PROMPTS[item as keyof typeof DECORATIVE_ITEM_PROMPTS]) {
+            promptParts.push(DECORATIVE_ITEM_PROMPTS[item as keyof typeof DECORATIVE_ITEM_PROMPTS]);
         }
       });
 
@@ -1515,8 +1516,8 @@ const ImageEditor: React.FC = () => {
           const generator = ADJUSTABLE_PROMPT_GENERATORS[bg];
           if (generator) {
               promptParts.push(generator(optionIntensities[bg]));
-          } else if (BACKGROUND_PROMPTS[bg]) {
-              promptParts.push(BACKGROUND_PROMPTS[bg]);
+          } else if (BACKGROUND_PROMPTS[bg as keyof typeof BACKGROUND_PROMPTS]) {
+              promptParts.push(BACKGROUND_PROMPTS[bg as keyof typeof BACKGROUND_PROMPTS]);
           }
       });
       
@@ -1525,19 +1526,19 @@ const ImageEditor: React.FC = () => {
           const generator = ADJUSTABLE_PROMPT_GENERATORS[fg];
           if (generator) {
               promptParts.push(generator(optionIntensities[fg]));
-          } else if (FOREGROUND_PROMPTS[fg]) {
-              promptParts.push(FOREGROUND_PROMPTS[fg]);
+          } else if (FOREGROUND_PROMPTS[fg as keyof typeof FOREGROUND_PROMPTS]) {
+              promptParts.push(FOREGROUND_PROMPTS[fg as keyof typeof FOREGROUND_PROMPTS]);
           }
       });
       
       // Time of Day
-      if (selectedTimeOfDay && TIME_OF_DAY_PROMPTS[selectedTimeOfDay]) {
-        promptParts.push(TIME_OF_DAY_PROMPTS[selectedTimeOfDay]);
+      if (selectedTimeOfDay && TIME_OF_DAY_PROMPTS[selectedTimeOfDay as keyof typeof TIME_OF_DAY_PROMPTS]) {
+        promptParts.push(TIME_OF_DAY_PROMPTS[selectedTimeOfDay as keyof typeof TIME_OF_DAY_PROMPTS]);
       }
       
       // Weather
-      if (selectedWeather && WEATHER_PROMPTS[selectedWeather]) {
-          promptParts.push(WEATHER_PROMPTS[selectedWeather]);
+      if (selectedWeather && WEATHER_PROMPTS[selectedWeather as keyof typeof WEATHER_PROMPTS]) {
+          promptParts.push(WEATHER_PROMPTS[selectedWeather as keyof typeof WEATHER_PROMPTS]);
       }
 
       // Vegetation
@@ -1550,7 +1551,7 @@ const ImageEditor: React.FC = () => {
       if (selectedCameraAngle) {
         const predefinedPrompt = CAMERA_ANGLE_PROMPTS[selectedCameraAngle];
         if (predefinedPrompt !== undefined && predefinedPrompt !== '') {
-          // It's a predefined angle like 'มุมสูง'
+          // It's a predefined angle like 'High Angle'
           promptParts.push(predefinedPrompt);
         } else if (predefinedPrompt === undefined) {
           // It's a custom/suggested angle string, not a key in CAMERA_ANGLE_PROMPTS
@@ -1560,13 +1561,13 @@ const ImageEditor: React.FC = () => {
       }
       
       // Filter
-      if (selectedFilter && selectedFilter !== 'ไม่มี' && FILTER_PROMPTS[selectedFilter]) {
-          promptParts.push(FILTER_PROMPTS[selectedFilter]);
+      if (selectedFilter && selectedFilter !== 'None' && FILTER_PROMPTS[selectedFilter as keyof typeof FILTER_PROMPTS]) {
+          promptParts.push(FILTER_PROMPTS[selectedFilter as keyof typeof FILTER_PROMPTS]);
       }
       
       // Art Style
-      if (selectedStyle && STYLE_PROMPTS[selectedStyle]) {
-          let stylePrompt = `transform the image to be ${STYLE_PROMPTS[selectedStyle]}`;
+      if (selectedStyle && STYLE_PROMPTS[selectedStyle as keyof typeof STYLE_PROMPTS]) {
+          let stylePrompt = `transform the image to be ${STYLE_PROMPTS[selectedStyle as keyof typeof STYLE_PROMPTS]}`;
           if (styleIntensity <= 33) {
             stylePrompt += ' with a subtle intensity.';
           } else if (styleIntensity > 66) {
@@ -1641,14 +1642,14 @@ const ImageEditor: React.FC = () => {
     const basePrompt = cleanPrompt(promptParts.join('. '));
     
     const ratioMap: { [key: string]: string } = {
-        '1:1 สี่เหลี่ยมจัตุรัส': '1:1 square',
-        '16:9 จอกว้าง': '16:9 widescreen',
-        '9:16 แนวตั้ง': '9:16 vertical',
-        '4:3 แนวนอน': '4:3 landscape',
-        '3:4 แนวตั้ง': '3:4 portrait',
+        '1:1 Square': '1:1 square',
+        '16:9 Widescreen': '16:9 widescreen',
+        '9:16 Portrait': '9:16 vertical',
+        '4:3 Landscape': '4:3 landscape',
+        '3:4 Portrait': '3:4 portrait',
     };
 
-    const aspectRatioText = (editingMode !== 'object' && generationAspectRatio && generationAspectRatio !== 'ต้นฉบับ')
+    const aspectRatioText = (editingMode !== 'object' && generationAspectRatio && generationAspectRatio !== 'Original')
         ? ratioMap[generationAspectRatio]
         : null;
 
@@ -1667,7 +1668,7 @@ const ImageEditor: React.FC = () => {
     }
 
     if (!finalPromptBody) {
-        setError('กรุณาระบุคำสั่งแก้ไขหรือเลือกตัวเลือก');
+        setError('Please provide an edit instruction or select an option.');
         return;
     }
     
@@ -1697,27 +1698,27 @@ const ImageEditor: React.FC = () => {
     setSelectedTimeOfDay('');
     setSelectedWeather('');
     setSelectedCameraAngle('');
-    setSelectedFilter('ไม่มี');
+    setSelectedFilter('None');
     setBrightness(100);
     setContrast(100);
     setSaturation(100);
     setSharpness(100);
     setTreeAge(50);
     setSeason(50);
-    setGenerationAspectRatio('ต้นฉบับ');
+    setGenerationAspectRatio('Original');
     setIsAddLightActive(false);
 
     // Set the selected action for UI feedback
     setSelectedQuickAction(randomAction.id);
 
     // Execute the generation
-    executeGeneration(randomPrompt, `สุ่มพรีเซท: ${randomAction.label}`);
+    executeGeneration(randomPrompt, `Random Preset: ${randomAction.label}`);
   };
 
 
   const handleUpscale = async () => {
     if (!activeImage || activeImage.historyIndex < 0 || activeImage.selectedResultIndex === null) {
-      setError('ไม่มีรูปภาพที่เลือกเพื่อเพิ่มความละเอียด');
+      setError('No image selected to upscale.');
       return;
     }
 
@@ -1763,7 +1764,7 @@ const ImageEditor: React.FC = () => {
 
     } catch (err) {
       if (!mountedRef.current) return;
-      const errorMessage = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดที่ไม่รู้จักระหว่างการเพิ่มความละเอียด';
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred during upscaling.';
       setError(errorMessage);
     } finally {
       if (mountedRef.current) {
@@ -1841,7 +1842,7 @@ const ImageEditor: React.FC = () => {
       };
       img.onerror = () => {
           if (!mountedRef.current) return;
-          setError("ไม่สามารถประมวลผลรูปภาพเพื่อบันทึกได้");
+          setError("Could not process image for saving.");
           setIsSaveModalOpen(false);
       };
       img.src = selectedImageUrl;
@@ -1889,17 +1890,17 @@ const ImageEditor: React.FC = () => {
                 
                 resolve(canvas.toDataURL('image/png'));
             };
-            img.onerror = () => reject(new Error("ไม่สามารถโหลดรูปภาพเพื่อแปลงได้"));
+            img.onerror = () => reject(new Error("Could not load image to transform."));
             img.src = selectedImageUrl;
         });
 
         if (!mountedRef.current) return;
 
         const transformLabels: Record<typeof transformation, string> = {
-            rotateLeft: 'หมุนซ้าย 90°',
-            rotateRight: 'หมุนขวา 90°',
-            flipHorizontal: 'พลิกแนวนอน',
-            flipVertical: 'พลิกแนวตั้ง',
+            rotateLeft: 'Rotate Left 90°',
+            rotateRight: 'Rotate Right 90°',
+            flipHorizontal: 'Flip Horizontal',
+            flipVertical: 'Flip Vertical',
         };
 
         updateActiveImage(img => {
@@ -1927,7 +1928,7 @@ const ImageEditor: React.FC = () => {
         });
     } catch (err) {
       if (!mountedRef.current) return;
-      const errorMessage = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดที่ไม่รู้จักระหว่างการแปลงรูปภาพ';
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred during image transformation.';
       setError(errorMessage);
     } finally {
       if (mountedRef.current) {
@@ -1937,42 +1938,43 @@ const ImageEditor: React.FC = () => {
   };
 
   const getResultsTitle = () => {
-    if (!activeImage || activeImage.historyIndex < 0 || !currentResults) return 'ผลลัพธ์';
+    if (!activeImage || activeImage.historyIndex < 0 || !currentResults) return 'Results';
     const currentType = activeImage.generationTypeHistory[activeImage.historyIndex];
     const currentPrompt = activeImage.promptHistory[activeImage.historyIndex];
     switch (currentType) {
         case 'style':
-            return 'รูปแบบสไตล์';
+            return 'Style Variations';
         case 'angle':
-            return 'รูปแบบมุมกล้อง';
+            return 'Camera Angle Variations';
         case 'variation':
-             if (currentPrompt?.includes('มุมมอง 3D')) {
-                return 'ผลลัพธ์ 3D สี่มุมมอง';
+             if (currentPrompt?.includes('3D views')) {
+                return 'Four 3D View Results';
             }
-            return 'รูปแบบต่างๆ';
+            return 'Variations';
         case 'edit':
-            return 'ผลลัพธ์การแก้ไข';
+            return 'Edit Result';
         case 'upscale':
-            return 'ผลลัพธ์การเพิ่มความละเอียด';
+            return 'Upscale Result';
         case 'transform':
-            return 'ผลลัพธ์การแปลงรูปภาพ';
+            return 'Transform Result';
         default:
-            return 'ผลลัพธ์';
+            return 'Results';
     }
   };
 
   const quickActions = [
-    { id: 'proPhotoFinish', label: 'สมจริง', description: 'แปลงภาพให้คมชัดระดับ 8K เหมือนถ่ายด้วยกล้องโปร' },
-    { id: 'luxuryHomeDusk', label: 'บ้านหรู', description: 'บรรยากาศบ้านหรูตอนค่ำหลังฝนตก มีแสงไฟอบอุ่น' },
-    { id: 'morningHousingEstate', label: 'หมู่บ้านยามเช้า', description: 'แสงแดดยามเช้าอันอบอุ่นในหมู่บ้านที่เงียบสงบ' },
-    { id: 'highriseNaturalView', label: 'อาคารสูงวิวธรรมชาติ', description: 'ตึกสูงในเมืองที่แวดล้อมด้วยธรรมชาติและถนน' },
-    { id: 'urbanSketch', label: 'สเก็ตช์เมือง', description: 'เปลี่ยนภาพเป็นลายเส้นสีน้ำแบบสเก็ตช์เมืองที่มีชีวิตชีวา' },
-    { id: 'sketchToPhoto', label: 'แปลงลายเส้นเป็นภาพจริง', description: 'เปลี่ยนภาพสเก็ตช์สถาปัตยกรรมให้เป็นภาพถ่ายสมจริง' },
-    { id: 'architecturalSketch', label: 'สเก็ตช์สถาปัตย์', description: 'แปลงภาพเป็นแบบร่างสถาปัตยกรรมพร้อมลายเส้นและสี' },
+    { id: 'proPhotoFinish', label: 'Photorealistic', description: 'Transform into an 8K ultra-sharp, pro-camera shot.' },
+    { id: 'luxuryHomeDusk', label: 'Luxury Home', description: 'Atmosphere of a luxury home at dusk after rain.' },
+    { id: 'morningHousingEstate', label: 'Morning Estate', description: 'Warm morning sunlight in a peaceful housing estate.' },
+    { id: 'pristineShowHome', label: 'Pristine Show Home', description: 'Creates a brand new look with a perfectly manicured lawn, road, and hedge fence.' },
+    { id: 'highriseNature', label: 'High-rise & Nature', description: 'Blend the building with a lush landscape and a city skyline.' },
+    { id: 'urbanSketch', label: 'Urban Sketch', description: 'Convert into a lively, urban watercolor sketch.' },
+    { id: 'sketchToPhoto', label: 'Sketch to Photo', description: 'Turn an architectural sketch into a photorealistic image.' },
+    { id: 'architecturalSketch', label: 'Architectural Sketch', description: 'Convert into an architect\'s concept sketch.' },
   ];
   
   const interiorQuickActions = [
-    { id: 'sketchupToPhotoreal', label: 'แปลงสเก็ตช์อัพเป็นภาพจริง', description: 'เปลี่ยนโมเดล SketchUp ให้เป็นภาพเรนเดอร์ 3D สมจริง' },
+    { id: 'sketchupToPhotoreal', label: 'SketchUp to Photoreal', description: 'Convert a SketchUp model to a photorealistic 3D render.' },
   ];
 
   const canUndo = activeImage ? activeImage.historyIndex >= 0 : false;
@@ -1984,10 +1986,10 @@ const ImageEditor: React.FC = () => {
   const imageForMasking = (sceneType === 'plan' ? (activeImage ? activeImage.dataUrl : null) : imageForDisplay);
 
   const LightingAndAtmosphereControls: React.FC<{ sceneType: SceneType | null }> = ({ sceneType }) => (
-    <CollapsibleSection title="แสงและบรรยากาศ" sectionKey="lighting" isOpen={openSections.lighting} onToggle={() => toggleSection('lighting')} icon={<SunriseIcon className="w-5 h-5" />}>
+    <CollapsibleSection title="Lighting & Atmosphere" sectionKey="lighting" isOpen={openSections.lighting} onToggle={() => toggleSection('lighting')} icon={<SunriseIcon className="w-5 h-5" />}>
       <div className="flex flex-col gap-4">
         <div>
-          <h4 className="text-sm font-semibold text-gray-300 mb-2">ช่วงเวลาของวัน</h4>
+          <h4 className="text-sm font-semibold text-gray-300 mb-2">Time of Day</h4>
           <div className="flex flex-wrap gap-2">
             {timeOfDayOptions.map(option => (
               <OptionButton key={option} option={option} isSelected={selectedTimeOfDay === option} onClick={(val) => setSelectedTimeOfDay(prev => prev === val ? '' : val)} />
@@ -1995,7 +1997,7 @@ const ImageEditor: React.FC = () => {
           </div>
         </div>
         <div>
-          <h4 className="text-sm font-semibold text-gray-300 mb-2">สภาพอากาศ</h4>
+          <h4 className="text-sm font-semibold text-gray-300 mb-2">Weather</h4>
           <div className="flex flex-wrap gap-2">
             {weatherOptions.map(option => (
               <OptionButton key={option} option={option} isSelected={selectedWeather === option} onClick={(val) => setSelectedWeather(prev => prev === val ? '' : val)} />
@@ -2004,7 +2006,7 @@ const ImageEditor: React.FC = () => {
         </div>
         {sceneType === 'interior' && (
           <div className="pt-4 border-t border-gray-700">
-            <h4 className="text-sm font-semibold text-gray-300 mb-2">พรีเซทการจัดแสงภายในห้อง</h4>
+            <h4 className="text-sm font-semibold text-gray-300 mb-2">Interior Lighting Presets</h4>
             <div className="flex flex-wrap gap-2">
               {interiorLightingOptions.map(option => (
                 <OptionButton
@@ -2019,19 +2021,19 @@ const ImageEditor: React.FC = () => {
         )}
         {sceneType === 'exterior' && (
           <div className="pt-4 border-t border-gray-700">
-            <h4 className="text-sm font-semibold text-gray-300 mb-2">เพิ่มแสงไฟในอาคาร</h4>
+            <h4 className="text-sm font-semibold text-gray-300 mb-2">Add Building Lights</h4>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" checked={isAddLightActive} onChange={(e) => setIsAddLightActive(e.target.checked)} className="sr-only peer" />
               <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-              <span className="ml-3 text-sm font-medium text-gray-300">เปิดใช้งาน</span>
+              <span className="ml-3 text-sm font-medium text-gray-300">Enable</span>
             </label>
             <div className={`mt-3 space-y-3 transition-opacity duration-300 ${isAddLightActive ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">ความสว่าง</label>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Brightness</label>
                 <input type="range" min="1" max="100" value={lightingBrightness} onChange={(e) => setLightingBrightness(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">อุณหภูมิสี (เย็น - อุ่น)</label>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Color Temperature (Cool - Warm)</label>
                 <input type="range" min="1" max="100" value={lightingTemperature} onChange={(e) => setLightingTemperature(Number(e.target.value))} className="w-full h-2 bg-gradient-to-r from-blue-400 to-orange-400 rounded-lg appearance-none cursor-pointer accent-red-600" />
               </div>
             </div>
@@ -2043,7 +2045,7 @@ const ImageEditor: React.FC = () => {
 
   const CommonEnvironmentControls: React.FC<{ excludeForeground?: boolean }> = ({ excludeForeground = false }) => (
     <>
-      <CollapsibleSection title="พื้นหลัง" sectionKey="background" isOpen={openSections.background} onToggle={() => toggleSection('background')} icon={<LandscapeIcon className="w-5 h-5" />}>
+      <CollapsibleSection title="Background" sectionKey="background" isOpen={openSections.background} onToggle={() => toggleSection('background')} icon={<LandscapeIcon className="w-5 h-5" />}>
         <div className="flex flex-wrap gap-2">
             {backgrounds.map(bg => (
                 <OptionButton
@@ -2077,7 +2079,7 @@ const ImageEditor: React.FC = () => {
         )}
       </CollapsibleSection>
       {!excludeForeground && (
-        <CollapsibleSection title="องค์ประกอบหน้า" sectionKey="foreground" isOpen={openSections.foreground} onToggle={() => toggleSection('foreground')} icon={<FlowerIcon className="w-5 h-5" />}>
+        <CollapsibleSection title="Foreground Elements" sectionKey="foreground" isOpen={openSections.foreground} onToggle={() => toggleSection('foreground')} icon={<FlowerIcon className="w-5 h-5" />}>
             <div className="flex flex-wrap gap-2">
                 {foregrounds.map(fg => (
                     <OptionButton
@@ -2119,7 +2121,7 @@ const ImageEditor: React.FC = () => {
     {isSaveModalOpen && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
             <div className="bg-gray-800 p-6 rounded-xl shadow-lg w-full max-w-sm border border-gray-700 flex flex-col">
-                <h2 className="text-xl font-bold text-gray-200 mb-4">เลือกคุณภาพของไฟล์ JPEG</h2>
+                <h2 className="text-xl font-bold text-gray-200 mb-4">Select JPEG Quality</h2>
                 <div className="flex flex-col gap-3 mb-6">
                     {qualityOptions.map(option => (
                         <button
@@ -2141,13 +2143,13 @@ const ImageEditor: React.FC = () => {
                         onClick={() => setIsSaveModalOpen(false)} 
                         className="px-6 py-2 rounded-full text-sm font-semibold bg-gray-600 text-gray-200 hover:bg-gray-500 transition-colors"
                     >
-                        ยกเลิก
+                        Cancel
                     </button>
                     <button 
                         onClick={handleConfirmSave} 
                         className="px-6 py-2 rounded-full text-sm font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors"
                     >
-                        ดาวน์โหลด
+                        Download
                     </button>
                 </div>
             </div>
@@ -2161,10 +2163,10 @@ const ImageEditor: React.FC = () => {
           <div className="bg-gray-800/50 p-4 rounded-xl shadow-lg border border-gray-700">
             <form onSubmit={handleSubmit} className="flex flex-col gap-6">
                 <div>
-                  <label htmlFor="file-upload" className="block text-sm font-medium text-gray-300 mb-2">1. อัปโหลดรูปภาพ</label>
+                  <label htmlFor="file-upload" className="block text-sm font-medium text-gray-300 mb-2">1. Upload Image</label>
                   <label htmlFor="file-upload" className="cursor-pointer flex justify-center items-center w-full px-4 py-6 bg-gray-700 text-gray-400 rounded-lg border-2 border-dashed border-gray-600 hover:border-red-400 hover:bg-gray-600 transition-colors">
                     <span className={imageList.length > 0 ? 'text-green-400' : ''}>
-                      {imageList.length > 0 ? `${imageList.length} ภาพถูกอัปโหลดแล้ว เพิ่มอีก?` : 'คลิกเพื่อเลือกไฟล์'}
+                      {imageList.length > 0 ? `${imageList.length} image(s) uploaded. Add more?` : 'Click to select files'}
                     </span>
                   </label>
                   <input id="file-upload" name="file-upload" type="file" className="sr-only" accept="image/*" onChange={handleImageChange} multiple />
@@ -2187,7 +2189,7 @@ const ImageEditor: React.FC = () => {
                                     type="button"
                                     onClick={() => handleRemoveImage(index)}
                                     className="absolute -top-2 -right-2 w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold hover:bg-red-700 transition-colors z-10 opacity-0 group-hover:opacity-100"
-                                    title="ลบรูปภาพ"
+                                    title="Remove image"
                                 >
                                     &times;
                                 </button>
@@ -2198,14 +2200,14 @@ const ImageEditor: React.FC = () => {
 
                 {!activeImage && (
                     <div className="text-center p-4 bg-gray-900/50 rounded-lg">
-                        <h2 className="text-lg font-semibold text-gray-200">ยินดีต้อนรับ!</h2>
-                        <p className="text-gray-400 mt-2">เริ่มต้นโดยการอัปโหลดรูปภาพเพื่อแก้ไข หรือแปลงแปลน 2D ให้เป็นภาพ 3D</p>
+                        <h2 className="text-lg font-semibold text-gray-200">Welcome!</h2>
+                        <p className="text-gray-400 mt-2">Get started by uploading an image to edit, or convert a 2D plan to 3D.</p>
                     </div>
                 )}
 
                 {activeImage && !sceneType && (
                   <div className="border-t border-b border-gray-700 py-4">
-                      <label className="block text-sm font-medium text-gray-300 mb-3 text-center">2. คุณต้องการทำอะไร?</label>
+                      <label className="block text-sm font-medium text-gray-300 mb-3 text-center">2. What would you like to do?</label>
                       <div className="flex flex-col gap-3">
                           <button
                               type="button"
@@ -2213,7 +2215,7 @@ const ImageEditor: React.FC = () => {
                               className="w-full flex items-center justify-center gap-3 p-3 text-base font-semibold rounded-lg transition-all duration-200 bg-gray-800 text-gray-200 hover:bg-red-600 hover:text-white border border-gray-600 hover:border-red-500"
                           >
                               <HomeModernIcon className="w-6 h-6"/>
-                              <span>แก้ไขรูปภาพภายนอก</span>
+                              <span>Exterior Editing</span>
                           </button>
                           <button
                               type="button"
@@ -2221,7 +2223,7 @@ const ImageEditor: React.FC = () => {
                               className="w-full flex items-center justify-center gap-3 p-3 text-base font-semibold rounded-lg transition-all duration-200 bg-gray-800 text-gray-200 hover:bg-red-600 hover:text-white border border-gray-600 hover:border-red-500"
                           >
                               <HomeIcon className="w-6 h-6"/>
-                              <span>แก้ไขรูปภาพภายใน</span>
+                              <span>Interior Editing</span>
                           </button>
                           <button
                               type="button"
@@ -2229,7 +2231,7 @@ const ImageEditor: React.FC = () => {
                               className="w-full flex items-center justify-center gap-3 p-3 text-base font-semibold rounded-lg transition-all duration-200 bg-gray-800 text-gray-200 hover:bg-red-600 hover:text-white border border-gray-600 hover:border-red-500"
                           >
                               <PlanIcon className="w-6 h-6"/>
-                              <span>แปลงแปลน 2D เป็น 3D</span>
+                              <span>2D Plan to 3D</span>
                           </button>
                       </div>
                   </div>
@@ -2237,17 +2239,17 @@ const ImageEditor: React.FC = () => {
                 
                 {activeImage && sceneType && sceneType !== 'plan' && (
                   <div>
-                    <p className="block text-sm font-medium text-gray-300 mb-2">2. เลือกโหมดการแก้ไข</p>
+                    <p className="block text-sm font-medium text-gray-300 mb-2">2. Select Editing Mode</p>
                      <div className="flex items-center justify-center p-1 bg-gray-900/50 rounded-lg gap-1">
                         <ModeButton 
-                          label="แก้ไขด้วย AI" 
+                          label="AI Editing" 
                           icon={<SparklesIcon className="w-5 h-5" />}
                           mode="default"
                           activeMode={editingMode}
                           onClick={setEditingMode}
                         />
                          <ModeButton 
-                          label="วาดเพื่อแก้ไข" 
+                          label="Inpainting" 
                           icon={<BrushIcon className="w-5 h-5" />}
                           mode="object"
                           activeMode={editingMode}
@@ -2262,7 +2264,7 @@ const ImageEditor: React.FC = () => {
                   
                   {activeImage && sceneType && sceneType !== 'plan' && (
                     <CollapsibleSection 
-                      title={editingMode === 'object' ? '3. อธิบายการแก้ไขสำหรับส่วนที่วาด' : '3. อธิบายการแก้ไขของคุณ'}
+                      title={editingMode === 'object' ? '3. Describe edit for masked area' : '3. Describe your edit'}
                       sectionKey="prompt" 
                       isOpen={openSections.prompt} 
                       onToggle={() => toggleSection('prompt')} 
@@ -2272,17 +2274,17 @@ const ImageEditor: React.FC = () => {
                         <div>
                           <div className="flex justify-between items-center mb-2">
                             <label htmlFor="prompt" className="block text-sm font-medium text-gray-300">
-                                ช่องใส่คำสั่ง
+                                Prompt
                             </label>
                             {activeImage && activeImage.promptHistory.length > 0 && (
                               <button
                                 type="button"
                                 onClick={() => setShowPromptHistory(prev => !prev)}
                                 className="flex items-center gap-1 px-2 py-1 text-xs font-semibold text-gray-300 bg-gray-600 rounded-md transition-colors hover:bg-gray-500"
-                                title="แสดงประวัติคำสั่ง"
+                                title="Show prompt history"
                               >
                                 <HistoryIcon className="w-4 h-4" />
-                                <span>ประวัติ</span>
+                                <span>History</span>
                               </button>
                             )}
                           </div>
@@ -2293,10 +2295,10 @@ const ImageEditor: React.FC = () => {
                               className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 transition placeholder-gray-500 disabled:opacity-50"
                               placeholder={
                                 editingMode === 'object'
-                                  ? 'เช่น: ทำให้เป็นสีแดง, ลบวัตถุนี้...'
+                                  ? 'e.g., make this red, remove this object...'
                                   : activeImage
-                                  ? 'เช่น: เพิ่มแมวหนึ่งตัวนั่งอยู่บนหลังคา...'
-                                  : 'กรุณาอัปโหลดรูปภาพก่อน'
+                                  ? 'e.g., add a cat sitting on the roof...'
+                                  : 'Please upload an image first'
                               }
                               value={prompt}
                               onChange={(e) => setPrompt(e.target.value)}
@@ -2327,13 +2329,13 @@ const ImageEditor: React.FC = () => {
                         </div>
                         <div>
                           <label htmlFor="negative-prompt" className="block text-sm font-medium text-gray-300 mb-2">
-                            คำสั่งเชิงลบ (สิ่งที่ต้องการหลีกเลี่ยง) <span className="text-gray-400 font-normal">(ไม่จำเป็น)</span>
+                            Negative Prompt (what to avoid) <span className="text-gray-400 font-normal">(optional)</span>
                           </label>
                           <textarea
                             id="negative-prompt"
                             rows={2}
                             className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 transition placeholder-gray-500 disabled:opacity-50"
-                            placeholder="เช่น: ข้อความ, ลายน้ำ, คุณภาพต่ำ..."
+                            placeholder="e.g., text, watermarks, low quality..."
                             value={negativePrompt}
                             onChange={(e) => setNegativePrompt(e.target.value)}
                             disabled={!activeImage || !sceneType}
@@ -2345,7 +2347,7 @@ const ImageEditor: React.FC = () => {
 
                    {/* --- Material Examples Section (for object mode) --- */}
                   {activeImage && sceneType && editingMode === 'object' && (
-                      <CollapsibleSection title="ตัวอย่างวัสดุ" sectionKey="materialExamples" isOpen={openSections.materialExamples} onToggle={() => toggleSection('materialExamples')} icon={<TextureIcon className="w-5 h-5" />}>
+                      <CollapsibleSection title="Material Examples" sectionKey="materialExamples" isOpen={openSections.materialExamples} onToggle={() => toggleSection('materialExamples')} icon={<TextureIcon className="w-5 h-5" />}>
                           <div className="flex flex-wrap gap-2">
                               {materialQuickPrompts.map(mat => (
                                   <button
@@ -2358,17 +2360,17 @@ const ImageEditor: React.FC = () => {
                                   </button>
                               ))}
                           </div>
-                          <p className="text-xs text-gray-400 mt-3">เคล็ดลับ: การเลือกวัสดุจะแทนที่คำสั่งปัจจุบันของคุณ</p>
+                          <p className="text-xs text-gray-400 mt-3">Tip: Selecting a material will replace your current prompt.</p>
                       </CollapsibleSection>
                   )}
 
                   {/* --- 2D Plan to 3D Controls --- */}
                   {activeImage && sceneType === 'plan' && (
                     <>
-                      <CollapsibleSection title="1. กำหนดห้องและสไตล์" sectionKey="planConfig" isOpen={openSections.planConfig} onToggle={() => toggleSection('planConfig')} icon={<HomeModernIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
+                      <CollapsibleSection title="1. Define Room & Style" sectionKey="planConfig" isOpen={openSections.planConfig} onToggle={() => toggleSection('planConfig')} icon={<HomeModernIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
                           <div className="flex flex-col gap-4">
                               <div>
-                                  <h4 className="text-sm font-semibold text-gray-300 mb-2">ประเภทห้อง</h4>
+                                  <h4 className="text-sm font-semibold text-gray-300 mb-2">Room Type</h4>
                                   <div className="flex flex-wrap gap-2">
                                       {roomTypeOptions.map(option => (
                                           <OptionButton
@@ -2381,7 +2383,7 @@ const ImageEditor: React.FC = () => {
                                   </div>
                               </div>
                               <div>
-                                  <h4 className="text-sm font-semibold text-gray-300 mb-2">สไตล์การตกแต่ง</h4>
+                                  <h4 className="text-sm font-semibold text-gray-300 mb-2">Interior Style</h4>
                                   <div className="grid grid-cols-2 gap-3">
                                       {interiorStyleOptions.map(option => (
                                           <PreviewCard
@@ -2395,11 +2397,11 @@ const ImageEditor: React.FC = () => {
                                           />
                                       ))}
                                   </div>
-                                  {selectedInteriorStyle && INTERIOR_STYLE_PROMPTS[selectedInteriorStyle] && (
+                                  {selectedInteriorStyle && INTERIOR_STYLE_PROMPTS[selectedInteriorStyle as keyof typeof INTERIOR_STYLE_PROMPTS] && (
                                     <div className="mt-4 pt-4 border-t border-gray-700">
-                                      <h4 className="font-semibold text-gray-200 mb-1">คำอธิบายสไตล์ "{selectedInteriorStyle}":</h4>
+                                      <h4 className="font-semibold text-gray-200 mb-1">"{selectedInteriorStyle}" Style Description:</h4>
                                       <p className="text-sm text-gray-400 bg-gray-900/50 p-3 rounded-md">
-                                        {INTERIOR_STYLE_PROMPTS[selectedInteriorStyle]}
+                                        {INTERIOR_STYLE_PROMPTS[selectedInteriorStyle as keyof typeof INTERIOR_STYLE_PROMPTS]}
                                       </p>
                                     </div>
                                   )}
@@ -2407,20 +2409,20 @@ const ImageEditor: React.FC = () => {
                           </div>
                       </CollapsibleSection>
 
-                      <CollapsibleSection title="2. รายละเอียด (ไม่จำเป็น)" sectionKey="planDetails" isOpen={openSections.planDetails} onToggle={() => toggleSection('planDetails')} icon={<PencilIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
+                      <CollapsibleSection title="2. Details (Optional)" sectionKey="planDetails" isOpen={openSections.planDetails} onToggle={() => toggleSection('planDetails')} icon={<PencilIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
                           <div className="flex flex-col gap-4">
                               <div>
-                                  <h4 className="text-sm font-semibold text-gray-300 mb-2">การจัดวางเฟอร์นิเจอร์</h4>
+                                  <h4 className="text-sm font-semibold text-gray-300 mb-2">Furniture Layout</h4>
                                   <textarea
                                     rows={3}
                                     className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 transition placeholder-gray-500"
-                                    placeholder="อธิบายตำแหน่งเฟอร์นิเจอร์ เช่น: วางเตียงชิดผนังซ้าย, ตู้เสื้อผ้าอยู่ผนังขวา..."
+                                    placeholder="Describe furniture placement, e.g., place bed against the left wall, wardrobe on the right wall..."
                                     value={furniturePrompt}
                                     onChange={(e) => setFurniturePrompt(e.target.value)}
                                   />
                               </div>
                               <div>
-                                <h4 className="text-sm font-semibold text-gray-300 mb-2">แสงและบรรยากาศ</h4>
+                                <h4 className="text-sm font-semibold text-gray-300 mb-2">Lighting & Atmosphere</h4>
                                   <div className="flex flex-wrap gap-2">
                                       {planLightingOptions.map(option => (
                                           <OptionButton
@@ -2433,7 +2435,7 @@ const ImageEditor: React.FC = () => {
                                   </div>
                               </div>
                               <div>
-                                <h4 className="text-sm font-semibold text-gray-300 mb-2">วัสดุ</h4>
+                                <h4 className="text-sm font-semibold text-gray-300 mb-2">Materials</h4>
                                   <div className="flex flex-wrap gap-2">
                                       {planMaterialsOptions.map(option => (
                                           <OptionButton
@@ -2449,7 +2451,7 @@ const ImageEditor: React.FC = () => {
                       </CollapsibleSection>
                       
                       <div className="flex flex-col gap-1 p-1 bg-gray-900/50 rounded-lg">
-                        <CollapsibleSection title="3. เลือกมุมมอง" sectionKey="planView" isOpen={openSections.planView} onToggle={() => toggleSection('planView')} icon={<CameraIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
+                        <CollapsibleSection title="3. Select View" sectionKey="planView" isOpen={openSections.planView} onToggle={() => toggleSection('planView')} icon={<CameraIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
                             <div className="flex flex-wrap gap-2">
                                 {planViewOptions.map(option => (
                                     <OptionButton
@@ -2477,7 +2479,7 @@ const ImageEditor: React.FC = () => {
                           }`}
                         >
                           <SquareDashedIcon className="w-6 h-6"/>
-                          <span>{editingMode === 'object' ? 'เสร็จสิ้นการเลือกพื้นที่' : 'เลือกพื้นที่ที่จะเรนเดอร์'}</span>
+                          <span>{editingMode === 'object' ? 'Finish Area Selection' : 'Select Area to Render'}</span>
                       </button>
                       </div>
                     </>
@@ -2487,7 +2489,7 @@ const ImageEditor: React.FC = () => {
                   {/* --- Exterior Scene Controls --- */}
                   {activeImage && sceneType === 'exterior' && editingMode === 'default' && (
                     <>
-                      <CollapsibleSection title="พรีเซท" sectionKey="quickActions" isOpen={openSections.quickActions} onToggle={() => toggleSection('quickActions')} icon={<StarIcon className="w-5 h-5" />}>
+                      <CollapsibleSection title="Presets" sectionKey="quickActions" isOpen={openSections.quickActions} onToggle={() => toggleSection('quickActions')} icon={<StarIcon className="w-5 h-5" />}>
                          <div className="grid grid-cols-2 gap-3">
                             {quickActions.map(({ id, label, description }) => (
                                <PreviewCard
@@ -2504,9 +2506,9 @@ const ImageEditor: React.FC = () => {
 
                       <LightingAndAtmosphereControls sceneType={sceneType} />
                       
-                      <CollapsibleSection title="ปรับแต่งด้วยตนเอง" sectionKey="manualAdjustments" isOpen={openSections.manualAdjustments} onToggle={() => toggleSection('manualAdjustments')} icon={<AdjustmentsIcon className="w-5 h-5" />}>
+                      <CollapsibleSection title="Manual Adjustments" sectionKey="manualAdjustments" isOpen={openSections.manualAdjustments} onToggle={() => toggleSection('manualAdjustments')} icon={<AdjustmentsIcon className="w-5 h-5" />}>
                           <div className="flex flex-col gap-4 p-2 bg-gray-900/30 rounded-lg">
-                               <CollapsibleSection title="สไตล์สถาปัตยกรรม" sectionKey="archStyle" isOpen={openSections.archStyle} onToggle={() => toggleSection('archStyle')} icon={<TextureIcon className="w-5 h-5" />}>
+                               <CollapsibleSection title="Architectural Style" sectionKey="archStyle" isOpen={openSections.archStyle} onToggle={() => toggleSection('archStyle')} icon={<TextureIcon className="w-5 h-5" />}>
                                   <div className="flex flex-col gap-3">
                                       <div className="grid grid-cols-2 gap-3">
                                           {architecturalStyleOptions.map(option => (
@@ -2521,17 +2523,17 @@ const ImageEditor: React.FC = () => {
                                               />
                                           ))}
                                       </div>
-                                      {selectedArchStyle && ARCHITECTURAL_STYLE_PROMPTS[selectedArchStyle] && (
+                                      {selectedArchStyle && ARCHITECTURAL_STYLE_PROMPTS[selectedArchStyle as keyof typeof ARCHITECTURAL_STYLE_PROMPTS] && (
                                         <div className="mt-4 pt-4 border-t border-gray-700">
-                                          <h4 className="font-semibold text-gray-200 mb-1">คำอธิบายสไตล์ "{selectedArchStyle}":</h4>
+                                          <h4 className="font-semibold text-gray-200 mb-1">"{selectedArchStyle}" Style Description:</h4>
                                           <p className="text-sm text-gray-400 bg-gray-900/50 p-3 rounded-md">
-                                            {ARCHITECTURAL_STYLE_PROMPTS[selectedArchStyle]}
+                                            {ARCHITECTURAL_STYLE_PROMPTS[selectedArchStyle as keyof typeof ARCHITECTURAL_STYLE_PROMPTS]}
                                           </p>
                                         </div>
                                       )}
                                   </div>
                               </CollapsibleSection>
-                              <CollapsibleSection title="สไตล์สวน" sectionKey="gardenStyle" isOpen={openSections.gardenStyle} onToggle={() => toggleSection('gardenStyle')} icon={<FlowerIcon className="w-5 h-5" />}>
+                              <CollapsibleSection title="Garden Style" sectionKey="gardenStyle" isOpen={openSections.gardenStyle} onToggle={() => toggleSection('gardenStyle')} icon={<FlowerIcon className="w-5 h-5" />}>
                                   <div className="grid grid-cols-2 gap-3">
                                       {gardenStyleOptions.map(option => (
                                          <PreviewCard
@@ -2547,11 +2549,11 @@ const ImageEditor: React.FC = () => {
                                   </div>
                                    {selectedGardenStyle && (
                                     <div className="mt-4 pt-4 border-t border-gray-700 space-y-4">
-                                      {GARDEN_STYLE_PROMPTS[selectedGardenStyle] && (
+                                      {GARDEN_STYLE_PROMPTS[selectedGardenStyle as keyof typeof GARDEN_STYLE_PROMPTS] && (
                                         <div>
-                                            <h4 className="font-semibold text-gray-200 mb-1">คำอธิบายสไตล์ "{selectedGardenStyle}":</h4>
+                                            <h4 className="font-semibold text-gray-200 mb-1">"{selectedGardenStyle}" Style Description:</h4>
                                             <p className="text-sm text-gray-400 bg-gray-900/50 p-3 rounded-md">
-                                                {GARDEN_STYLE_PROMPTS[selectedGardenStyle]}
+                                                {GARDEN_STYLE_PROMPTS[selectedGardenStyle as keyof typeof GARDEN_STYLE_PROMPTS]}
                                             </p>
                                         </div>
                                       )}
@@ -2571,25 +2573,25 @@ const ImageEditor: React.FC = () => {
                                     </div>
                                   )}
                               </CollapsibleSection>
-                               <CollapsibleSection title="การปรับแต่งขั้นสูง" sectionKey="advancedAdjustments" isOpen={openSections.advancedAdjustments} onToggle={() => toggleSection('advancedAdjustments')} icon={<CogIcon className="w-5 h-5" />}>
+                               <CollapsibleSection title="Advanced Color" sectionKey="advancedAdjustments" isOpen={openSections.advancedAdjustments} onToggle={() => toggleSection('advancedAdjustments')} icon={<CogIcon className="w-5 h-5" />}>
                                    <div className="flex flex-col gap-4">
                                       <div>
-                                         <h4 className="text-sm font-semibold text-gray-300 mb-2">ปรับสี</h4>
+                                         <h4 className="text-sm font-semibold text-gray-300 mb-2">Color Adjustments</h4>
                                           <div className="flex flex-col gap-3">
                                               <div>
-                                                  <label htmlFor="brightness" className="block text-sm font-medium text-gray-400">ความสว่าง ({brightness - 100})</label>
+                                                  <label htmlFor="brightness" className="block text-sm font-medium text-gray-400">Brightness ({brightness - 100})</label>
                                                   <input id="brightness" type="range" min="50" max="150" value={brightness} onChange={e => setBrightness(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600" />
                                               </div>
                                               <div>
-                                                  <label htmlFor="contrast" className="block text-sm font-medium text-gray-400">คอนทราสต์ ({contrast - 100})</label>
+                                                  <label htmlFor="contrast" className="block text-sm font-medium text-gray-400">Contrast ({contrast - 100})</label>
                                                   <input id="contrast" type="range" min="50" max="150" value={contrast} onChange={e => setContrast(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600" />
                                               </div>
                                               <div>
-                                                  <label htmlFor="saturation" className="block text-sm font-medium text-gray-400">ความอิ่มตัวของสี ({saturation - 100})</label>
+                                                  <label htmlFor="saturation" className="block text-sm font-medium text-gray-400">Saturation ({saturation - 100})</label>
                                                   <input id="saturation" type="range" min="50" max="150" value={saturation} onChange={e => setSaturation(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600" />
                                               </div>
                                               <div>
-                                                  <label htmlFor="sharpness" className="block text-sm font-medium text-gray-400">ความคมชัด ({sharpness - 100})</label>
+                                                  <label htmlFor="sharpness" className="block text-sm font-medium text-gray-400">Sharpness ({sharpness - 100})</label>
                                                   <input id="sharpness" type="range" min="50" max="150" value={sharpness} onChange={e => setSharpness(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600" />
                                               </div>
                                           </div>
@@ -2600,7 +2602,7 @@ const ImageEditor: React.FC = () => {
                       </CollapsibleSection>
                       <CommonEnvironmentControls />
                       <CollapsibleSection
-                        title="มุมกล้อง"
+                        title="Camera Angle"
                         sectionKey="cameraAngle"
                         isOpen={openSections.cameraAngle}
                         onToggle={() => toggleSection('cameraAngle')}
@@ -2614,10 +2616,10 @@ const ImageEditor: React.FC = () => {
                             }}
                             disabled={isSuggestingAngles || isLoading || !selectedImageUrl}
                             className="flex items-center gap-1.5 px-2 py-1 text-xs font-semibold rounded-md transition-colors bg-gray-600 hover:bg-gray-500 text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="รับคำแนะนำมุมกล้องจาก AI"
+                            title="Get AI camera angle suggestions"
                           >
                             <LightbulbIcon className="w-4 h-4" />
-                            <span>{isSuggestingAngles ? 'กำลังแนะนำ...' : 'แนะนำ'}</span>
+                            <span>{isSuggestingAngles ? 'Suggesting...' : 'Suggest'}</span>
                           </button>
                         }
                       >
@@ -2633,7 +2635,7 @@ const ImageEditor: React.FC = () => {
                           </div>
                           {suggestedAngles.length > 0 && (
                             <div className="mt-4 pt-4 border-t border-gray-700/50">
-                              <h4 className="text-sm font-semibold text-gray-300 mb-2">มุมกล้องที่แนะนำ:</h4>
+                              <h4 className="text-sm font-semibold text-gray-300 mb-2">Suggested Angles:</h4>
                               <div className="flex flex-wrap gap-2">
                                 {suggestedAngles.map((angle, index) => (
                                   <OptionButton
@@ -2653,7 +2655,7 @@ const ImageEditor: React.FC = () => {
                   {/* --- Interior Scene Controls --- */}
                   {activeImage && sceneType === 'interior' && editingMode === 'default' && (
                       <>
-                        <CollapsibleSection title="พรีเซท" sectionKey="interiorQuickActions" isOpen={openSections.interiorQuickActions} onToggle={() => toggleSection('interiorQuickActions')} icon={<StarIcon className="w-5 h-5" />}>
+                        <CollapsibleSection title="Presets" sectionKey="interiorQuickActions" isOpen={openSections.interiorQuickActions} onToggle={() => toggleSection('interiorQuickActions')} icon={<StarIcon className="w-5 h-5" />}>
                            <div className="grid grid-cols-2 gap-3">
                               {interiorQuickActions.map(({ id, label, description }) => (
                                 <PreviewCard
@@ -2670,12 +2672,12 @@ const ImageEditor: React.FC = () => {
 
                         <LightingAndAtmosphereControls sceneType={sceneType} />
                         
-                         <CollapsibleSection title="ปรับแต่งด้วยตนเอง" sectionKey="manualAdjustments" isOpen={openSections.manualAdjustments} onToggle={() => toggleSection('manualAdjustments')} icon={<AdjustmentsIcon className="w-5 h-5" />}>
+                         <CollapsibleSection title="Manual Adjustments" sectionKey="manualAdjustments" isOpen={openSections.manualAdjustments} onToggle={() => toggleSection('manualAdjustments')} icon={<AdjustmentsIcon className="w-5 h-5" />}>
                           <div className="flex flex-col gap-4 p-2 bg-gray-900/30 rounded-lg">
-                            <CollapsibleSection title="ประเภทห้องและสไตล์" sectionKey="interiorStyle" isOpen={openSections.interiorStyle} onToggle={() => toggleSection('interiorStyle')} icon={<HomeIcon className="w-5 h-5" />}>
+                            <CollapsibleSection title="Room Type & Style" sectionKey="interiorStyle" isOpen={openSections.interiorStyle} onToggle={() => toggleSection('interiorStyle')} icon={<HomeIcon className="w-5 h-5" />}>
                                 <div className="flex flex-col gap-4">
                                    <div>
-                                      <h4 className="text-sm font-semibold text-gray-300 mb-2">ประเภทห้อง</h4>
+                                      <h4 className="text-sm font-semibold text-gray-300 mb-2">Room Type</h4>
                                       <div className="flex flex-wrap gap-2">
                                           {roomTypeOptions.map(option => (
                                               <OptionButton
@@ -2688,7 +2690,7 @@ const ImageEditor: React.FC = () => {
                                       </div>
                                    </div>
                                    <div className="pt-4 border-t border-gray-700">
-                                      <h4 className="text-sm font-semibold text-gray-300 mb-2">สไตล์การตกแต่ง</h4>
+                                      <h4 className="text-sm font-semibold text-gray-300 mb-2">Interior Style</h4>
                                       <div className="grid grid-cols-2 gap-3">
                                           {interiorStyleOptions.map(option => (
                                               <PreviewCard
@@ -2702,11 +2704,11 @@ const ImageEditor: React.FC = () => {
                                               />
                                           ))}
                                       </div>
-                                      {selectedInteriorStyle && INTERIOR_STYLE_PROMPTS[selectedInteriorStyle] && (
+                                      {selectedInteriorStyle && INTERIOR_STYLE_PROMPTS[selectedInteriorStyle as keyof typeof INTERIOR_STYLE_PROMPTS] && (
                                         <div className="mt-4 pt-4 border-t border-gray-700">
-                                          <h4 className="font-semibold text-gray-200 mb-1">คำอธิบายสไตล์ "{selectedInteriorStyle}":</h4>
+                                          <h4 className="font-semibold text-gray-200 mb-1">"{selectedInteriorStyle}" Style Description:</h4>
                                           <p className="text-sm text-gray-400 bg-gray-900/50 p-3 rounded-md">
-                                            {INTERIOR_STYLE_PROMPTS[selectedInteriorStyle]}
+                                            {INTERIOR_STYLE_PROMPTS[selectedInteriorStyle as keyof typeof INTERIOR_STYLE_PROMPTS]}
                                           </p>
                                         </div>
                                       )}
@@ -2714,12 +2716,12 @@ const ImageEditor: React.FC = () => {
                                 </div>
                             </CollapsibleSection>
 
-                            <CollapsibleSection title="บรรยากาศและแสง" sectionKey="specialLighting" isOpen={openSections.specialLighting} onToggle={() => toggleSection('specialLighting')} icon={<LightbulbIcon className="w-5 h-5" />}>
+                            <CollapsibleSection title="Advanced Lighting" sectionKey="specialLighting" isOpen={openSections.specialLighting} onToggle={() => toggleSection('specialLighting')} icon={<LightbulbIcon className="w-5 h-5" />}>
                                 <div className="flex flex-col gap-6">
                                     {/* Cove Lighting */}
                                     <div className="p-3 bg-gray-900/50 rounded-lg">
                                         <label className="flex items-center cursor-pointer justify-between">
-                                            <span className="text-sm font-medium text-gray-300">ไฟหลืบ LED (Cove Light)</span>
+                                            <span className="text-sm font-medium text-gray-300">LED Cove Light</span>
                                             <div className="relative">
                                                 <input type="checkbox" checked={isCoveLightActive} onChange={(e) => setIsCoveLightActive(e.target.checked)} className="sr-only peer" />
                                                 <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
@@ -2727,11 +2729,11 @@ const ImageEditor: React.FC = () => {
                                         </label>
                                         <div className={`mt-4 space-y-4 transition-all duration-300 ease-in-out overflow-hidden ${isCoveLightActive ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'}`}>
                                             <div>
-                                                <label className="block text-xs font-medium text-gray-400 mb-1">ความสว่าง</label>
+                                                <label className="block text-xs font-medium text-gray-400 mb-1">Brightness</label>
                                                 <input type="range" min="1" max="100" value={coveLightBrightness} onChange={(e) => setCoveLightBrightness(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600" />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-medium text-gray-400 mb-1">สีของแสง</label>
+                                                <label className="block text-xs font-medium text-gray-400 mb-1">Light Color</label>
                                                 <input type="color" value={coveLightColor} onChange={(e) => setCoveLightColor(e.target.value)} className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md cursor-pointer" />
                                             </div>
                                         </div>
@@ -2740,7 +2742,7 @@ const ImageEditor: React.FC = () => {
                                     {/* Spotlight */}
                                     <div className="p-3 bg-gray-900/50 rounded-lg">
                                         <label className="flex items-center cursor-pointer justify-between">
-                                            <span className="text-sm font-medium text-gray-300">ไฟสปอตไลท์ (Halogen)</span>
+                                            <span className="text-sm font-medium text-gray-300">Halogen Spotlight</span>
                                             <div className="relative">
                                                 <input type="checkbox" checked={isSpotlightActive} onChange={(e) => setIsSpotlightActive(e.target.checked)} className="sr-only peer" />
                                                 <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
@@ -2748,11 +2750,11 @@ const ImageEditor: React.FC = () => {
                                         </label>
                                         <div className={`mt-4 space-y-4 transition-all duration-300 ease-in-out overflow-hidden ${isSpotlightActive ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'}`}>
                                             <div>
-                                                <label className="block text-xs font-medium text-gray-400 mb-1">ความสว่าง</label>
+                                                <label className="block text-xs font-medium text-gray-400 mb-1">Brightness</label>
                                                 <input type="range" min="1" max="100" value={spotlightBrightness} onChange={(e) => setSpotlightBrightness(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600" />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-medium text-gray-400 mb-1">สีของแสง</label>
+                                                <label className="block text-xs font-medium text-gray-400 mb-1">Light Color</label>
                                                 <input type="color" value={spotlightColor} onChange={(e) => setSpotlightColor(e.target.value)} className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md cursor-pointer" />
                                             </div>
                                         </div>
@@ -2761,7 +2763,7 @@ const ImageEditor: React.FC = () => {
                             </CollapsibleSection>
                           </div>
                         </CollapsibleSection>
-                        <CollapsibleSection title="ของตกแต่ง" sectionKey="decorativeItems" isOpen={openSections.decorativeItems} onToggle={() => toggleSection('decorativeItems')} icon={<FlowerIcon className="w-5 h-5" />}>
+                        <CollapsibleSection title="Decorative Items" sectionKey="decorativeItems" isOpen={openSections.decorativeItems} onToggle={() => toggleSection('decorativeItems')} icon={<FlowerIcon className="w-5 h-5" />}>
                             <div className="flex flex-wrap gap-2">
                                 {decorativeItemOptions.map(item => (
                                     <OptionButton
@@ -2782,7 +2784,7 @@ const ImageEditor: React.FC = () => {
                   { activeImage && sceneType && (
                      <>
                       <CollapsibleSection
-                          title={`สัดส่วนภาพ${generationAspectRatio !== 'ต้นฉบับ' ? `: ${generationAspectRatio.split(' ')[0]}` : ''}`}
+                          title={`Aspect Ratio${generationAspectRatio !== 'Original' ? `: ${generationAspectRatio.split(' ')[0]}` : ''}`}
                           sectionKey="output"
                           isOpen={openSections.output}
                           onToggle={() => toggleSection('output')}
@@ -2801,12 +2803,12 @@ const ImageEditor: React.FC = () => {
                                   />
                               ))}
                           </div>
-                          {editingMode === 'object' && <p className="text-xs text-gray-400 mt-3 text-center">การเปลี่ยนสัดส่วนภาพถูกปิดใช้งานในโหมดวาดเพื่อแก้ไข</p>}
+                          {editingMode === 'object' && <p className="text-xs text-gray-400 mt-3 text-center">Aspect ratio changes are disabled in Inpainting mode.</p>}
                       </CollapsibleSection>
-                     <CollapsibleSection title="การตั้งค่าขั้นสูง" sectionKey="advanced" isOpen={openSections.advanced} onToggle={() => toggleSection('advanced')} icon={<CogIcon className="w-5 h-5" />}>
+                     <CollapsibleSection title="Advanced Settings" sectionKey="advanced" isOpen={openSections.advanced} onToggle={() => toggleSection('advanced')} icon={<CogIcon className="w-5 h-5" />}>
                         <div className="flex flex-col gap-4 text-sm">
                            <div>
-                             <label className="block text-gray-400">อุณหภูมิ: <span className="font-mono text-gray-200">{advancedSettings.temperature.toFixed(2)}</span></label>
+                             <label className="block text-gray-400">Temperature: <span className="font-mono text-gray-200">{advancedSettings.temperature.toFixed(2)}</span></label>
                              <input type="range" min="0" max="1" step="0.01" value={advancedSettings.temperature} onChange={(e) => handleAdvancedSettingsChange('temperature', parseFloat(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600" />
                            </div>
                            <div>
@@ -2822,9 +2824,9 @@ const ImageEditor: React.FC = () => {
                                 <label className="block text-gray-400">Seed: <span className="font-mono text-gray-200">{advancedSettings.seed}</span></label>
                                 <input type="number" value={advancedSettings.seed} onChange={(e) => handleAdvancedSettingsChange('seed', parseInt(e.target.value))} className="w-full bg-gray-700 border border-gray-600 rounded-md p-2 text-white focus:ring-1 focus:ring-red-500" />
                               </div>
-                              <button type="button" onClick={randomizeSeed} title="สุ่ม Seed" className="p-2.5 mt-5 bg-gray-700 rounded-md hover:bg-gray-600"><ShuffleIcon className="w-5 h-5" /></button>
+                              <button type="button" onClick={randomizeSeed} title="Randomize Seed" className="p-2.5 mt-5 bg-gray-700 rounded-md hover:bg-gray-600"><ShuffleIcon className="w-5 h-5" /></button>
                            </div>
-                           <button type="button" onClick={resetAdvancedSettings} className="text-sm text-red-400 hover:text-red-300 self-start mt-2">รีเซ็ตค่าเริ่มต้น</button>
+                           <button type="button" onClick={resetAdvancedSettings} className="text-sm text-red-400 hover:text-red-300 self-start mt-2">Reset to defaults</button>
                         </div>
                      </CollapsibleSection>
                      </>
@@ -2832,10 +2834,10 @@ const ImageEditor: React.FC = () => {
 
 
                   {activeImage && sceneType && editingMode === 'object' && (
-                    <CollapsibleSection title="เครื่องมือวาด" sectionKey="brushTool" isOpen={openSections.brushTool} onToggle={() => toggleSection('brushTool')} icon={<BrushIcon className="w-5 h-5" />}>
+                    <CollapsibleSection title="Brush Tool" sectionKey="brushTool" isOpen={openSections.brushTool} onToggle={() => toggleSection('brushTool')} icon={<BrushIcon className="w-5 h-5" />}>
                       <div className="flex flex-col gap-4">
                           <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-2">ขนาดแปรง</label>
+                            <label className="block text-sm font-medium text-gray-400 mb-2">Brush Size</label>
                             <input
                               type="range"
                               min="10"
@@ -2846,7 +2848,7 @@ const ImageEditor: React.FC = () => {
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-2">สีแปรง</label>
+                            <label className="block text-sm font-medium text-gray-400 mb-2">Brush Color</label>
                               <div className="flex justify-around items-center">
                                 {brushColors.map(({ name, value, css }) => (
                                   <button
@@ -2865,7 +2867,7 @@ const ImageEditor: React.FC = () => {
                             disabled={isMaskEmpty}
                             className="w-full px-4 py-2 mt-2 text-sm font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 disabled:bg-gray-600 disabled:opacity-50 transition-colors"
                           >
-                            ล้างส่วนที่วาดทั้งหมด
+                            Clear Mask
                           </button>
                       </div>
                     </CollapsibleSection>
@@ -2883,7 +2885,7 @@ const ImageEditor: React.FC = () => {
                           className="flex-grow w-full flex items-center justify-center gap-3 px-6 py-4 rounded-full text-lg font-bold text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105"
                         >
                           <SparklesIcon className="w-6 h-6" />
-                          <span>{sceneType === 'plan' ? 'สร้างภาพ 3D' : 'สร้างภาพ'}</span>
+                          <span>{sceneType === 'plan' ? 'Generate 3D' : 'Generate'}</span>
                         </button>
                         {sceneType !== 'plan' && (
                             <button
@@ -2891,7 +2893,7 @@ const ImageEditor: React.FC = () => {
                                 onClick={handleRandomQuickAction}
                                 disabled={isLoading || !activeImage}
                                 className="flex-shrink-0 p-4 rounded-full bg-gray-700 hover:bg-gray-600 text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                                title="สุ่มพรีเซท"
+                                title="Random Preset"
                             >
                                 <ShuffleIcon className="w-6 h-6" />
                             </button>
@@ -2906,7 +2908,7 @@ const ImageEditor: React.FC = () => {
                               className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-full text-base font-semibold text-gray-200 bg-gray-700/80 hover:bg-gray-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                               <CameraIcon className="w-5 h-5" />
-                              <span>สร้าง 4 มุมมอง 3D</span>
+                              <span>Generate 4 3D Views</span>
                           </button>
                       )}
 
@@ -2919,7 +2921,7 @@ const ImageEditor: React.FC = () => {
                                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-full text-base font-semibold text-gray-200 bg-gray-700/80 hover:bg-gray-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <SparklesIcon className="w-5 h-5" />
-                                <span>สร้าง 4 สไตล์</span>
+                                <span>Generate 4 Styles</span>
                             </button>
                             <button
                                 type="button"
@@ -2928,7 +2930,7 @@ const ImageEditor: React.FC = () => {
                                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-full text-base font-semibold text-gray-200 bg-gray-700/80 hover:bg-gray-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <CameraIcon className="w-5 h-5" />
-                                <span>สร้าง 4 มุมกล้อง</span>
+                                <span>Generate 4 Angles</span>
                             </button>
                         </div>
                       )}
@@ -2947,15 +2949,15 @@ const ImageEditor: React.FC = () => {
               ref={imageDisplayRef}
               label={
                 selectedImageUrl 
-                  ? (isPlanResultsView ? 'ผลลัพธ์ 3D' : 'พื้นที่ทำงาน (ผลลัพธ์)') 
-                  : (activeImage ? (sceneType === 'plan' ? 'แปลน 2D ต้นฉบับ' : 'ภาพต้นฉบับ') : 'พื้นที่ทำงาน')
+                  ? (isPlanResultsView ? '3D Result' : 'Workspace (Result)') 
+                  : (activeImage ? (sceneType === 'plan' ? 'Original 2D Plan' : 'Original Image') : 'Workspace')
               }
               imageUrl={editingMode === 'object' ? imageForMasking : imageForDisplay}
               originalImageUrl={
                 (editingMode !== 'object' && selectedImageUrl && activeImage) ? activeImage.dataUrl : null
               }
               isLoading={isLoading}
-              selectedFilter={editingMode === 'object' ? 'ไม่มี' : selectedFilter}
+              selectedFilter={editingMode === 'object' ? 'None' : selectedFilter}
               brightness={editingMode === 'object' ? 100 : brightness}
               contrast={editingMode === 'object' ? 100 : contrast}
               saturation={editingMode === 'object' ? 100 : saturation}
@@ -2987,17 +2989,17 @@ const ImageEditor: React.FC = () => {
                     <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
                         <h3 className="text-lg font-semibold text-gray-300">{getResultsTitle()}</h3>
                          <div className="flex gap-2 flex-wrap">
-                            <ActionButton onClick={handleUndo} disabled={!canUndo} title="ย้อนกลับ">
+                            <ActionButton onClick={handleUndo} disabled={!canUndo} title="Undo">
                               <UndoIcon className="w-4 h-4" />
-                              <span>ย้อนกลับ</span>
+                              <span>Undo</span>
                             </ActionButton>
-                            <ActionButton onClick={handleRedo} disabled={!canRedo} title="ทำซ้ำ">
+                            <ActionButton onClick={handleRedo} disabled={!canRedo} title="Redo">
                               <RedoIcon className="w-4 h-4" />
-                               <span>ทำซ้ำ</span>
+                               <span>Redo</span>
                             </ActionButton>
-                            <ActionButton onClick={handleResetEdits} disabled={!activeImage || activeImage.history.length === 0} title="รีเซ็ตการแก้ไขทั้งหมด" color="red">
+                            <ActionButton onClick={handleResetEdits} disabled={!activeImage || activeImage.history.length === 0} title="Reset all edits" color="red">
                                 <ResetEditsIcon className="w-4 h-4" />
-                                <span>รีเซ็ต</span>
+                                <span>Reset</span>
                             </ActionButton>
                          </div>
                     </div>

@@ -1,5 +1,5 @@
 {
   "name": "FAST AI Image Editor",
-  "description": "แอปพลิเคชันสำหรับผู้ใช้ในการแก้ไขรูปภาพโดยใช้คำสั่งข้อความ ขับเคลื่อนโดยโมเดล Gemini 2.5 Flash Image ผู้ใช้สามารถอธิบายการเปลี่ยนแปลง เช่น 'เพิ่มฟิลเตอร์ย้อนยุค' เพื่อสร้างรูปภาพเวอร์ชันใหม่",
+  "description": "An application for users to edit images using text commands, powered by the Gemini 2.5 Flash Image model. Users can describe changes, such as 'add a vintage filter,' to create a new version of the image.",
   "requestFramePermissions": []
 }

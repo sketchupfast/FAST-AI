@@ -31,26 +31,26 @@ export interface ImageDisplayHandle {
 }
 
 const loadingMessages = [
-    "กำลังเตรียม AI...",
-    "กำลังวิเคราะห์ภาพของคุณ...",
-    "กำลังปรึกษากับศิลปินดิจิทัล...",
-    "กำลังใช้ฟิลเตอร์สร้างสรรค์...",
-    "กำลังเรนเดอร์พิกเซลอย่างใส่ใจ...",
-    "กำลังเก็บรายละเอียดสุดท้าย...",
-    "ใกล้เสร็จแล้ว...",
+    "Preparing AI...",
+    "Analyzing your image...",
+    "Consulting with digital artists...",
+    "Applying creative filters...",
+    "Rendering pixels with care...",
+    "Adding finishing touches...",
+    "Almost there...",
 ];
 
 const getFilterStyle = (filterName?: string): string => {
   switch (filterName) {
-    case 'ขาว-ดำ': return 'grayscale(100%)';
-    case 'ซีเปีย': return 'sepia(100%)';
-    case 'กลับสี': return 'invert(100%)';
-    case 'สีเทา': return 'grayscale(80%)';
-    case 'วินเทจ': return 'sepia(60%) contrast(1.1) brightness(0.9)';
-    case 'โทนเย็น': return 'sepia(10%) hue-rotate(-10deg) saturate(1.2)';
-    case 'โทนอุ่น': return 'sepia(30%) hue-rotate(10deg) saturate(1.5) contrast(0.9)';
+    case 'Black & White': return 'grayscale(100%)';
+    case 'Sepia': return 'sepia(100%)';
+    case 'Invert': return 'invert(100%)';
+    case 'Grayscale': return 'grayscale(80%)';
+    case 'Vintage': return 'sepia(60%) contrast(1.1) brightness(0.9)';
+    case 'Cool Tone': return 'sepia(10%) hue-rotate(-10deg) saturate(1.2)';
+    case 'Warm Tone': return 'sepia(30%) hue-rotate(10deg) saturate(1.5) contrast(0.9)';
     case 'HDR': return 'contrast(120%) saturate(120%)';
-    case 'ไม่มี':
+    case 'None':
     default:
       return '';
   }
@@ -373,7 +373,7 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
                           <img 
                             ref={imageRef}
                             src={originalImageUrl} 
-                            alt="ต้นฉบับ" 
+                            alt="Original" 
                             className="w-full h-full object-contain"
                             style={imageStyles}
                             draggable={false}
@@ -430,13 +430,13 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
               
               {!isMaskingMode && (
                   <div className="absolute top-2 right-2 z-10 flex flex-col gap-2">
-                      <ZoomButton onClick={handleZoomIn} title="ซูมเข้า">
+                      <ZoomButton onClick={handleZoomIn} title="Zoom In">
                           <ZoomInIcon className="w-5 h-5" />
                       </ZoomButton>
-                      <ZoomButton onClick={handleZoomOut} title="ซูมออก">
+                      <ZoomButton onClick={handleZoomOut} title="Zoom Out">
                           <ZoomOutIcon className="w-5 h-5" />
                       </ZoomButton>
-                      <ZoomButton onClick={handleReset} title="รีเซ็ตมุมมอง">
+                      <ZoomButton onClick={handleReset} title="Reset View">
                           <ResetViewIcon className="w-5 h-5" />
                       </ZoomButton>
                   </div>
@@ -447,7 +447,7 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
             <div className="w-full h-full flex items-center justify-center text-center text-gray-500">
               <div>
                 <PhotoIcon className="w-16 h-16 mx-auto mb-2" />
-                <p>ภาพ{label.toLowerCase()}ของคุณจะแสดงที่นี่</p>
+                <p>Your {label.toLowerCase()} will appear here</p>
               </div>
             </div>
           )
