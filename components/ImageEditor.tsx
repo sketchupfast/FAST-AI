@@ -114,7 +114,7 @@ const interiorStyleOptions = [
 ];
 
 
-const backgrounds = ["Bangkok High-rise View", "Mountain View", "Bangkok Traffic View", "Farmland View", "Housing Estate View", "Chao Phraya River View", "Forest", "Public Park", "Beach", "Cityscape", "Outer Space"];
+const backgrounds = ["Bangkok High-rise View", "Mountain View", "Bangkok Traffic View", "Farmland View", "Housing Estate View", "Chao Phraya River View", "Forest", "Public Park", "Beach", "Cityscape", "Outer Space", "IMPACT Exhibition Hall"];
 const foregrounds = ["Foreground Road", "Foreground Large Tree", "Foreground River", "Top Corner Leaves", "Bottom Corner Bush"];
 const filters = ['None', 'Black & White', 'Sepia', 'Invert', 'Grayscale', 'Vintage', 'Cool Tone', 'Warm Tone', 'HDR'];
 
@@ -303,6 +303,7 @@ const BACKGROUND_PROMPTS: Record<string, string> = {
     "Farmland View": "with a lush green farmland and agricultural fields in the background",
     "Housing Estate View": "with a modern, landscaped housing estate project in the background",
     "Chao Phraya River View": "with a scenic view of the Chao Phraya River in Bangkok in the background",
+    "IMPACT Exhibition Hall": "with the background of a large, modern exhibition hall like IMPACT Muang Thong Thani during a trade show. The scene should feature high ceilings, professional lighting, various exhibition booths, and a bustling atmosphere with crowds of people."
 };
 
 const FOREGROUND_PROMPTS: Record<string, string> = {

@@ -204,6 +204,29 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
     setIsDragging(false);
   };
 
+  const handleWheel = (e: React.WheelEvent) => {
+    if (!imageUrl || !imageContainerRef.current || isMaskingMode) return;
+    e.preventDefault();
+
+    const rect = imageContainerRef.current.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    const zoomFactor = -e.deltaY * 0.001;
+    const newScale = Math.max(0.5, Math.min(scale + zoomFactor, 5));
+    
+    // Position of the mouse pointer relative to the image itself (before zoom)
+    const mousePointX = (mouseX - position.x) / scale;
+    const mousePointY = (mouseY - position.y) / scale;
+
+    // New position of the image to keep the mouse pointer at the same spot after zoom
+    const newPosX = mouseX - mousePointX * newScale;
+    const newPosY = mouseY - mousePointY * newScale;
+
+    setScale(newScale);
+    setPosition({ x: newPosX, y: newPosY });
+  };
+
   const handleReset = () => {
     setScale(1);
     setPosition({ x: 0, y: 0 });
@@ -354,6 +377,7 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUpOrLeave}
         onMouseLeave={handleMouseUpOrLeave}
+        onWheel={handleWheel}
         style={{ cursor: imageUrl && !isMaskingMode ? (isDragging ? 'grabbing' : (isSliderDragging ? 'ew-resize' : 'grab')) : 'default' }}
       >
         {isLoading && (
