@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback, useImperativeHandle, forwardRef } from 'react';
 import ProgressBar from './ProgressBar';
 import { PhotoIcon } from './icons/PhotoIcon';
@@ -368,7 +367,7 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
   };
 
   return (
-    <div className="bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-700 flex flex-col h-full">
+    <div className={`bg-gray-800 p-4 rounded-xl shadow-lg border flex flex-col h-full transition-colors duration-300 ${isMaskingMode ? 'border-red-500' : 'border-gray-700'}`}>
       {!hideLabel && <h2 className="text-lg font-semibold text-center mb-4 text-gray-300">{label}</h2>}
       <div 
         ref={imageContainerRef}
@@ -378,7 +377,10 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
         onMouseUp={handleMouseUpOrLeave}
         onMouseLeave={handleMouseUpOrLeave}
         onWheel={handleWheel}
-        style={{ cursor: imageUrl && !isMaskingMode ? (isDragging ? 'grabbing' : (isSliderDragging ? 'ew-resize' : 'grab')) : 'default' }}
+        style={{
+          cursor: imageUrl && !isMaskingMode ? (isDragging ? 'grabbing' : (isSliderDragging ? 'ew-resize' : 'grab')) : 'default',
+          overscrollBehavior: 'contain',
+        }}
       >
         {isLoading && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 z-30 p-8 text-center">

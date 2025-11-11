@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { editImage, analyzeImage, suggestCameraAngles, type AnalysisResult } from '../services/geminiService';
 import ImageDisplay, { type ImageDisplayHandle } from './ImageDisplay';
@@ -114,12 +115,12 @@ const interiorStyleOptions = [
 ];
 
 
-const backgrounds = ["Bangkok High-rise View", "Mountain View", "Bangkok Traffic View", "Farmland View", "Housing Estate View", "Chao Phraya River View", "Forest", "Public Park", "Beach", "Cityscape", "Outer Space", "IMPACT Exhibition Hall"];
+const backgrounds = ["Original Background", "Bangkok High-rise View", "Mountain View", "Bangkok Traffic View", "Farmland View", "Housing Estate View", "Chao Phraya River View", "Forest", "Public Park", "Beach", "Cityscape", "Outer Space", "IMPACT Exhibition Hall"];
 const foregrounds = ["Foreground Road", "Foreground Large Tree", "Foreground River", "Top Corner Leaves", "Bottom Corner Bush"];
 const filters = ['None', 'Black & White', 'Sepia', 'Invert', 'Grayscale', 'Vintage', 'Cool Tone', 'Warm Tone', 'HDR'];
 
 // --- New Time/Weather Controls ---
-const timeOfDayOptions = ['Dawn', 'Daytime', 'Afternoon', 'Dusk', 'Night'];
+const timeOfDayOptions = ['Dawn', 'Daytime', 'Afternoon', 'Sunset', 'Night'];
 const weatherOptions = ['Sunny', 'Overcast', 'Rainy (Wet Ground)', 'Misty'];
 const interiorLightingOptions = ['Natural Daylight', 'Warm Evening Light', 'Studio Light', 'Cinematic Light'];
 
@@ -271,14 +272,14 @@ const INTERIOR_STYLE_PROMPTS: Record<string, string> = {
 };
 
 const FILTER_PROMPTS: Record<string, string> = {
-    'Black & White': 'apply a Black and White filter.',
-    'Sepia': 'apply a Sepia filter.',
-    'Invert': 'apply an Inverted Color filter.',
-    'Grayscale': 'apply a Grayscale filter.',
-    'Vintage': 'apply a Vintage filter.',
-    'Cool Tone': 'apply a Cool Tone filter.',
-    'Warm Tone': 'apply a Warm Tone filter.',
-    'HDR': 'apply a High Dynamic Range (HDR) filter, enhancing details in both shadows and highlights, increasing local contrast, and making the colors more vibrant and saturated to create a dramatic and detailed look.',
+    'Black & White': 'make the image black and white.',
+    'Sepia': 'give the image a sepia tone.',
+    'Invert': 'invert the colors of the image.',
+    'Grayscale': 'make the image grayscale.',
+    'Vintage': 'give the image a vintage, faded look.',
+    'Cool Tone': 'adjust the color balance to give the image a cool, blueish tone.',
+    'Warm Tone': 'adjust the color balance to give the image a warm, yellowish tone.',
+    'HDR': 'regenerate the image with a High Dynamic Range (HDR) effect, enhancing details in both shadows and highlights, increasing local contrast, and making the colors more vibrant and saturated to create a dramatic and detailed look.',
 };
 
 const STYLE_PROMPTS: Record<string, string> = {
@@ -317,7 +318,7 @@ const TIME_OF_DAY_PROMPTS: Record<string, string> = {
     'Dawn': 'Change the time of day to early morning, with soft, warm, golden sunrise light and long gentle shadows.',
     'Daytime': 'Change the time of day to midday, with bright, clear, natural daylight.',
     'Afternoon': 'Change the time of day to afternoon, with warm, slightly angled sunlight.',
-    'Dusk': 'Change the atmosphere to dusk or sunset, with dramatic, colorful lighting and a mix of natural and artificial light.',
+    'Sunset': 'Change the time of day to sunset, with a dramatic sky filled with orange, pink, and purple hues. The lighting should be warm and golden, casting long shadows. If there are buildings, their lights should be starting to turn on.',
     'Night': 'Change the scene to nighttime, illuminated by moonlight and artificial light sources.'
 };
 
@@ -733,32 +734,29 @@ const ImageEditor: React.FC = () => {
   // UI state
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     prompt: true,
-    quickActions: true,
+    quickActions: false,
     addLight: false,
     colorAdjust: false,
     filter: false,
-    gardenStyle: true,
-    archStyle: true,
-    cameraAngle: true,
-    interiorStyle: true,
-    interiorQuickActions: true,
+    gardenStyle: false,
+    archStyle: false,
+    cameraAngle: false,
+    interiorStyle: false,
+    interiorQuickActions: false,
     artStyle: false,
     background: false,
-    foreground: true,
-    output: true,
+    foreground: false,
+    output: false,
     advanced: false,
-    // New sections
-    lighting: true, 
-    vegetation: true,
-    materialExamples: true,
-    specialLighting: true,
-    // Plan to 3D sections
-    planConfig: true,
-    planDetails: true,
-    planView: true,
-    brushTool: true,
-    roomType: true,
-    // New parent sections
+    lighting: false,
+    vegetation: false,
+    materialExamples: false,
+    specialLighting: false,
+    planConfig: false,
+    planDetails: false,
+    planView: false,
+    brushTool: false,
+    roomType: false,
     manualAdjustments: false,
     advancedAdjustments: false,
   });
@@ -792,6 +790,14 @@ const ImageEditor: React.FC = () => {
 
   const toggleSection = (sectionName: string) => {
     setOpenSections(prev => ({ ...prev, [sectionName]: !prev[sectionName] }));
+  };
+  
+  const changeEditingMode = (mode: EditingMode) => {
+    setEditingMode(mode);
+    if (mode === 'object') {
+      // Make sure the brush tool is visible when switching to inpainting
+      setOpenSections(prev => ({ ...prev, brushTool: true }));
+    }
   };
 
   const promptHistoryRef = useRef<HTMLDivElement>(null);
@@ -962,22 +968,33 @@ const ImageEditor: React.FC = () => {
   
   const handleSceneTypeSelect = (type: SceneType) => {
     setSceneType(type);
+    // Reset all sections to closed, then open the primary ones for the selected mode.
+    const allClosed = Object.keys(openSections).reduce((acc, key) => {
+        acc[key] = false;
+        return acc;
+    }, {} as Record<string, boolean>);
+
     if (type === 'interior') {
         setEditingMode('default');
-        setOpenSections(prev => ({ ...prev, interiorStyle: true, quickActions: true, gardenStyle: false, archStyle: false, cameraAngle: false, planConfig: false, planDetails: false, planView: false, lighting: true, background: true, foreground: false, decorativeItems: true }));
+        setOpenSections({ 
+            ...allClosed, 
+            prompt: true,
+            interiorQuickActions: true,
+        });
     } else if (type === 'plan') {
-        setEditingMode('default'); // Mode is not relevant, but set to something
-        setPrompt(''); // Clear text prompt for plan mode
-        setOpenSections(prev => ({
-            ...Object.keys(prev).reduce((acc, key) => ({...acc, [key]: false}), {}), // Close all
+        setEditingMode('default');
+        setPrompt('');
+        setOpenSections({
+            ...allClosed,
             planConfig: true,
-            planDetails: true,
-            planView: true,
-            brushTool: true,
-        }));
+        });
     } else { // exterior
         setEditingMode('default');
-        setOpenSections(prev => ({ ...prev, quickActions: true, gardenStyle: true, archStyle: true, cameraAngle: true, interiorStyle: false, planConfig: false, planDetails: false, planView: false, background: true, foreground: true, lighting: true, decorativeItems: false }));
+        setOpenSections({
+            ...allClosed,
+            prompt: true,
+            quickActions: true,
+        });
     }
   };
 
@@ -1014,14 +1031,17 @@ const ImageEditor: React.FC = () => {
     if (!isDeselecting) {
       setSelectedCameraAngle(''); // Clear camera angle when selecting a quick action
     }
+    setOpenSections(prev => ({...prev, quickActions: false, interiorQuickActions: false }));
   };
 
   const handleGardenStyleChange = (style: string) => {
       setSelectedGardenStyle(prev => prev === style ? '' : style);
+      setOpenSections(prev => ({ ...prev, gardenStyle: false }));
   }
   
   const handleArchStyleChange = (style: string) => {
       setSelectedArchStyle(prev => prev === style ? '' : style);
+      setOpenSections(prev => ({ ...prev, archStyle: false }));
   }
 
   const handleRandomArchStyle = () => {
@@ -1032,7 +1052,28 @@ const ImageEditor: React.FC = () => {
 
   const handleInteriorStyleChange = (style: string) => {
       setSelectedInteriorStyle(prev => prev === style ? '' : style);
+      const sectionToClose = sceneType === 'plan' ? 'planConfig' : 'interiorStyle';
+      setOpenSections(prev => ({ ...prev, [sectionToClose]: false }));
   }
+
+  const handleRoomTypeChange = (room: string) => {
+    setSelectedRoomType(prev => (prev === room ? '' : room));
+    const sectionToClose = sceneType === 'plan' ? 'planConfig' : 'interiorStyle';
+    setOpenSections(prev => ({ ...prev, [sectionToClose]: false }));
+  };
+
+  const handleLightingSelection = (
+    setter: React.Dispatch<React.SetStateAction<string>>,
+    value: string
+  ) => {
+      setter(prev => (prev === value ? '' : value));
+      setOpenSections(prev => ({ ...prev, lighting: false }));
+  };
+
+  const handleAspectRatioChange = (value: string) => {
+    setGenerationAspectRatio(value);
+    setOpenSections(prev => ({ ...prev, output: false }));
+  };
   
   const handleFilterChange = (filter: string) => {
       setSelectedFilter(prev => prev === filter ? 'None' : filter);
@@ -1043,9 +1084,26 @@ const ImageEditor: React.FC = () => {
   };
 
   const handleBackgroundToggle = (bg: string) => {
-      setSelectedBackgrounds(prev =>
-          prev.includes(bg) ? prev.filter(item => item !== bg) : [...prev, bg]
-      );
+    if (bg === 'Original Background') {
+        setSelectedBackgrounds(prev => {
+            if (prev.includes('Original Background')) {
+                return []; // deselect
+            }
+            return ['Original Background']; // select only this one
+        });
+    } else {
+        setSelectedBackgrounds(prev => {
+            // If other bg is selected, remove 'Original Background'
+            const withoutOriginal = prev.filter(item => item !== 'Original Background');
+            
+            // Toggle the clicked one
+            if (withoutOriginal.includes(bg)) {
+                return withoutOriginal.filter(item => item !== bg);
+            } else {
+                return [...withoutOriginal, bg];
+            }
+        });
+    }
   };
 
   const handleForegroundToggle = (fg: string) => {
@@ -1066,6 +1124,7 @@ const ImageEditor: React.FC = () => {
     if (!isDeselecting) {
       setSelectedQuickAction(''); // Clear quick action when selecting an angle
     }
+    setOpenSections(prev => ({ ...prev, cameraAngle: false }));
   };
 
   const getTreeAgePrompt = (value: number): string | null => {
@@ -1580,23 +1639,23 @@ const ImageEditor: React.FC = () => {
       const colorAdjustments = [];
       if (brightness !== 100) {
         const change = brightness - 100;
-        colorAdjustments.push(`${change > 0 ? 'increase' : 'decrease'} brightness by ${Math.abs(change)}%`);
+        colorAdjustments.push(`${change > 0 ? 'increase the' : 'decrease the'} brightness`);
       }
       if (contrast !== 100) {
         const change = contrast - 100;
-        colorAdjustments.push(`${change > 0 ? 'increase' : 'decrease'} contrast by ${Math.abs(change)}%`);
+        colorAdjustments.push(`${change > 0 ? 'increase the' : 'decrease the'} contrast`);
       }
       if (saturation !== 100) {
         const change = saturation - 100;
-        colorAdjustments.push(`${change > 0 ? 'increase' : 'decrease'} saturation by ${Math.abs(change)}%`);
+        colorAdjustments.push(`${change > 0 ? 'increase the' : 'decrease the'} color saturation`);
       }
       if (sharpness !== 100) {
         const change = sharpness - 100;
-        colorAdjustments.push(`${change > 0 ? 'increase' : 'decrease'} sharpness by ${Math.abs(change)}%`);
+        colorAdjustments.push(`${change > 0 ? 'increase the' : 'decrease the'} sharpness`);
       }
 
       if (colorAdjustments.length > 0) {
-          promptParts.push(`Apply color adjustments: ${colorAdjustments.join(', ')}.`);
+          promptParts.push(`Regenerate the image to ${colorAdjustments.join(', and to ')}.`);
       }
 
       if (isAddLightActive) {
@@ -1993,7 +2052,7 @@ const ImageEditor: React.FC = () => {
           <h4 className="text-sm font-semibold text-gray-300 mb-2">Time of Day</h4>
           <div className="flex flex-wrap gap-2">
             {timeOfDayOptions.map(option => (
-              <OptionButton key={option} option={option} isSelected={selectedTimeOfDay === option} onClick={(val) => setSelectedTimeOfDay(prev => prev === val ? '' : val)} />
+              <OptionButton key={option} option={option} isSelected={selectedTimeOfDay === option} onClick={() => handleLightingSelection(setSelectedTimeOfDay, option)} />
             ))}
           </div>
         </div>
@@ -2001,7 +2060,7 @@ const ImageEditor: React.FC = () => {
           <h4 className="text-sm font-semibold text-gray-300 mb-2">Weather</h4>
           <div className="flex flex-wrap gap-2">
             {weatherOptions.map(option => (
-              <OptionButton key={option} option={option} isSelected={selectedWeather === option} onClick={(val) => setSelectedWeather(prev => prev === val ? '' : val)} />
+              <OptionButton key={option} option={option} isSelected={selectedWeather === option} onClick={() => handleLightingSelection(setSelectedWeather, option)} />
             ))}
           </div>
         </div>
@@ -2014,7 +2073,7 @@ const ImageEditor: React.FC = () => {
                   key={option}
                   option={option}
                   isSelected={selectedInteriorLighting === option}
-                  onClick={(val) => setSelectedInteriorLighting(prev => prev === val ? '' : val)}
+                  onClick={() => handleLightingSelection(setSelectedInteriorLighting, option)}
                 />
               ))}
             </div>
@@ -2247,14 +2306,14 @@ const ImageEditor: React.FC = () => {
                           icon={<SparklesIcon className="w-5 h-5" />}
                           mode="default"
                           activeMode={editingMode}
-                          onClick={setEditingMode}
+                          onClick={changeEditingMode}
                         />
                          <ModeButton 
-                          label="Inpainting" 
+                          label="Inpainting / Masking" 
                           icon={<BrushIcon className="w-5 h-5" />}
                           mode="object"
                           activeMode={editingMode}
-                          onClick={setEditingMode}
+                          onClick={changeEditingMode}
                         />
                      </div>
                   </div>
@@ -2378,7 +2437,7 @@ const ImageEditor: React.FC = () => {
                                               key={option}
                                               option={option}
                                               isSelected={selectedRoomType === option}
-                                              onClick={() => setSelectedRoomType(prev => prev === option ? '' : option)}
+                                              onClick={() => handleRoomTypeChange(option)}
                                           />
                                       ))}
                                   </div>
@@ -2468,7 +2527,7 @@ const ImageEditor: React.FC = () => {
                           type="button"
                           onClick={() => {
                               const newMode = editingMode === 'object' ? 'default' : 'object';
-                              setEditingMode(newMode);
+                              changeEditingMode(newMode);
                               if (newMode === 'object') {
                                   imageDisplayRef.current?.clearMask();
                               }
@@ -2685,7 +2744,7 @@ const ImageEditor: React.FC = () => {
                                                   key={option}
                                                   option={option}
                                                   isSelected={selectedRoomType === option}
-                                                  onClick={() => setSelectedRoomType(prev => prev === option ? '' : option)}
+                                                  onClick={() => handleRoomTypeChange(option)}
                                               />
                                           ))}
                                       </div>
@@ -2799,7 +2858,7 @@ const ImageEditor: React.FC = () => {
                                       value={option.value}
                                       icon={option.icon}
                                       isSelected={generationAspectRatio === option.value}
-                                      onClick={setGenerationAspectRatio}
+                                      onClick={handleAspectRatioChange}
                                       disabled={editingMode === 'object'}
                                   />
                               ))}
