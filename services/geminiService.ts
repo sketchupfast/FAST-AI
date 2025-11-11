@@ -1,5 +1,4 @@
-
-import { GoogleGenAI, Modality, Type } from "@google/genai";
+import { GoogleGenAI, Modality, Type, GenerateContentResponse } from "@google/genai";
 
 // It's recommended to initialize the GoogleGenAI client once
 // and reuse it throughout your application.
@@ -12,6 +11,46 @@ export interface AnalysisResult {
   keyMaterials: string[];
   lightingConditions: string;
   improvementSuggestions: string[];
+}
+
+const RETRY_COUNT = 3; // Total attempts
+const RETRY_DELAY = 1000; // 1 second initial delay
+
+/**
+ * A wrapper to retry a function that returns a Promise in case of transient errors.
+ * @param fn The asynchronous function to execute.
+ * @returns A promise that resolves with the result of the function.
+ */
+async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
+  let lastError: Error | undefined;
+  for (let i = 0; i < RETRY_COUNT; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error as Error;
+      const errorMessage = lastError.message.toLowerCase();
+      
+      // Don't retry on specific client-side or quota errors that are unlikely to succeed on retry.
+      if (
+        errorMessage.includes('blocked') ||
+        errorMessage.includes('429') || // Rate limit
+        errorMessage.includes('resource_exhausted') ||
+        errorMessage.includes('quota') ||
+        errorMessage.includes('400') // Bad Request (likely a prompt issue, no point retrying)
+      ) {
+        console.error('Non-retriable error:', errorMessage);
+        throw lastError;
+      }
+      
+      console.warn(`Attempt ${i + 1} failed. Retrying in ${RETRY_DELAY * (i + 1)}ms...`);
+      // Wait before retrying for server/network errors
+      if (i < RETRY_COUNT - 1) {
+        await new Promise(res => setTimeout(res, RETRY_DELAY * (i + 1))); // Simple linear backoff
+      }
+    }
+  }
+  console.error("All retry attempts failed.");
+  throw lastError;
 }
 
 
@@ -142,13 +181,14 @@ export const editImage = async (
         }
     }
 
-    const response = await ai.models.generateContent({
+    // FIX: Add GenerateContentResponse type to the response from Gemini API.
+    const response: GenerateContentResponse = await withRetry(() => ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: {
         parts: parts,
       },
       config: apiConfig,
-    });
+    }));
     
     // Check for safety blocks or empty responses BEFORE trying to access candidates
     if (!response.candidates || response.candidates.length === 0) {
@@ -238,7 +278,8 @@ export const analyzeImage = async (
         required: ["architecturalStyle", "keyMaterials", "lightingConditions", "improvementSuggestions"]
     };
 
-    const response = await ai.models.generateContent({
+    // FIX: Add GenerateContentResponse type to the response from Gemini API.
+    const response: GenerateContentResponse = await withRetry(() => ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: {
         parts: [
@@ -255,7 +296,7 @@ export const analyzeImage = async (
         responseMimeType: "application/json",
         responseSchema: responseSchema,
       },
-    });
+    }));
 
     const text = response.text.trim();
     // The text might be wrapped in ```json ... ```, need to strip it.
@@ -302,7 +343,8 @@ export const suggestCameraAngles = async (
         items: { type: Type.STRING },
     };
 
-    const response = await ai.models.generateContent({
+    // FIX: Add GenerateContentResponse type to the response from Gemini API.
+    const response: GenerateContentResponse = await withRetry(() => ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: {
         parts: [
@@ -319,7 +361,7 @@ export const suggestCameraAngles = async (
         responseMimeType: "application/json",
         responseSchema: responseSchema,
       },
-    });
+    }));
     
     const text = response.text.trim();
     const jsonStr = text.startsWith('```json') ? text.replace(/^```json\n|```$/g, '') : text;

@@ -51,6 +51,7 @@ interface ImageState {
   historyIndex: number;
   selectedResultIndex: number | null;
   promptHistory: string[];
+  apiPromptHistory: string[];
   lastGeneratedLabels: string[];
   generationTypeHistory: ('style' | 'angle' | 'edit' | 'upscale' | 'variation' | 'transform')[];
 }
@@ -227,6 +228,7 @@ const tropicalPathwayGardenPrompt = "Transform the image to be highly realistic,
 const thaiStreamGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Inside the living and dining rooms, randomly turn on the lights. The exterior atmosphere is like a housing estate with a clear sky, few clouds, and trees from the project visible. The image shows a shady and serene natural garden. A clear stream flows among naturally placed rocks. Both sides of the stream are filled with large, shady trees and ground cover plants like ferns, green-leafed plants, and other tropical vegetation spreading across the area. The atmosphere feels cool, fresh, and relaxing, suitable for rest or meditation. It's a natural-style garden that beautifully mimics a rainforest and could be part of a residence or resort.";
 
 const QUICK_ACTION_PROMPTS: Record<string, string> = {
+    modernTwilightHome: "Transform the image into a high-quality, photorealistic architectural photograph of a modern home. Set the time to dusk, with a soft twilight sky. Turn on warm, inviting interior lights that are visible through the windows, creating a cozy and welcoming glow. Surround the house with a modern, manicured landscape, including a neat green lawn, contemporary shrubs, and a healthy feature tree. The foreground should include a clean paved walkway and sidewalk. The final image must be hyper-realistic, mimicking a professional real estate photograph, maintaining the original camera angle and architecture.",
     proPhotoFinish: "Transform the image into a high-quality, photorealistic architectural photograph, as if it was captured with a professional DSLR camera. Enhance all materials and textures to be hyper-realistic (e.g., realistic wood grain, concrete texture, reflections on glass). The lighting should be soft, natural daylight, creating believable shadows and a sense of realism. It is absolutely crucial that the final image is indistinguishable from a real photograph and has no outlines, cartoonish features, or any sketch-like lines whatsoever. The final image should be 8k resolution and hyper-detailed.",
     luxuryHomeDusk: "Transform this architectural photo to have the atmosphere of a luxury modern home at dusk, shortly after a light rain. The ground and surfaces should be wet, creating beautiful reflections from the lighting. The lighting should be a mix of warm, inviting interior lights glowing from the windows and strategically placed exterior architectural up-lights. The overall mood should be sophisticated, warm, and serene, mimicking a high-end real estate photograph.",
     morningHousingEstate: "Transform this architectural photo to capture the serene atmosphere of an early morning in a modern housing estate. The lighting should be soft, warm, and golden, characteristic of the hour just after sunrise, casting long, gentle shadows. The air should feel fresh and clean, with a hint of morning dew on the manicured lawns. The overall mood should be peaceful, pristine, and inviting, typical of a high-end, well-maintained residential village.",
@@ -234,6 +236,8 @@ const QUICK_ACTION_PROMPTS: Record<string, string> = {
     architecturalSketch: "Transform the image into a sophisticated architectural concept sketch. The main subject should be rendered with a blend of clean linework and artistic, semi-realistic coloring, showcasing materials like wood, concrete, and glass. Superimpose this rendering over a background that resembles a technical blueprint or a working draft, complete with faint construction lines, dimensional annotations, and handwritten notes. The final result should look like a page from an architect's sketchbook, merging a polished design with the raw, creative process.",
     pristineShowHome: "Transform the image into a high-quality, photorealistic photograph of a modern house, as if it were brand new. Meticulously arrange the landscape to be neat and tidy, featuring a perfectly manicured lawn, a clean driveway and paths, and well-placed trees. Add a neat, green hedge fence around the property. The lighting should be bright, natural daylight, creating a clean and inviting atmosphere typical of a show home in a housing estate. Ensure the final result looks like a professional real estate photo, maintaining the original architecture.",
     highriseNature: "Transform the image into a hyper-detailed, 8k resolution photorealistic masterpiece, as if captured by a professional architectural photographer. The core concept is a harmonious blend of sleek, modern architecture with a lush, organic, and natural landscape. The building should be seamlessly integrated into its verdant surroundings. In the background, establish a dynamic and slightly distant city skyline, creating a powerful visual contrast between the tranquility of nature and the energy of urban life. The lighting must be bright, soft, natural daylight that accentuates the textures of both the building materials and the foliage, casting believable, gentle shadows. The final image should be a striking composition that feels both sophisticated and serene.",
+    urbanCondoDusk: "Transform the image into a dramatic, high-quality, photorealistic architectural photograph of a modern high-rise condominium, perfect for a real estate advertisement. The shot must be from a high-angle aerial perspective, showcasing the building against a vibrant city skyline at dusk. The sky should feature beautiful sunset colors. All city lights, including traffic, streetlights, and surrounding buildings, must be illuminated. The main condominium building should be the central focus, with its interior and exterior lights turned on to create a warm, inviting, and luxurious glow. The final image must be hyper-realistic and visually stunning, capturing the energy of a bustling metropolis at twilight.",
+    urbanCondoDay: "Transform the image into a high-quality, photorealistic architectural photograph of a modern high-rise condominium, perfect for a real estate advertisement. The shot must be from a high-angle aerial perspective, showcasing the building against a vibrant city skyline under a clear blue sky with bright, natural daylight. The main condominium building should be the central focus, appearing crisp and clear in the sunlight. The final image must be hyper-realistic and visually stunning, capturing the energy of a bustling metropolis during the day.",
     sketchToPhoto: "Transform this architectural sketch/line drawing into a photorealistic, 8K resolution image. Interpret the lines to create a building with realistic details, textures, and appropriate materials. The lighting must be soft, natural daylight, creating gentle shadows and a realistic feel. The final image should look like a professional architectural photograph, strictly maintaining the original perspective and composition of the sketch.",
     sketchupToPhotoreal: "Transform this SketchUp rendering into a high-quality, photorealistic architectural render, as if it was created using 3ds Max and V-Ray. Enhance all materials and textures to be hyper-realistic (e.g., wood grain, fabric textures, reflections on metal and glass). The lighting should be natural and cinematic, creating a believable and inviting atmosphere. Strictly maintain the original camera angle, composition, and design elements. It is absolutely crucial that the final image looks like a professional 3D render and has no outlines or sketch-like lines whatsoever.",
 };
@@ -272,10 +276,10 @@ const INTERIOR_STYLE_PROMPTS: Record<string, string> = {
 };
 
 const FILTER_PROMPTS: Record<string, string> = {
-    'Black & White': 'make the image black and white.',
+    'Black & White': 'give the image a black and white photographic treatment.',
     'Sepia': 'give the image a sepia tone.',
-    'Invert': 'invert the colors of the image.',
-    'Grayscale': 'make the image grayscale.',
+    'Invert': 'give the image an inverted color effect.',
+    'Grayscale': 'give the image a grayscale treatment.',
     'Vintage': 'give the image a vintage, faded look.',
     'Cool Tone': 'adjust the color balance to give the image a cool, blueish tone.',
     'Warm Tone': 'adjust the color balance to give the image a warm, yellowish tone.',
@@ -295,7 +299,7 @@ const STYLE_PROMPTS: Record<string, string> = {
 
 const BACKGROUND_PROMPTS: Record<string, string> = {
     "Forest": "with a Forest background",
-    "Public Park": "with a beautifully composed public park in the background. The park should feature a lush green lawn, large shady trees, benches for relaxation, and winding pathways. The atmosphere should be peaceful and serene, with natural daylight.",
+    "Public Park": "with a beautifully composed public park in the background. It is crucial that the image is shown from an eye-level perspective. The park should feature a lush green lawn, large shady trees, benches for relaxation, and winding pathways. The atmosphere should be peaceful and serene, with natural daylight.",
     "Beach": "with a Beach background",
     "Cityscape": "with a Cityscape background",
     "Outer Space": "with an Outer Space background",
@@ -907,6 +911,7 @@ const ImageEditor: React.FC = () => {
                               historyIndex: -1,
                               selectedResultIndex: null,
                               promptHistory: [],
+                              apiPromptHistory: [],
                               lastGeneratedLabels: [],
                               generationTypeHistory: [],
                           });
@@ -1203,7 +1208,7 @@ const ImageEditor: React.FC = () => {
           const newIndex = newHistory.length - 1;
 
           const newPromptHistory = [...img.promptHistory.slice(0, img.historyIndex + 1), promptForHistory];
-          
+          const newApiPromptHistory = [...img.apiPromptHistory.slice(0, img.historyIndex + 1), `VARIATION:${variationType}`];
           const newGenerationTypeHistory: ImageState['generationTypeHistory'] = [...img.generationTypeHistory.slice(0, img.historyIndex + 1), variationType];
 
           return {
@@ -1212,6 +1217,7 @@ const ImageEditor: React.FC = () => {
               historyIndex: newIndex,
               selectedResultIndex: 0,
               promptHistory: newPromptHistory,
+              apiPromptHistory: newApiPromptHistory,
               lastGeneratedLabels: labelsForResults,
               generationTypeHistory: newGenerationTypeHistory,
           };
@@ -1289,7 +1295,7 @@ const ImageEditor: React.FC = () => {
           const newIndex = newHistory.length - 1;
 
           const newPromptHistory = [...img.promptHistory.slice(0, img.historyIndex + 1), promptForHistory];
-          
+          const newApiPromptHistory = [...img.apiPromptHistory.slice(0, img.historyIndex + 1), `VARIATION:plan`];
           const newGenerationTypeHistory: ImageState['generationTypeHistory'] = [...img.generationTypeHistory.slice(0, img.historyIndex + 1), 'variation'];
 
           return {
@@ -1298,6 +1304,7 @@ const ImageEditor: React.FC = () => {
               historyIndex: newIndex,
               selectedResultIndex: 0,
               promptHistory: newPromptHistory,
+              apiPromptHistory: newApiPromptHistory,
               lastGeneratedLabels: labelsForResults,
               generationTypeHistory: newGenerationTypeHistory,
           };
@@ -1431,7 +1438,7 @@ const ImageEditor: React.FC = () => {
           const newIndex = newHistory.length - 1;
 
           const newPromptHistory = [...img.promptHistory.slice(0, img.historyIndex + 1), promptForHistory];
-          
+          const newApiPromptHistory = [...img.apiPromptHistory.slice(0, img.historyIndex + 1), promptForGeneration];
           const newGenerationTypeHistory: ImageState['generationTypeHistory'] = [...img.generationTypeHistory.slice(0, img.historyIndex + 1), 'edit'];
 
           return {
@@ -1440,6 +1447,7 @@ const ImageEditor: React.FC = () => {
               historyIndex: newIndex,
               selectedResultIndex: 0,
               promptHistory: newPromptHistory,
+              apiPromptHistory: newApiPromptHistory,
               lastGeneratedLabels: ['Edited'],
               generationTypeHistory: newGenerationTypeHistory,
           };
@@ -1788,7 +1796,7 @@ const ImageEditor: React.FC = () => {
     const sourceUrl = activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex];
     const mimeType = sourceUrl.substring(5, sourceUrl.indexOf(';'));
     const base64 = sourceUrl.split(',')[1];
-    const upscalePrompt = "Upscale this image to a higher resolution, enhance details, and make it sharper without adding new elements.";
+    const upscalePrompt = "Upscale this image to a higher resolution, significantly enhance fine details, and make it photorealistically sharp without adding new elements.";
 
     try {
       const generatedImageBase64 = await editImage(base64, mimeType, upscalePrompt);
@@ -1809,7 +1817,7 @@ const ImageEditor: React.FC = () => {
 
           const newPromptHistory = [...img.promptHistory.slice(0, img.historyIndex + 1)];
           newPromptHistory.push(upscalePrompt);
-
+          const newApiPromptHistory = [...img.apiPromptHistory.slice(0, img.historyIndex + 1), upscalePrompt];
           const newGenerationTypeHistory: ImageState['generationTypeHistory'] = [...img.generationTypeHistory.slice(0, img.historyIndex + 1), 'upscale'];
           
           return {
@@ -1817,6 +1825,7 @@ const ImageEditor: React.FC = () => {
               history: newHistory,
               historyIndex: newIndex,
               promptHistory: newPromptHistory,
+              apiPromptHistory: newApiPromptHistory,
               generationTypeHistory: newGenerationTypeHistory,
               lastGeneratedLabels: img.lastGeneratedLabels, // Preserve labels from previous step
           };
@@ -1864,6 +1873,8 @@ const ImageEditor: React.FC = () => {
         history: [],
         historyIndex: -1,
         selectedResultIndex: null,
+        promptHistory: [],
+        apiPromptHistory: [],
         lastGeneratedLabels: [],
         generationTypeHistory: [],
     }));
@@ -1970,6 +1981,7 @@ const ImageEditor: React.FC = () => {
 
             const newPromptHistory = [...img.promptHistory.slice(0, img.historyIndex + 1)];
             newPromptHistory.push(transformLabels[transformation]);
+            const newApiPromptHistory = [...img.apiPromptHistory.slice(0, img.historyIndex + 1), 'TRANSFORM'];
 
             const newGenerationTypeHistory: ImageState['generationTypeHistory'] = [
                 ...img.generationTypeHistory.slice(0, img.historyIndex + 1),
@@ -1982,6 +1994,7 @@ const ImageEditor: React.FC = () => {
                 historyIndex: newIndex,
                 selectedResultIndex: 0,
                 promptHistory: newPromptHistory,
+                apiPromptHistory: newApiPromptHistory,
                 generationTypeHistory: newGenerationTypeHistory,
                 lastGeneratedLabels: ['Transformed'],
             };
@@ -1994,6 +2007,32 @@ const ImageEditor: React.FC = () => {
       if (mountedRef.current) {
         setIsLoading(false);
       }
+    }
+  };
+
+  const handleRegenerate = async () => {
+    if (!activeImage || activeImage.historyIndex < 0) return;
+
+    const lastApiPrompt = activeImage.apiPromptHistory[activeImage.historyIndex];
+    const lastGenType = activeImage.generationTypeHistory[activeImage.historyIndex];
+    
+    // Randomize seed for a new result
+    randomizeSeed();
+
+    if (lastApiPrompt.startsWith('VARIATION:')) {
+        const variationType = lastApiPrompt.split(':')[1];
+        if (variationType === 'style' || variationType === 'angle') {
+            await handleVariationSubmit(variationType as 'style' | 'angle');
+        } else if (variationType === 'plan') {
+            await handleGenerate4PlanViews();
+        }
+    } else if (lastGenType === 'edit' || lastGenType === 'upscale') {
+        const lastDisplayPrompt = activeImage.promptHistory[activeImage.historyIndex];
+        await executeGeneration(lastApiPrompt, `(Regen) ${lastDisplayPrompt}`);
+    } else {
+        console.warn("This action cannot be regenerated.", lastGenType);
+        // If we can't regenerate, let's not keep the new seed.
+        // Or should we? Let's just warn and do nothing.
     }
   };
 
@@ -2023,11 +2062,14 @@ const ImageEditor: React.FC = () => {
   };
 
   const quickActions = [
+    { id: 'modernTwilightHome', label: 'Modern Twilight', description: 'A dusk setting with warm interior lights and a manicured garden.' },
     { id: 'proPhotoFinish', label: 'Photorealistic', description: 'Transform into an 8K ultra-sharp, pro-camera shot.' },
     { id: 'luxuryHomeDusk', label: 'Luxury Home', description: 'Atmosphere of a luxury home at dusk after rain.' },
     { id: 'morningHousingEstate', label: 'Morning Estate', description: 'Warm morning sunlight in a peaceful housing estate.' },
     { id: 'pristineShowHome', label: 'Pristine Show Home', description: 'Creates a brand new look with a perfectly manicured lawn, road, and hedge fence.' },
     { id: 'highriseNature', label: 'High-rise & Nature', description: 'Blend the building with a lush landscape and a city skyline.' },
+    { id: 'urbanCondoDusk', label: 'Urban Condo Dusk', description: 'High-angle dusk shot of a condo with city lights.' },
+    { id: 'urbanCondoDay', label: 'Urban Condo Day', description: 'A high-angle daytime shot of a condo with a clear blue sky.' },
     { id: 'urbanSketch', label: 'Urban Sketch', description: 'Convert into a lively, urban watercolor sketch.' },
     { id: 'sketchToPhoto', label: 'Sketch to Photo', description: 'Turn an architectural sketch into a photorealistic image.' },
     { id: 'architecturalSketch', label: 'Architectural Sketch', description: 'Convert into an architect\'s concept sketch.' },
@@ -2039,6 +2081,7 @@ const ImageEditor: React.FC = () => {
 
   const canUndo = activeImage ? activeImage.historyIndex >= 0 : false;
   const canRedo = activeImage ? activeImage.historyIndex < activeImage.history.length - 1 : false;
+  const canRegenerate = activeImage && activeImage.historyIndex >= 0 && activeImage.generationTypeHistory[activeImage.historyIndex] !== 'transform';
 
   const isPlanResultsView = activeImage && sceneType === 'plan' && activeImage.historyIndex > -1;
 
@@ -3049,15 +3092,19 @@ const ImageEditor: React.FC = () => {
                     <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
                         <h3 className="text-lg font-semibold text-gray-300">{getResultsTitle()}</h3>
                          <div className="flex gap-2 flex-wrap">
-                            <ActionButton onClick={handleUndo} disabled={!canUndo} title="Undo">
+                            <ActionButton onClick={handleRegenerate} disabled={!canRegenerate || isLoading} title="Generate a new result with the same prompt">
+                              <ShuffleIcon className="w-4 h-4" />
+                              <span>Regenerate</span>
+                            </ActionButton>
+                            <ActionButton onClick={handleUndo} disabled={!canUndo || isLoading} title="Undo">
                               <UndoIcon className="w-4 h-4" />
                               <span>Undo</span>
                             </ActionButton>
-                            <ActionButton onClick={handleRedo} disabled={!canRedo} title="Redo">
+                            <ActionButton onClick={handleRedo} disabled={!canRedo || isLoading} title="Redo">
                               <RedoIcon className="w-4 h-4" />
                                <span>Redo</span>
                             </ActionButton>
-                            <ActionButton onClick={handleResetEdits} disabled={!activeImage || activeImage.history.length === 0} title="Reset all edits" color="red">
+                            <ActionButton onClick={handleResetEdits} disabled={!activeImage || activeImage.history.length === 0 || isLoading} title="Reset all edits" color="red">
                                 <ResetEditsIcon className="w-4 h-4" />
                                 <span>Reset</span>
                             </ActionButton>
