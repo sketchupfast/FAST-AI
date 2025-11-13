@@ -610,7 +610,7 @@ const ImageToolbar: React.FC<{
   canUpscaleAndSave: boolean;
   isLoading: boolean;
 }> = ({ onUndo, onRedo, onReset, onUpscale, onOpenSaveModal, onTransform, canUndo, canRedo, canReset, canUpscaleAndSave, isLoading }) => (
-  <div className="bg-gray-800/50 p-3 rounded-xl border border-gray-700 flex flex-wrap items-center justify-center gap-3">
+  <div className="bg-gray-800/50 p-3 rounded-xl border border-gray-700 flex flex-col sm:flex-row sm:flex-wrap items-center justify-center gap-3">
     {/* History */}
     <div className="flex items-center gap-2 p-1 bg-gray-900/50 rounded-full">
       <ActionButton onClick={onUndo} disabled={!canUndo || isLoading} title="Undo"><UndoIcon className="w-5 h-5" /></ActionButton>
@@ -626,7 +626,7 @@ const ImageToolbar: React.FC<{
     </div>
 
     {/* Main Actions */}
-    <div className="flex items-center gap-3">
+    <div className="flex flex-col xs:flex-row items-center gap-3">
       <ActionButton onClick={onUpscale} disabled={!canUpscaleAndSave || isLoading} title="Upscale selected image" color="purple"><UpscaleIcon className="w-5 h-5" /><span>Upscale</span></ActionButton>
       <ActionButton onClick={onOpenSaveModal} disabled={!canUpscaleAndSave || isLoading} title="Download selected image" color="blue"><DownloadIcon className="w-5 h-5" /><span>Download</span></ActionButton>
       <ActionButton onClick={onReset} disabled={!canReset || isLoading} title="Reset all edits" color="red"><ResetEditsIcon className="w-5 h-5" /><span>Reset</span></ActionButton>
@@ -2487,7 +2487,7 @@ const ImageEditor: React.FC = () => {
                               </div>
                               <div>
                                   <h4 className="text-sm font-semibold text-gray-300 mb-2">Interior Style</h4>
-                                  <div className="grid grid-cols-2 gap-3">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                       {interiorStyleOptions.map(option => (
                                           <PreviewCard
                                               key={option.name}
@@ -2593,7 +2593,7 @@ const ImageEditor: React.FC = () => {
                   {activeImage && sceneType === 'exterior' && editingMode === 'default' && (
                     <>
                       <CollapsibleSection title="Presets" sectionKey="quickActions" isOpen={openSections.quickActions} onToggle={() => toggleSection('quickActions')} icon={<StarIcon className="w-5 h-5" />}>
-                         <div className="grid grid-cols-2 gap-3">
+                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {quickActions.map(({ id, label, description }) => (
                                <PreviewCard
                                   key={id}
@@ -2613,7 +2613,7 @@ const ImageEditor: React.FC = () => {
                           <div className="flex flex-col gap-4 p-2 bg-gray-900/30 rounded-lg">
                                <CollapsibleSection title="Architectural Style" sectionKey="archStyle" isOpen={openSections.archStyle} onToggle={() => toggleSection('archStyle')} icon={<TextureIcon className="w-5 h-5" />}>
                                   <div className="flex flex-col gap-3">
-                                      <div className="grid grid-cols-2 gap-3">
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                           {architecturalStyleOptions.map(option => (
                                               <PreviewCard
                                                   key={option.name}
@@ -2637,7 +2637,7 @@ const ImageEditor: React.FC = () => {
                                   </div>
                               </CollapsibleSection>
                               <CollapsibleSection title="Garden Style" sectionKey="gardenStyle" isOpen={openSections.gardenStyle} onToggle={() => toggleSection('gardenStyle')} icon={<FlowerIcon className="w-5 h-5" />}>
-                                  <div className="grid grid-cols-2 gap-3">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                       {gardenStyleOptions.map(option => (
                                          <PreviewCard
                                             key={option.name}
@@ -2759,7 +2759,7 @@ const ImageEditor: React.FC = () => {
                   {activeImage && sceneType === 'interior' && editingMode === 'default' && (
                       <>
                         <CollapsibleSection title="Presets" sectionKey="interiorQuickActions" isOpen={openSections.interiorQuickActions} onToggle={() => toggleSection('interiorQuickActions')} icon={<StarIcon className="w-5 h-5" />}>
-                           <div className="grid grid-cols-2 gap-3">
+                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               {interiorQuickActions.map(({ id, label, description }) => (
                                 <PreviewCard
                                    key={id}
@@ -2794,7 +2794,7 @@ const ImageEditor: React.FC = () => {
                                    </div>
                                    <div className="pt-4 border-t border-gray-700">
                                       <h4 className="text-sm font-semibold text-gray-300 mb-2">Interior Style</h4>
-                                      <div className="grid grid-cols-2 gap-3">
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                           {interiorStyleOptions.map(option => (
                                               <PreviewCard
                                                   key={option.name}

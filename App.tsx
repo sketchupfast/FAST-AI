@@ -2,10 +2,13 @@
 import React, { useState } from 'react';
 import ImageEditor from './components/ImageEditor';
 import { ShareIcon } from './components/icons/ShareIcon';
+import { useAuth } from './contexts/AuthContext';
+import AuthPage from './components/AuthPage';
 
 const App: React.FC = () => {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [copyButtonText, setCopyButtonText] = useState('Copy Link');
+  const { isLoggedIn, user, logout } = useAuth();
 
   const handleCopyToClipboard = () => {
     navigator.clipboard.writeText(window.location.href).then(() => {
@@ -24,6 +27,9 @@ const App: React.FC = () => {
   const twitterShareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(appUrl)}&text=${encodeURIComponent(shareText)}`;
   const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(appUrl)}`;
 
+  if (!isLoggedIn) {
+    return <AuthPage />;
+  }
 
   return (
     <>
@@ -71,8 +77,21 @@ const App: React.FC = () => {
       )}
       <div className="min-h-screen bg-gray-900 text-gray-100 font-sans">
         <main className="container mx-auto px-4 py-8">
-          <header className="text-center mb-8 flex flex-col items-center">
-              <div className="relative">
+          <header className="relative text-center mb-8 flex flex-col items-center">
+              <div className="absolute top-0 right-0 flex items-center gap-4">
+                <div className="text-right hidden sm:block">
+                  <span className="text-sm text-gray-400">Welcome,</span>
+                  <p className="font-semibold text-gray-200 truncate max-w-[150px]">{user?.email}</p>
+                </div>
+                <button 
+                  onClick={logout}
+                  className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-full hover:bg-red-700 transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
+
+              <div className="relative mt-16 sm:mt-0">
                 <h1 className="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-600 mb-2">
                     FAST AI
                 </h1>
