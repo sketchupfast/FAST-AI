@@ -111,12 +111,13 @@ const interiorStyleOptions = [
     { name: 'Thai', description: 'Uses teak wood, intricate carvings, and Thai silk for a warm, luxurious feel.' },
     { name: 'Chinese', description: 'Lacquered wood furniture, screens, and use of red and gold for prosperity.' },
     { name: 'Moroccan', description: 'Vibrant colors, mosaic tiles, metal lanterns, creating a warm atmosphere.' },
-    { name: 'Classic', description: 'Elegant, formal, using high-quality materials and carved furniture.' },
+    { name: 'Classic', description: 'Elegant and formal, focusing on symmetry, high-quality materials, and carved furniture for a timeless and sophisticated look.' },
     { name: 'Modern', description: 'Sharp lines, geometric shapes, polished surfaces, and no decorative patterns.' },
+    { name: 'Modern Luxury', description: 'Combines modern simplicity with luxurious materials like marble, gold accents, and high-gloss surfaces for a sophisticated and glamorous feel.' },
 ];
 
 
-const backgrounds = ["Original Background", "Bangkok High-rise View", "Mountain View", "Bangkok Traffic View", "Farmland View", "Housing Estate View", "Chao Phraya River View", "Forest", "Public Park", "Beach", "Cityscape", "Outer Space", "IMPACT Exhibition Hall"];
+const backgrounds = ["Original Background", "Bangkok High-rise View", "Mountain View", "Bangkok Traffic View", "Farmland View", "Housing Estate View", "Chao Phraya River View", "Forest", "Public Park", "Beach", "Cityscape", "Outer Space", "IMPACT Exhibition Hall", "Luxury Shopping Mall"];
 const foregrounds = ["Foreground Road", "Foreground Large Tree", "Foreground River", "Top Corner Leaves", "Bottom Corner Bush"];
 const filters = ['None', 'Black & White', 'Sepia', 'Invert', 'Grayscale', 'Vintage', 'Cool Tone', 'Warm Tone', 'HDR'];
 
@@ -228,13 +229,16 @@ const tropicalPathwayGardenPrompt = "Transform the image to be highly realistic,
 const thaiStreamGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Inside the living and dining rooms, randomly turn on the lights. The exterior atmosphere is like a housing estate with a clear sky, few clouds, and trees from the project visible. The image shows a shady and serene natural garden. A clear stream flows among naturally placed rocks. Both sides of the stream are filled with large, shady trees and ground cover plants like ferns, green-leafed plants, and other tropical vegetation spreading across the area. The atmosphere feels cool, fresh, and relaxing, suitable for rest or meditation. It's a natural-style garden that beautifully mimics a rainforest and could be part of a residence or resort.";
 
 const QUICK_ACTION_PROMPTS: Record<string, string> = {
+    sereneHomeWithGarden: "Transform the image into a high-quality, photorealistic architectural photograph, maintaining the original architecture and camera angle. Turn on warm, inviting interior lights visible through the windows. Add large, elegant trees in the foreground, framing the view slightly. Create a beautifully landscaped garden in front of the house with a neat lawn and some flowering bushes. The background should feature soft, out-of-focus trees, creating a sense of depth and tranquility. The overall atmosphere should be peaceful, serene, and welcoming, as if for a luxury real estate listing.",
     modernTwilightHome: "Transform the image into a high-quality, photorealistic architectural photograph of a modern home. Set the time to dusk, with a soft twilight sky. Turn on warm, inviting interior lights that are visible through the windows, creating a cozy and welcoming glow. Surround the house with a modern, manicured landscape, including a neat green lawn, contemporary shrubs, and a healthy feature tree. The foreground should include a clean paved walkway and sidewalk. The final image must be hyper-realistic, mimicking a professional real estate photograph, maintaining the original camera angle and architecture.",
+    modernPineEstate: "Transform the image into a high-quality, photorealistic architectural photograph, maintaining the original architecture and camera angle. Set the scene against a clear, soft sky. In the background, add a dense forest of tall pine trees. The house should have warm, inviting interior lights turned on, visible through the windows. The foreground should feature a modern, manicured landscape with neat green shrubs and a few decorative trees. The overall atmosphere should be clean, serene, and professional, suitable for a high-end real estate portfolio.",
     proPhotoFinish: "Transform the image into a high-quality, photorealistic architectural photograph, as if it was captured with a professional DSLR camera. Enhance all materials and textures to be hyper-realistic (e.g., realistic wood grain, concrete texture, reflections on glass). The lighting should be soft, natural daylight, creating believable shadows and a sense of realism. It is absolutely crucial that the final image is indistinguishable from a real photograph and has no outlines, cartoonish features, or any sketch-like lines whatsoever. The final image should be 8k resolution and hyper-detailed.",
     luxuryHomeDusk: "Transform this architectural photo to have the atmosphere of a luxury modern home at dusk, shortly after a light rain. The ground and surfaces should be wet, creating beautiful reflections from the lighting. The lighting should be a mix of warm, inviting interior lights glowing from the windows and strategically placed exterior architectural up-lights. The overall mood should be sophisticated, warm, and serene, mimicking a high-end real estate photograph.",
     morningHousingEstate: "Transform this architectural photo to capture the serene atmosphere of an early morning in a modern housing estate. The lighting should be soft, warm, and golden, characteristic of the hour just after sunrise, casting long, gentle shadows. The air should feel fresh and clean, with a hint of morning dew on the manicured lawns. The overall mood should be peaceful, pristine, and inviting, typical of a high-end, well-maintained residential village.",
     urbanSketch: "Transform this image into a beautiful urban watercolor sketch. It should feature loose, expressive ink linework combined with soft, atmospheric watercolor washes. The style should capture the gritty yet vibrant energy of a bustling city street, similar to the work of a professional urban sketch artist. Retain the core composition but reinterpret it in this artistic, hand-drawn style.",
     architecturalSketch: "Transform the image into a sophisticated architectural concept sketch. The main subject should be rendered with a blend of clean linework and artistic, semi-realistic coloring, showcasing materials like wood, concrete, and glass. Superimpose this rendering over a background that resembles a technical blueprint or a working draft, complete with faint construction lines, dimensional annotations, and handwritten notes. The final result should look like a page from an architect's sketchbook, merging a polished design with the raw, creative process.",
     pristineShowHome: "Transform the image into a high-quality, photorealistic photograph of a modern house, as if it were brand new. Meticulously arrange the landscape to be neat and tidy, featuring a perfectly manicured lawn, a clean driveway and paths, and well-placed trees. Add a neat, green hedge fence around the property. The lighting should be bright, natural daylight, creating a clean and inviting atmosphere typical of a show home in a housing estate. Ensure the final result looks like a professional real estate photo, maintaining the original architecture.",
+    addForegroundRoad: "Add a clean, photorealistic paved road in the foreground of the image. It should integrate naturally with the existing landscape, perspective, and lighting.",
     highriseNature: "Transform the image into a hyper-detailed, 8k resolution photorealistic masterpiece, as if captured by a professional architectural photographer. The core concept is a harmonious blend of sleek, modern architecture with a lush, organic, and natural landscape. The building should be seamlessly integrated into its verdant surroundings. In the background, establish a dynamic and slightly distant city skyline, creating a powerful visual contrast between the tranquility of nature and the energy of urban life. The lighting must be bright, soft, natural daylight that accentuates the textures of both the building materials and the foliage, casting believable, gentle shadows. The final image should be a striking composition that feels both sophisticated and serene.",
     urbanCondoDusk: "Transform the image into a dramatic, high-quality, photorealistic architectural photograph of a modern high-rise condominium, perfect for a real estate advertisement. The shot must be from a high-angle aerial perspective, showcasing the building against a vibrant city skyline at dusk. The sky should feature beautiful sunset colors. All city lights, including traffic, streetlights, and surrounding buildings, must be illuminated. The main condominium building should be the central focus, with its interior and exterior lights turned on to create a warm, inviting, and luxurious glow. The final image must be hyper-realistic and visually stunning, capturing the energy of a bustling metropolis at twilight.",
     urbanCondoDay: "Transform the image into a high-quality, photorealistic architectural photograph of a modern high-rise condominium, perfect for a real estate advertisement. The shot must be from a high-angle aerial perspective, showcasing the building against a vibrant city skyline under a clear blue sky with bright, natural daylight. The main condominium building should be the central focus, appearing crisp and clear in the sunlight. The final image must be hyper-realistic and visually stunning, capturing the energy of a bustling metropolis during the day.",
@@ -273,6 +277,7 @@ const INTERIOR_STYLE_PROMPTS: Record<string, string> = {
     'Moroccan': "Redesign the interior with a vibrant Moroccan style. Use bold, rich colors like deep blues, reds, and oranges. Incorporate complex geometric tilework (Zellige), arched doorways, pierced metal lanterns, and plush textiles like layered rugs and floor cushions. The atmosphere should be exotic, warm, and richly detailed.",
     'Classic': "Change the interior to a classic European style. It should be elegant and formal, emphasizing order, symmetry, and ornate details. Use high-quality materials like marble and fine woods, furniture with detailed carvings and luxurious upholstery, decorative moldings, and perhaps a crystal chandelier. The style should evoke a sense of timeless sophistication.",
     'Modern': "Redesign the interior with a modern design aesthetic. Emphasize sharp, clean lines, simple geometric shapes, and a lack of ornamentation. Use a neutral color palette, polished surfaces, and materials like metal, chrome, and glass. Furniture should be sleek and streamlined. The space should feel open and uncluttered.",
+    'Modern Luxury': "Redesign the interior with a Modern Luxury aesthetic. This style combines the clean lines and uncluttered spaces of modern design with opulent materials and finishes. Key elements should include: polished marble floors or walls, metallic accents in gold or brass for fixtures and furniture details, high-gloss lacquered surfaces, and plush, high-quality textiles like velvet or silk. The color palette should be sophisticated, often using neutrals like white, gray, and black, accented with rich jewel tones. The overall atmosphere must feel glamorous, sophisticated, and impeccably curated.",
 };
 
 const FILTER_PROMPTS: Record<string, string> = {
@@ -308,7 +313,8 @@ const BACKGROUND_PROMPTS: Record<string, string> = {
     "Farmland View": "with a lush green farmland and agricultural fields in the background",
     "Housing Estate View": "with a modern, landscaped housing estate project in the background",
     "Chao Phraya River View": "with a scenic view of the Chao Phraya River in Bangkok in the background",
-    "IMPACT Exhibition Hall": "with the background of a large, modern exhibition hall like IMPACT Muang Thong Thani during a trade show. The scene should feature high ceilings, professional lighting, various exhibition booths, and a bustling atmosphere with crowds of people."
+    "IMPACT Exhibition Hall": "with the background of a large, modern exhibition hall like IMPACT Muang Thong Thani during a trade show. The scene should feature high ceilings, professional lighting, various exhibition booths, and a bustling atmosphere with crowds of people.",
+    "Luxury Shopping Mall": "with the background of a modern, luxurious shopping mall interior. The scene should feature high ceilings, polished marble floors, and bright, elegant lighting. In the background, include blurred storefronts of high-end brands and a few shoppers to create a realistic, bustling yet sophisticated atmosphere. The main subject should appear as if it is an exhibition booth within this upscale mall."
 };
 
 const FOREGROUND_PROMPTS: Record<string, string> = {
@@ -999,6 +1005,7 @@ const ImageEditor: React.FC = () => {
             ...allClosed,
             prompt: true,
             quickActions: true,
+            foreground: true,
         });
     }
   };
@@ -1743,7 +1750,7 @@ const ImageEditor: React.FC = () => {
     executeGeneration(finalPromptBody, promptForHistoryDisplay);
   };
   
-  const handleRandomQuickAction = () => {
+  const handleRandomQuickAction = async () => {
     if (!activeImage || !sceneType || sceneType === 'plan') return;
 
     const availableActions = sceneType === 'exterior' ? quickActions : interiorQuickActions;
@@ -2062,11 +2069,14 @@ const ImageEditor: React.FC = () => {
   };
 
   const quickActions = [
+    { id: 'sereneHomeWithGarden', label: 'Serene Garden Home', description: 'Adds a lush garden, foreground trees, and warm interior lights for a peaceful, high-end look.' },
     { id: 'modernTwilightHome', label: 'Modern Twilight', description: 'A dusk setting with warm interior lights and a manicured garden.' },
+    { id: 'modernPineEstate', label: 'Modern Pine Estate', description: 'A serene, professional look with a pine forest background and warm interior lighting.' },
     { id: 'proPhotoFinish', label: 'Photorealistic', description: 'Transform into an 8K ultra-sharp, pro-camera shot.' },
     { id: 'luxuryHomeDusk', label: 'Luxury Home', description: 'Atmosphere of a luxury home at dusk after rain.' },
     { id: 'morningHousingEstate', label: 'Morning Estate', description: 'Warm morning sunlight in a peaceful housing estate.' },
     { id: 'pristineShowHome', label: 'Pristine Show Home', description: 'Creates a brand new look with a perfectly manicured lawn, road, and hedge fence.' },
+    { id: 'addForegroundRoad', label: 'Add Road', description: 'Adds a paved road into the foreground of the scene.' },
     { id: 'highriseNature', label: 'High-rise & Nature', description: 'Blend the building with a lush landscape and a city skyline.' },
     { id: 'urbanCondoDusk', label: 'Urban Condo Dusk', description: 'High-angle dusk shot of a condo with city lights.' },
     { id: 'urbanCondoDay', label: 'Urban Condo Day', description: 'A high-angle daytime shot of a condo with a clear blue sky.' },
@@ -2146,8 +2156,7 @@ const ImageEditor: React.FC = () => {
     </CollapsibleSection>
   );
 
-  const CommonEnvironmentControls: React.FC<{ excludeForeground?: boolean }> = ({ excludeForeground = false }) => (
-    <>
+  const BackgroundControls: React.FC = () => (
       <CollapsibleSection title="Background" sectionKey="background" isOpen={openSections.background} onToggle={() => toggleSection('background')} icon={<LandscapeIcon className="w-5 h-5" />}>
         <div className="flex flex-wrap gap-2">
             {backgrounds.map(bg => (
@@ -2181,42 +2190,75 @@ const ImageEditor: React.FC = () => {
             </div>
         )}
       </CollapsibleSection>
-      {!excludeForeground && (
-        <CollapsibleSection title="Foreground Elements" sectionKey="foreground" isOpen={openSections.foreground} onToggle={() => toggleSection('foreground')} icon={<FlowerIcon className="w-5 h-5" />}>
-            <div className="flex flex-wrap gap-2">
-                {foregrounds.map(fg => (
-                    <OptionButton
-                        key={fg}
-                        option={fg}
-                        isSelected={selectedForegrounds.includes(fg)}
-                        onClick={() => handleForegroundToggle(fg)}
-                    />
-                ))}
-            </div>
-            {selectedForegrounds.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-gray-700 space-y-3">
-                    {selectedForegrounds.map(fg => {
-                        const config = adjustableOptions[fg];
-                        if (!config) return null;
-                        return (
-                            <div key={fg}>
-                                <label className="block text-sm font-medium text-gray-400 mb-1">{config.label} ({fg})</label>
-                                <input
-                                    type="range"
-                                    min="1"
-                                    max="100"
-                                    value={optionIntensities[fg] || config.default}
-                                    onChange={(e) => handleIntensityChange(fg, Number(e.target.value))}
-                                    className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600"
-                                />
-                            </div>
-                        )
-                    })}
-                </div>
-            )}
-        </CollapsibleSection>
-      )}
-    </>
+  );
+
+  const ForegroundControls: React.FC = () => (
+      <CollapsibleSection title="Foreground Elements" sectionKey="foreground" isOpen={openSections.foreground} onToggle={() => toggleSection('foreground')} icon={<FlowerIcon className="w-5 h-5" />}>
+          <div className="flex flex-wrap gap-2">
+              {foregrounds.map(fg => (
+                  <OptionButton
+                      key={fg}
+                      option={fg}
+                      isSelected={selectedForegrounds.includes(fg)}
+                      onClick={() => handleForegroundToggle(fg)}
+                  />
+              ))}
+          </div>
+          {selectedForegrounds.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-gray-700 space-y-3">
+                  {selectedForegrounds.map(fg => {
+                      const config = adjustableOptions[fg];
+                      if (!config) return null;
+                      return (
+                          <div key={fg}>
+                              <label className="block text-sm font-medium text-gray-400 mb-1">{config.label} ({fg})</label>
+                              <input
+                                  type="range"
+                                  min="1"
+                                  max="100"
+                                  value={optionIntensities[fg] || config.default}
+                                  onChange={(e) => handleIntensityChange(fg, Number(e.target.value))}
+                                  className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600"
+                              />
+                          </div>
+                      )
+                  })}
+              </div>
+          )}
+      </CollapsibleSection>
+  );
+
+  const ArtStyleControls = () => (
+    <CollapsibleSection title="Artistic Style" sectionKey="artStyle" isOpen={openSections.artStyle} onToggle={() => toggleSection('artStyle')} icon={<BrushIcon className="w-5 h-5" />}>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-wrap gap-2">
+          {styleOptions.map(option => (
+            <OptionButton
+              key={option.name}
+              option={option.name}
+              isSelected={selectedStyle === option.name}
+              onClick={() => handleArtStyleChange(option.name)}
+            />
+          ))}
+        </div>
+        {selectedStyle && (
+          <div className="mt-2 pt-4 border-t border-gray-700/50">
+            <label htmlFor="style-intensity" className="block text-sm font-medium text-gray-400 mb-1">
+              Style Intensity ({styleIntensity}%)
+            </label>
+            <input
+              id="style-intensity"
+              type="range"
+              min="1"
+              max="100"
+              value={styleIntensity}
+              onChange={(e) => setStyleIntensity(Number(e.target.value))}
+              className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600"
+            />
+          </div>
+        )}
+      </div>
+    </CollapsibleSection>
   );
 
   return (
@@ -2703,7 +2745,11 @@ const ImageEditor: React.FC = () => {
                                </CollapsibleSection>
                           </div>
                       </CollapsibleSection>
-                      <CommonEnvironmentControls />
+                      
+                      <ArtStyleControls />
+                      <BackgroundControls />
+                      <ForegroundControls />
+
                       <CollapsibleSection
                         title="Camera Angle"
                         sectionKey="cameraAngle"
@@ -2866,6 +2912,9 @@ const ImageEditor: React.FC = () => {
                             </CollapsibleSection>
                           </div>
                         </CollapsibleSection>
+
+                        <ArtStyleControls />
+
                         <CollapsibleSection title="Decorative Items" sectionKey="decorativeItems" isOpen={openSections.decorativeItems} onToggle={() => toggleSection('decorativeItems')} icon={<FlowerIcon className="w-5 h-5" />}>
                             <div className="flex flex-wrap gap-2">
                                 {decorativeItemOptions.map(item => (
@@ -2878,7 +2927,7 @@ const ImageEditor: React.FC = () => {
                                 ))}
                             </div>
                         </CollapsibleSection>
-                        <CommonEnvironmentControls excludeForeground />
+                        <BackgroundControls />
                       </>
                   )}
 
