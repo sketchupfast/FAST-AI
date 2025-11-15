@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback, useImperativeHandle, forwardRef } from 'react';
 import ProgressBar from './ProgressBar';
 import { PhotoIcon } from './icons/PhotoIcon';
@@ -22,6 +23,7 @@ interface ImageDisplayProps {
   brushSize?: number;
   brushColor?: string;
   onMaskChange?: (isMaskEmpty: boolean) => void;
+  cropAspectRatio?: string;
 }
 
 export interface ImageDisplayHandle {
@@ -65,11 +67,12 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
   brightness = 100,
   contrast = 100,
   saturation = 100,
-  sharpness = 100,
+  sharpness = 0,
   isMaskingMode = false,
   brushSize = 30,
   brushColor = 'rgba(255, 59, 48, 0.7)',
-  onMaskChange
+  onMaskChange,
+  cropAspectRatio = 'Original'
 }, ref) => {
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -85,6 +88,7 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
   const [isSliderDragging, setIsSliderDragging] = useState(false);
   const showComparison = originalImageUrl && imageUrl;
   const prevOriginalImageUrlRef = useRef<string | null | undefined>(undefined);
+  const [cropBox, setCropBox] = useState<{ width: number; height: number } | null>(null);
 
   // Masking state
   const isDrawing = useRef(false);
@@ -338,6 +342,69 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
     }
   }, [isMaskingMode, imageUrl, resizeCanvas]);
 
+  useEffect(() => {
+    const image = imageRef.current;
+    const container = imageContainerRef.current;
+
+    const calculateCropBox = () => {
+      if (cropAspectRatio === 'Original' || !image || !container) {
+        setCropBox(null);
+        return;
+      }
+    
+      const ratioParts = cropAspectRatio.split(' ')[0].split(':');
+      if (ratioParts.length !== 2) {
+        setCropBox(null);
+        return;
+      }
+      const targetRatio = parseFloat(ratioParts[0]) / parseFloat(ratioParts[1]);
+
+      const { naturalWidth, naturalHeight } = image;
+      const imageRatio = naturalWidth / naturalHeight;
+      const containerRatio = container.clientWidth / container.clientHeight;
+      
+      let displayWidth, displayHeight;
+      if (imageRatio > containerRatio) {
+        displayWidth = container.clientWidth;
+        displayHeight = displayWidth / imageRatio;
+      } else {
+        displayHeight = container.clientHeight;
+        displayWidth = displayHeight * imageRatio;
+      }
+      
+      let cropWidth, cropHeight;
+      const displayRatio = displayWidth / displayHeight;
+      
+      if (targetRatio > displayRatio) {
+        cropWidth = displayWidth;
+        cropHeight = cropWidth / targetRatio;
+      } else {
+        cropHeight = displayHeight;
+        cropWidth = cropHeight * targetRatio;
+      }
+
+      setCropBox({ width: cropWidth, height: cropHeight });
+    };
+
+    if (image) {
+      if (image.complete) {
+        calculateCropBox();
+      } else {
+        image.onload = calculateCropBox;
+      }
+    }
+    
+    const observer = new ResizeObserver(calculateCropBox);
+    if (container) {
+      observer.observe(container);
+    }
+
+    return () => {
+      if (image) image.onload = null;
+      if (container) observer.unobserve(container);
+    };
+  }, [cropAspectRatio, imageUrl]);
+
 
   const ZoomButton: React.FC<{onClick: () => void, children: React.ReactNode, title: string}> = ({ onClick, children, title }) => (
     <button
@@ -353,9 +420,8 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
 
   const baseFilterStyle = getFilterStyle(selectedFilter);
   // Note: CSS filter for sharpness is not standard.
-  // We use contrast as a visual proxy for sharpness in the preview.
-  // The actual sharpening is handled by the Gemini model prompt.
-  const colorAdjustmentsStyle = `brightness(${brightness / 100}) contrast(${contrast / 100}) saturate(${saturation / 100}) contrast(${sharpness / 100})`;
+  // The actual sharpening is handled by the Gemini model prompt, so we don't apply a fake one here.
+  const colorAdjustmentsStyle = `brightness(${brightness / 100}) contrast(${contrast / 100}) saturate(${saturation / 100})`;
   const filterStyle = [baseFilterStyle, colorAdjustmentsStyle].filter(Boolean).join(' ');
   
   const imageStyles: React.CSSProperties = {
@@ -430,6 +496,18 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
                   )}
               </div>
               
+              {cropBox && (
+                <div 
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                  style={{ width: cropBox.width, height: cropBox.height }}
+                >
+                    <div className="w-full h-full" style={{
+                        boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.6)',
+                        border: '2px dashed rgba(255, 255, 255, 0.7)',
+                    }}/>
+                </div>
+              )}
+
               {isMaskingMode && (
                 <canvas
                   ref={canvasRef}
