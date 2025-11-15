@@ -1,10 +1,11 @@
+
 import { GoogleGenAI, Modality, Type, GenerateContentResponse } from "@google/genai";
 
 // It's recommended to initialize the GoogleGenAI client once
 // and reuse it throughout your application.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
-const MAX_IMAGE_DIMENSION = 1024; // Max width or height for the largest side
+const MAX_IMAGE_DIMENSION = 3840; // Max width or height for the largest side
 
 export interface AnalysisResult {
   architecturalStyle: string;
@@ -111,6 +112,63 @@ const resizeImage = (
     };
     img.onerror = () => {
       reject(new Error('Failed to load image for resizing.'));
+    };
+    img.src = dataUrl;
+  });
+};
+
+/**
+ * Resizes and crops an image on the client-side to fit target dimensions.
+ * @param dataUrl The data URL of the source image.
+ * @param targetSize A string representing the target size, e.g., "1920x1080".
+ * @returns A promise that resolves to the new data URL of the cropped and resized image.
+ */
+export const cropAndResizeImage = (
+  dataUrl: string,
+  targetSize: string,
+): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const [targetWidth, targetHeight] = targetSize.split('x').map(Number);
+    if (!targetWidth || !targetHeight) {
+      return reject(new Error('Invalid target size format. Expected "WIDTHxHEIGHT".'));
+    }
+
+    const img = new Image();
+    img.onload = () => {
+      const sourceWidth = img.width;
+      const sourceHeight = img.height;
+      const sourceRatio = sourceWidth / sourceHeight;
+      const targetRatio = targetWidth / targetHeight;
+
+      let sx = 0, sy = 0, sWidth = sourceWidth, sHeight = sourceHeight;
+
+      // Determine cropping dimensions (center crop) to match the target aspect ratio
+      if (sourceRatio > targetRatio) {
+        // Source image is wider than target aspect ratio, so crop the sides
+        sWidth = sourceHeight * targetRatio;
+        sx = (sourceWidth - sWidth) / 2;
+      } else if (sourceRatio < targetRatio) {
+        // Source image is taller than target aspect ratio, so crop the top and bottom
+        sHeight = sourceWidth / targetRatio;
+        sy = (sourceHeight - sHeight) / 2;
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        return reject(new Error('Could not get canvas context for resizing.'));
+      }
+
+      // Draw the cropped portion of the source image onto the canvas, resizing it to the target dimensions
+      ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, targetWidth, targetHeight);
+
+      // Using JPEG for potentially better file size, with high quality
+      resolve(canvas.toDataURL('image/jpeg', 0.95));
+    };
+    img.onerror = () => {
+      reject(new Error('Failed to load image for client-side resizing.'));
     };
     img.src = dataUrl;
   });
@@ -298,6 +356,9 @@ export const analyzeImage = async (
       },
     }));
 
+    if (!response.text) {
+      throw new Error("The AI returned an empty analysis. Please try again.");
+    }
     const text = response.text.trim();
     // The text might be wrapped in ```json ... ```, need to strip it.
     const jsonStr = text.startsWith('```json') ? text.replace(/^```json\n|```$/g, '') : text;
@@ -363,6 +424,9 @@ export const suggestCameraAngles = async (
       },
     }));
     
+    if (!response.text) {
+      throw new Error("The AI returned empty suggestions. Please try again.");
+    }
     const text = response.text.trim();
     const jsonStr = text.startsWith('```json') ? text.replace(/^```json\n|```$/g, '') : text;
     const parsedResult = JSON.parse(jsonStr) as string[];
