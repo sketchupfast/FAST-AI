@@ -8,33 +8,64 @@ const AuthPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  const { login, signup } = useAuth();
+  const { login, signup, signupPending, setSignupPending } = useAuth();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSignupPending(false);
 
-    if (isLoginView) {
-      // Basic validation
-      if (!email || !password) {
-        setError('Please fill in all fields.');
-        return;
+    try {
+      if (isLoginView) {
+        if (!email || !password) {
+          setError('Please fill in all fields.');
+          return;
+        }
+        login(email);
+      } else {
+        if (!email || !password || !confirmPassword) {
+          setError('Please fill in all fields.');
+          return;
+        }
+        if (password.length < 6) {
+          setError('Password must be at least 6 characters long.');
+          return;
+        }
+        if (password !== confirmPassword) {
+          setError('Passwords do not match.');
+          return;
+        }
+        signup(email);
       }
-      // In this simulation, any login attempt for a non-empty email/pw is "successful"
-      login(email);
-    } else {
-      // Signup validation
-      if (!email || !password || !confirmPassword) {
-        setError('Please fill in all fields.');
-        return;
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An unknown error occurred.');
       }
-      if (password !== confirmPassword) {
-        setError('Passwords do not match.');
-        return;
-      }
-      signup(email);
     }
   };
+
+  if (signupPending) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4 text-center animate-fade-in">
+        <div className="w-full max-w-md bg-gray-800/50 p-8 rounded-2xl shadow-lg border border-gray-700">
+          <h2 className="text-2xl font-bold text-gray-200 mb-4">
+            Thank you for signing up!
+          </h2>
+          <p className="text-gray-400">
+            Your account has been created successfully and is now awaiting approval from the creator. You will be able to log in once your account is approved.
+          </p>
+          <button
+            onClick={() => setSignupPending(false)}
+            className="mt-8 w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-sm font-bold text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-red-500 transition-transform transform hover:scale-105"
+          >
+            Return to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4 animate-fade-in">
@@ -110,7 +141,7 @@ const AuthPage: React.FC = () => {
             
             <p className="mt-6 text-center text-sm text-gray-400">
               {isLoginView ? "Don't have an account?" : 'Already have an account?'}
-              <button onClick={() => { setIsLoginView(!isLoginView); setError(''); }} className="ml-1 font-semibold text-red-400 hover:text-red-300">
+              <button onClick={() => { setIsLoginView(!isLoginView); setError(''); setSignupPending(false); }} className="ml-1 font-semibold text-red-400 hover:text-red-300">
                 {isLoginView ? 'Sign Up' : 'Log In'}
               </button>
             </p>

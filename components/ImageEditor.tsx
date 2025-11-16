@@ -112,8 +112,10 @@ const interiorStyleOptions = [
 ];
 
 
-const backgrounds = ["Original Background", "Bangkok High-rise View", "Mountain View", "Bangkok Traffic View", "Farmland View", "Housing Estate View", "Chao Phraya River View", "Forest", "Public Park", "Beach", "Cityscape", "Outer Space", "IMPACT Exhibition Hall", "Luxury Shopping Mall"];
-const foregrounds = ["Foreground Road", "Foreground Large Tree", "Foreground River", "Top Corner Leaves", "Bottom Corner Bush"];
+const backgrounds = ["No Change", "Bangkok High-rise View", "Mountain View", "Bangkok Traffic View", "Farmland View", "Housing Estate View", "Chao Phraya River View", "View from Inside to Garden", "Forest", "Public Park", "Beach", "Cityscape", "Outer Space", "IMPACT Exhibition Hall", "Luxury Shopping Mall"];
+const interiorBackgrounds = ["No Change", "View from Inside to Garden", "Ground Floor View (Hedge & House)", "Upper Floor View (House)", "Bangkok High-rise View", "Mountain View", "Cityscape", "Beach", "Forest", "Chao Phraya River View", "Public Park"];
+
+const foregrounds = ["Foreground Large Tree", "Foreground River", "Top Corner Leaves", "Bottom Corner Bush"];
 const filters = ['None', 'Black & White', 'Sepia', 'Invert', 'Grayscale', 'Vintage', 'Cool Tone', 'Warm Tone', 'HDR'];
 
 // --- New Time/Weather Controls ---
@@ -211,17 +213,32 @@ const DECORATIVE_ITEM_PROMPTS: Record<string, string> = {
     'Stack of Books': 'Place a small, artfully arranged stack of books on a coffee table or shelf.'
 };
 
-const magicalGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Turn on the lights. Randomize the exterior atmosphere to be like a large, beautiful, naturally landscaped garden. There is a clear stream creating a large pond where koi fish swim. Large trees and dense bushes surround the area, providing shade and lushness. A curved stone path winds through green tropical bushes, connecting to a wooden deck with a white chair and table for relaxing by the pond. The area looks serene and perfect for relaxing in nature. The vegetation is lush and diverse, surrounded by large plumeria trees, supports, ferns, caladiums, and bushes on the stone path, hidden in a white mist. Sunlight filtering through the canopy creates beautiful light rays. The atmosphere is calm, shady, and natural after a rain.";
+const magicalGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Turn on the lights. Randomize the exterior atmosphere to be a large, beautiful, naturally landscaped garden. A clear stream creates a large pond where koi fish swim. Large trees and dense bushes surround the area. A curved, moss-covered stone path with detailed texture winds through lush tropical bushes, connecting to a wooden deck. The vegetation is hyper-realistic and diverse, featuring large plumeria trees, tree ferns with intricate fronds, colorful caladiums, anthuriums, and hostas. The entire scene is shrouded in a light, ethereal mist. Sunlight filters through the canopy, creating beautiful, volumetric light rays. The atmosphere is calm, shady, and natural after a rain, with visible dew drops on the leaves.";
 
-const modernTropicalGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. The setting is a house in a housing estate. Randomly turn on lights in the living and dining rooms. The exterior walls of the house may have some old stains. The sky should be clear with few clouds, showing other houses and trees in the estate in the background. The main focus is to change the garden into a meticulously designed, luxurious, and contemporary modern tropical garden with the following details: - Key elements: Use large-leafed tropical plants like palms and philodendrons to create a dense, lush feel. Use large, neatly arranged black stone slabs for the flooring to create a modern, minimalist contrast. Incorporate free-form stones as sculptural elements or seating. Use uplighting from the ground and hidden lights to highlight plants and architecture, creating a calm and mysterious atmosphere at night. - Overall feel: The design should blend tropical lushness with sharp, modern lines, creating a serene, quiet, cool, and private atmosphere like a high-end resort. - Vertical elements: Use black slatted walls for privacy and as a backdrop that contrasts with the green foliage.";
+const modernTropicalGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. The setting is a house in a housing estate. Randomly turn on lights. The sky should be clear with few clouds. The main focus is to change the garden into a meticulously designed, luxurious, and contemporary modern tropical garden with the following details: - Key elements: Use a diverse array of large-leafed tropical plants like Monstera Deliciosa, Strelitzia nicolai (giant white bird of paradise), and various Alocasia species to create a dense, lush feel with detailed leaf textures. Use large, neatly arranged black slate or honed basalt slabs for the flooring to create a modern, minimalist contrast with visible texture. Incorporate large, smooth river stones as sculptural elements. Use dramatic uplighting from the ground to highlight the textures of plant leaves and architectural elements. - Overall feel: The design should blend tropical lushness with sharp, modern lines, creating a serene and private atmosphere like a high-end resort. - Vertical elements: Use black slatted walls made of textured composite wood for privacy and as a backdrop that contrasts with the vibrant green foliage.";
 
-const formalGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Inside the living and dining rooms, randomly turn on the lights. The exterior atmosphere is like a housing estate with a clear sky, few clouds, and trees from the project visible. Change the garden to a Formal Garden, designed with order, symmetry, and a focus on classic beauty. Key elements include geometrically shaped topiary, such as square and round bushes, and meticulously trimmed low hedges. A multi-tiered classic marble fountain serves as the garden's centerpiece. A curved brick or concrete path runs through the lawn, and large shade trees are scattered around the garden. The design emphasizes symmetrical planting and balanced pathways, creating an orderly and elegant look suitable for relaxation.";
+const formalGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Inside the living and dining rooms, randomly turn on the lights. Change the garden to a Formal Garden, designed with order and symmetry. Key elements include geometrically shaped topiary and meticulously trimmed low hedges made from Buxus sempervirens (boxwood) with detailed leaf textures. A multi-tiered classic marble fountain with flowing water is the centerpiece. An aged brick or crushed gravel path runs through a perfectly manicured lawn. Symmetrically placed beds of roses and lavender add color and fragrance. The design emphasizes balance and elegance, suitable for relaxation.";
 
-const modernNaturalGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Inside the living and dining rooms, randomly turn on the lights. The exterior atmosphere is like a housing estate with a clear sky, few clouds, and trees from the project visible. Change the garden to a Modern Natural Garden, decorated simply, cleanly, and functionally. Key elements include a checkerboard path paved with gray stone slabs contrasting with green grass, a large tree with a wooden support frame and various shrubs, including a beautiful weeping willow for shade. There is a seating area in the garden with a wooden bench, and it is decorated with various potted plants. The design is a semi-formal, natural style that emphasizes soft sunlight and green tones, creating a relaxing and private atmosphere suitable for a residence.";
+const modernNaturalGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Inside the living and dining rooms, randomly turn on the lights. Change the garden to a Modern Natural Garden. Key elements include a checkerboard path paved with large-format gray stone pavers with detailed texture, contrasting with a rich, dense lawn where individual blades are visible. The garden features a mix of ornamental grasses like Pennisetum and Miscanthus, and shrubs such as hydrangeas and viburnum. A seating area has a wooden bench, surrounded by ferns and hostas in minimalist concrete planters. The design emphasizes soft sunlight and a variety of green tones, creating a relaxing and private atmosphere.";
 
-const tropicalPathwayGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Inside the living and dining rooms, randomly turn on the lights. The exterior atmosphere is like a housing estate with a clear sky, few clouds, and trees from the project visible. A brick pathway winds towards the house's door, surrounded by dense tropical vegetation such as large plumeria trees, large caladium leaves, ferns, orchids, and other lush green plants. The atmosphere is shady and natural, giving the feeling of walking into a forest garden or a tropical-style resort. This image conveys tranquility, coolness, and a design that harmonizes perfectly with nature.";
+const tropicalPathwayGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Inside the living and dining rooms, randomly turn on the lights. A textured flagstone or weathered brick pathway winds towards the house's door, surrounded by dense, multi-layered tropical vegetation. This includes plumeria trees, heliconias with vibrant flowers, elephant ear plants (Alocasia) with massive leaves, climbing philodendrons, and various species of ferns and orchids. The atmosphere is shady and humid, with visible dew drops on the leaves, giving the feeling of walking into a lush, tropical-style resort.";
 
-const thaiStreamGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Inside the living and dining rooms, randomly turn on the lights. The exterior atmosphere is like a housing estate with a clear sky, few clouds, and trees from the project visible. The image shows a shady and serene natural garden. A clear stream flows among naturally placed rocks. Both sides of the stream are filled with large, shady trees and ground cover plants like ferns, green-leafed plants, and other tropical vegetation spreading across the area. The atmosphere feels cool, fresh, and relaxing, suitable for rest or meditation. It's a natural-style garden that beautifully mimics a rainforest and could be part of a residence or resort.";
+const thaiStreamGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Inside the living and dining rooms, randomly turn on the lights. The image shows a shady and serene natural Thai garden. A crystal-clear stream with a pebble-lined bed flows among moss-covered river rocks of varying sizes. Both sides of the stream are filled with tall bamboo culms, Bodhi trees, and a lush ground cover of moss and creeping Jenny. The atmosphere feels cool and fresh, beautifully mimicking a rainforest. The textures of the wet rocks, tree bark, and diverse leaves should be hyper-realistic.";
+
+// FIX: Define GARDEN_STYLE_PROMPTS constant to resolve reference errors.
+const GARDEN_STYLE_PROMPTS: Record<string, string> = {
+    'Thai Garden': "Transform the landscape into a traditional Thai garden, featuring elements like salas (pavilions), water features such as ponds with lotus flowers, intricate stone carvings, and lush tropical plants like banana trees and orchids, with a moderate amount of trees. The atmosphere should be serene and elegant.",
+    'Japanese Garden': "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain original design and camera angle. The scene is a serene and beautiful traditional Japanese garden. It features a koi pond with colorful carp, a stone lantern (tōrō), a water basin (tsukubai), and a bamboo fence (takegaki). The vegetation includes Japanese maple (Acer palmatum) with delicate red leaves, meticulously pruned black pine trees (Pinus thunbergii), and rounded azalea bushes (tsutsuji). The textures of the moss on the rocks, the raked sand or gravel (samon), and the aged wood should be highly detailed, reflecting the simplicity and harmony of Zen philosophy.",
+    'English Garden': "Transform the landscape into a classic English cottage garden, characterized by an informal, romantic design. It should feature overflowing flowerbeds packed with a diverse mix of climbing roses, foxgloves, delphiniums, and hollyhocks. A winding, textured brick or gravel path meanders through the garden. The scene should have a charming and abundant natural feel with a variety of textures from soft flower petals to silver-leafed plants like Lamb's Ear, creating a sense of layered beauty.",
+    'Tropical Garden': "Transform the landscape into a dense and vibrant tropical garden. Fill it with a diverse array of large-leafed plants like Monstera deliciosa, Alocasia, and philodendrons. Add vibrant, exotic flowers like hibiscus, bird of paradise, and orchids. Include various types of towering palm trees and lush ferns. The atmosphere should be humid and verdant, with detailed textures on leaves, bark, and wet ground.",
+    'Flower Garden': "Transform the landscape into a magnificent and colorful flower garden. The scene should be filled with a wide variety of flowers in full bloom, such as roses, peonies, tulips, and lavender, showcasing different colors, shapes, and sizes. Create a stunning visual tapestry with detailed petal textures, visible pollen on stamens, and varying plant heights. It should look like a professional botanical garden at its peak, buzzing with life.",
+    'Magical Garden': magicalGardenPrompt,
+    'Modern Tropical Garden': modernTropicalGardenPrompt,
+    'Formal Garden': formalGardenPrompt,
+    'Modern Natural Garden': modernNaturalGardenPrompt,
+    'Tropical Pathway Garden': tropicalPathwayGardenPrompt,
+    'Thai Stream Garden': thaiStreamGardenPrompt,
+};
 
 const QUICK_ACTION_PROMPTS: Record<string, string> = {
     sereneHomeWithGarden: "Transform the image into a high-quality, photorealistic architectural photograph, maintaining the original architecture and camera angle. Turn on warm, inviting interior lights visible through the windows. Add large, elegant trees in the foreground, framing the view slightly. Create a beautifully landscaped garden in front of the house with a neat lawn and some flowering bushes. The background should feature soft, out-of-focus trees, creating a sense of depth and tranquility. The overall atmosphere should be peaceful, serene, and welcoming, as if for a luxury real estate listing.",
@@ -233,25 +250,27 @@ const QUICK_ACTION_PROMPTS: Record<string, string> = {
     morningHousingEstate: "Transform this architectural photo to capture the serene atmosphere of an early morning in a modern housing estate. The lighting should be soft, warm, and golden, characteristic of the hour just after sunrise, casting long, gentle shadows. The air should feel fresh and clean, with a hint of morning dew on the manicured lawns. The overall mood should be peaceful, pristine, and inviting, typical of a high-end, well-maintained residential village.",
     urbanSketch: "Transform this image into a beautiful urban watercolor sketch. It should feature loose, expressive ink linework combined with soft, atmospheric watercolor washes. The style should capture the gritty yet vibrant energy of a bustling city street, similar to the work of a professional urban sketch artist. Retain the core composition but reinterpret it in this artistic, hand-drawn style.",
     architecturalSketch: "Transform the image into a sophisticated architectural concept sketch. The main subject should be rendered with a blend of clean linework and artistic, semi-realistic coloring, showcasing materials like wood, concrete, and glass. Superimpose this rendering over a background that resembles a technical blueprint or a working draft, complete with faint construction lines, dimensional annotations, and handwritten notes. The final result should look like a page from an architect's sketchbook, merging a polished design with the raw, creative process.",
+    midjourneyArtlineSketch: "Transform the image into a stunning architectural artline sketch, in the style of a Midjourney AI generation. The image should feature a blend of photorealistic rendering of the building with clean, precise art lines overlaid. The background should be a vintage or parchment-like paper with faint blueprint lines, handwritten notes, and technical annotations, giving it the feel of an architect's creative draft. The final result must be a sophisticated and artistic representation, seamlessly merging technical drawing with a photorealistic render.",
     pristineShowHome: "Transform the image into a high-quality, photorealistic photograph of a modern house, as if it were brand new. Meticulously arrange the landscape to be neat and tidy, featuring a perfectly manicured lawn, a clean driveway and paths, and well-placed trees. Add a neat, green hedge fence around the property. The lighting should be bright, natural daylight, creating a clean and inviting atmosphere typical of a show home in a housing estate. Ensure the final result looks like a professional real estate photo, maintaining the original architecture.",
-    highriseNature: "Transform the image into a hyper-detailed, 8k resolution photorealistic masterpiece, as if captured by a professional architectural photographer. The core concept is a harmonious blend of sleek, modern architecture with a lush, organic, and natural landscape. The building should be seamlessly integrated into its verdant surroundings. In the background, establish a dynamic and slightly distant city skyline, creating a powerful visual contrast between the tranquility of nature and the energy of urban life. The lighting must be bright, soft, natural daylight that accentuates the textures of both the building materials and the foliage, casting believable, gentle shadows. The final image should be a striking composition that feels both sophisticated and serene.",
-    urbanCondoDusk: "Transform the image into a dramatic, high-quality, photorealistic architectural photograph of a modern high-rise condominium, perfect for a real estate advertisement. The shot must be from a high-angle aerial perspective, showcasing the building against a vibrant city skyline at dusk. The sky should feature beautiful sunset colors. All city lights, including traffic, streetlights, and surrounding buildings, must be illuminated. The main condominium building should be the central focus, with its interior and exterior lights turned on to create a warm, inviting, and luxurious glow. The final image must be hyper-realistic and visually stunning, capturing the energy of a bustling metropolis at twilight.",
-    urbanCondoDay: "Transform the image into a high-quality, photorealistic architectural photograph of a modern high-rise condominium, perfect for a real estate advertisement. The shot must be from a high-angle aerial perspective, showcasing the building against a vibrant city skyline under a clear blue sky with bright, natural daylight. The main condominium building should be the central focus, appearing crisp and clear in the sunlight. The final image must be hyper-realistic and visually stunning, capturing the energy of a bustling metropolis during the day.",
-    sketchToPhoto: "Transform this architectural sketch/line drawing into a photorealistic, 8K resolution image. Interpret the lines to create a building with realistic details, textures, and appropriate materials. The lighting must be soft, natural daylight, creating gentle shadows and a realistic feel. The final image should look like a professional architectural photograph, strictly maintaining the original perspective and composition of the sketch.",
-    sketchupToPhotoreal: "Transform this SketchUp rendering into a high-quality, photorealistic architectural render, as if it was created using 3ds Max and V-Ray. Enhance all materials and textures to be hyper-realistic (e.g., wood grain, fabric textures, reflections on metal and glass). The lighting should be natural and cinematic, creating a believable and inviting atmosphere. Strictly maintain the original camera angle, composition, and design elements. It is absolutely crucial that the final image looks like a professional 3D render and has no outlines or sketch-like lines whatsoever.",
-};
+    // FIX: Corrected a corrupted prompt for highriseNature and removed misplaced garden style prompts.
+    highriseNature: "Transform the image into a hyper-detailed, 8k resolution photorealistic masterpiece, as if captured by a professional architectural photographer. The core concept is a harmonious blend of sleek, modern architecture with a lush, organic, and natural landscape. The building should be seamlessly integrated into its verdant surroundings. In the background, establish a dynamic and slightly distant city skyline, creating a powerful visual contrast between the tranquility of nature and the energy of urban life. The lighting must be bright, soft, natural daylight.",
+    fourSeasonsTwilight: "Transform the image into a high-quality, photorealistic architectural photograph of a modern luxury high-rise building, maintaining the original architecture and camera angle. The scene is set at dusk, with a beautiful twilight sky blending from deep blue to soft orange tones. The building's interior and exterior architectural lights are turned on, creating a warm, inviting glow that reflects elegantly on the surface of a wide, calm river in the foreground. The background features a sophisticated, partially lit city skyline. The final image must be hyper-realistic, mimicking a professional photograph for a prestigious real estate project.",
+    urbanCondoDayHighAngle: "Transform the image into a high-quality, photorealistic architectural photograph from a high-angle or aerial perspective, maintaining the original architecture. The scene should depict a clear, bright daytime setting. The main building should be a modern condominium with a glass facade. The surrounding area should be a dense urban or suburban landscape with smaller buildings and roads. The sky should be a clear blue with a few soft clouds. The overall feel must be clean, sharp, and professional, suitable for real estate marketing.",
+    modernWoodHouseTropical: "Transform the image into a high-quality, photorealistic architectural photograph of a modern two-story house, maintaining the original architecture and camera angle. The house should feature prominent natural wood siding and large glass windows. Set the time to late afternoon, with warm, golden sunlight creating soft, pleasant shadows. The house must be surrounded by a lush, vibrant, and well-manicured modern tropical garden with diverse plant species. The overall atmosphere should be warm, luxurious, and serene, as if for a high-end home and garden magazine.",
+    classicMansionFormalGarden: "Transform the image into a high-quality, photorealistic architectural photograph of a luxurious, classic-style two-story house, maintaining the original architecture and camera angle. The house should have a pristine white facade with elegant moldings and contrasting black window frames and doors. The lighting should be bright, clear daylight, creating a clean and crisp look. The surrounding landscape must be a meticulously designed formal garden, featuring symmetrical topiary, low boxwood hedges, a neat lawn, and a classic water feature or fountain. The overall mood should be one of timeless elegance and grandeur.",
 
-const GARDEN_STYLE_PROMPTS: Record<string, string> = {
-    'Japanese Garden': "Transform the image to be highly realistic, like an ad in a home design magazine. Maintain original design and camera angle. Turn on lights in living/dining rooms. Exterior is a housing estate with a clear sky. The image shows a particularly serene and beautiful traditional Japanese garden. At the center is a small koi pond with colorful carp swimming gracefully. Clear water flows among carefully placed rocks and natural vegetation arranged in the Japanese style. The surrounding atmosphere is quiet, with pine trees, small-leafed trees, and neatly trimmed bushes, reflecting the simplicity, harmony, and respect for nature of Japanese Zen philosophy. The image evokes a relaxing, warm feeling, perfect for sipping tea quietly while enjoying nature in the morning or evening.",
-    'English Garden': "Transform the landscape into a classic English cottage garden, characterized by an informal, romantic design. It should feature overflowing flowerbeds, climbing roses, and winding brick or gravel paths. A mix of perennials, annuals, and shrubs should create a charming and abundant natural feel.",
-    'Tropical Garden': "Transform the landscape into a dense and vibrant tropical garden. Fill it with large-leafed plants like monstera and philodendron, colorful exotic flowers like hibiscus and bird of paradise, towering palm trees, and a humid, lush atmosphere. The scene should feel natural, verdant, and full of life.",
-    'Flower Garden': "Transform the landscape into a magnificent and colorful flower garden. The scene should be filled with a wide variety of flowers in full bloom, showcasing different colors, shapes, and sizes, creating a stunning visual tapestry. It should look like a professional botanical garden at its peak.",
-    'Magical Garden': magicalGardenPrompt,
-    'Modern Tropical Garden': modernTropicalGardenPrompt,
-    'Formal Garden': formalGardenPrompt,
-    'Modern Natural Garden': modernNaturalGardenPrompt,
-    'Tropical Pathway Garden': tropicalPathwayGardenPrompt,
-    'Thai Stream Garden': thaiStreamGardenPrompt,
+    // --- Interior Presets ---
+    sketchupToPhotoreal: "Transform this SketchUp or 3D model image into a hyper-realistic, photorealistic 3D render. Focus on creating natural lighting, realistic material textures (like wood grain, fabric weaves, metal reflections), and soft shadows to make it look like a real photograph taken with a professional camera.",
+    darkMoodyLuxuryBedroom: "Redesign this bedroom into a dark, moody, and luxurious sanctuary. Use a sophisticated color palette of deep charcoals, rich browns, and black, accented with warm, soft lighting from designer fixtures. Incorporate high-end materials like dark wood paneling, a feature wall with book-matched marble, plush velvet textiles, and subtle brass or gold details. The atmosphere should be intimate, sophisticated, and exceptionally cozy.",
+    softModernSanctuary: "Transform this bedroom into a soft, modern sanctuary with a focus on comfort and serenity. The centerpiece should be a large, fully upholstered bed with a tall, curved, and backlit headboard that creates a gentle glow. Use a calming and light color palette of warm whites, soft beiges, and muted grays. Incorporate gentle curves throughout the room's furniture and decor. The lighting should be soft and layered, creating a peaceful and relaxing atmosphere.",
+    geometricChicBedroom: "Redesign this bedroom with a chic and elegant modern aesthetic. The main feature should be a stunning headboard wall with a geometric pattern, such as inlaid wood or upholstered panels. Flank the bed with stylish, modern pendant lights. Use a balanced color palette of neutral tones with a single sophisticated accent color. The furniture should be clean-lined and contemporary. The overall look must be polished, high-end, and visually interesting.",
+    symmetricalGrandeurBedroom: "Transform this bedroom into a space of grand, luxurious, and symmetrical design. The layout must be perfectly balanced around the bed. Use high-quality materials like a large, tufted headboard, elegant wall moldings (wainscoting), and mirrored nightstands. Above the bed, hang a large, modern sculptural chandelier as a statement piece. The color palette should be classic and refined, like cream, gray, and gold, creating an atmosphere of timeless opulence and order.",
+    classicSymmetryLivingRoom: "Redesign this living room with a classic, symmetrical, and formal aesthetic. The layout should be centered around a traditional fireplace with an ornate mantel. Arrange two elegant, curved sofas facing each other. Use a soft, neutral color palette with light grays and creams. The walls should feature classic, decorative moldings. The atmosphere must be refined, elegant, and timeless.",
+    modernDarkMarbleLivingRoom: "Transform this living room into a sophisticated, moody, and modern space. The focal point should be a dramatic feature wall made of dark, heavily-veined marble. Incorporate a modern, suspended or minimalist fireplace. Use rich materials like dark wood for shelving and paneling. The furniture should be contemporary and comfortable, in deep, rich colors. The lighting should be warm and atmospheric, creating an intimate and luxurious mood.",
+    contemporaryGoldAccentLivingRoom: "Redesign this living room to be bright, airy, and contemporary with a touch of luxury. The main feature should be a light-colored marble wall, possibly for a TV or fireplace. Use a large, comfortable white or light gray sofa. Introduce striking, polished gold or brass accents in the lighting fixtures, coffee table base, and decorative objects. The space should feel open, clean, and glamorous.",
+    modernEclecticArtLivingRoom: "Transform this living room into an artistic and contemporary eclectic space. Combine different materials like concrete, wood, and metal. The lighting should be modern and integrated, such as LED strips in shelving or ceiling coves. The focal point should be a large, prominent piece of abstract or modern artwork on the main wall. The furniture should be a curated mix of modern styles. The overall atmosphere must feel creative, unique, and sophisticated.",
+    brightModernClassicLivingRoom: "Redesign this into a bright, luxurious, and open-plan living and dining space with a modern classic aesthetic. Create a feature wall using large slabs of light-colored marble. Incorporate built-in, backlit shelving to display decorative items. Use a sophisticated color palette of whites, creams, and grays, accented with polished gold details in the furniture and lighting. The space must feel grand, luminous, and impeccably designed.",
+    parisianChicLivingRoom: "Transform this interior into an elegant Parisian-style living room. The architecture should feature high ceilings, intricate neoclassical wall paneling (boiserie), and a large, arched window that floods the space with natural light. Furnish the room with a mix of chic, modern furniture and classic pieces to create a timeless look. The color palette should be light and sophisticated. The overall atmosphere must feel effortlessly elegant and chic.",
 };
 
 const ARCHITECTURAL_STYLE_PROMPTS: Record<string, string> = {
@@ -308,12 +327,25 @@ const BACKGROUND_PROMPTS: Record<string, string> = {
     "Farmland View": "with a lush green farmland and agricultural fields in the background",
     "Housing Estate View": "with a modern, landscaped housing estate project in the background",
     "Chao Phraya River View": "with a scenic view of the Chao Phraya River in Bangkok in the background",
+    "View from Inside to Garden": "change the background to a view looking out from inside a room into a beautifully landscaped front garden. The foreground should subtly include elements of the interior, such as a window frame, a curtain, or the edge of a wall, to create a clear sense of looking out from within the house. The garden should be lush and well-maintained.",
     "IMPACT Exhibition Hall": "with the background of a large, modern exhibition hall like IMPACT Muang Thong Thani during a trade show. The scene should feature high ceilings, professional lighting, various exhibition booths, and a bustling atmosphere with crowds of people.",
     "Luxury Shopping Mall": "with the background of a modern, luxurious shopping mall interior. The scene should feature high ceilings, polished marble floors, and bright, elegant lighting. In the background, include blurred storefronts of high-end brands and a few shoppers to create a realistic, bustling yet sophisticated atmosphere. The main subject should appear as if it is an exhibition booth within this upscale mall."
 };
 
+const INTERIOR_BACKGROUND_PROMPTS: Record<string, string> = {
+    "View from Inside to Garden": "change the background to a view looking out from inside a room into a beautifully landscaped front garden. The foreground should subtly include elements of the interior, such as a window frame, a curtain, or the edge of a wall, to create a clear sense of looking out from within the house. The garden should be lush and well-maintained.",
+    "Ground Floor View (Hedge & House)": "change the view outside the window to be a ground floor perspective looking out onto a neat hedge fence with a modern house from a housing estate visible across the street.",
+    "Upper Floor View (House)": "change the view outside the window to be an upper floor perspective, looking slightly down onto the upper parts and roofs of neighboring houses in a modern housing estate.",
+    "Bangkok High-rise View": "change the view outside the window to a modern, dense Bangkok skyscraper cityscape.",
+    "Mountain View": "change the view outside the window to a majestic mountain range.",
+    "Cityscape": "change the view outside the window to a dense, sprawling metropolis cityscape.",
+    "Beach": "change the view outside the window to a beautiful, serene beach with a clear ocean.",
+    "Forest": "change the view outside the window to a dense forest.",
+    "Chao Phraya River View": "change the view outside the window to a scenic view of the Chao Phraya River in Bangkok, with boats on the water.",
+    "Public Park": "change the view outside the window to a beautifully composed public park with a lush green lawn, large shady trees, and pathways."
+};
+
 const FOREGROUND_PROMPTS: Record<string, string> = {
-    "Foreground Road": "with a road in the foreground",
     "Foreground River": "with a river in the foreground",
     "Top Corner Leaves": "with out-of-focus leaves framing the top corner of the view, creating a natural foreground bokeh effect",
     "Bottom Corner Bush": "with a flowering bush in the bottom corner of the view, adding a touch of nature to the foreground",
@@ -371,7 +403,6 @@ const adjustableOptions: Record<string, { label: string; default: number }> = {
     'Outer Space': { label: 'Star Density', default: 50 },
     // Foregrounds
     'Foreground Large Tree': { label: 'Tree Amount', default: 30 },
-    "Foreground Road": { label: 'Road Condition', default: 50 },
     "Foreground River": { label: 'River Width', default: 50 },
     "Top Corner Leaves": { label: 'Leaf Amount', default: 40 },
     "Bottom Corner Bush": { label: 'Bush Size', default: 50 },
@@ -438,10 +469,6 @@ const ADJUSTABLE_PROMPT_GENERATORS: Record<string, (intensity: number) => string
     'Outer Space': (intensity) => {
         const density = getIntensityDescriptor(intensity, ['a few distant stars', 'a clear night sky with constellations', 'a sky full of stars and a faint milky way', 'a vibrant, star-filled nebula', 'an intensely colorful and complex galactic core']);
         return `with ${density} background`;
-    },
-    "Foreground Road": (intensity) => {
-        const type = getIntensityDescriptor(intensity, ['a simple dirt path', 'a single-lane paved road', 'a two-lane road', 'a multi-lane highway', 'a massive, complex freeway interchange']);
-        return `with ${type} in the foreground`;
     },
     "Foreground River": (intensity) => {
         const width = getIntensityDescriptor(intensity, ['a small stream', 'a medium-sized river', 'a wide river', 'a very wide, expansive river', 'a massive, flowing river']);
@@ -706,6 +733,7 @@ const ImageEditor: React.FC = () => {
   const [isSpotlightActive, setIsSpotlightActive] = useState<boolean>(false);
   const [spotlightBrightness, setSpotlightBrightness] = useState<number>(60);
   const [spotlightColor, setSpotlightColor] = useState<string>('#FFFFE0'); // Light Yellow - halogen-like
+  const [addFourWayAC, setAddFourWayAC] = useState<boolean>(false);
 
 
   // UI state
@@ -720,6 +748,7 @@ const ImageEditor: React.FC = () => {
     cameraAngle: false,
     interiorStyle: false,
     interiorQuickActions: false,
+    livingRoomQuickActions: false,
     artStyle: false,
     background: false,
     foreground: false,
@@ -857,6 +886,7 @@ const ImageEditor: React.FC = () => {
     setIsSpotlightActive(false);
     setSpotlightBrightness(60);
     setSpotlightColor('#FFFFE0');
+    setAddFourWayAC(false);
   }, [activeImage?.id]);
 
 
@@ -958,6 +988,7 @@ const ImageEditor: React.FC = () => {
             ...allClosed, 
             prompt: true,
             interiorQuickActions: true,
+            livingRoomQuickActions: true,
         });
     } else if (type === 'plan') {
         setEditingMode('default');
@@ -965,6 +996,7 @@ const ImageEditor: React.FC = () => {
         setOpenSections({
             ...allClosed,
             planConfig: true,
+            planView: true,
         });
     } else { // exterior
         setEditingMode('default');
@@ -989,7 +1021,7 @@ const ImageEditor: React.FC = () => {
   };
 
   const hasTextPrompt = prompt.trim() !== '';
-  const hasOtherOptions = selectedStyle !== '' || selectedBackgrounds.length > 0 || selectedForegrounds.length > 0 || selectedDecorativeItems.length > 0 || selectedTimeOfDay !== '' || selectedWeather !== '' || (treeAge !== 50) || (season !== 50) || selectedQuickAction !== '' || selectedFilter !== 'None' || selectedGardenStyle !== '' || selectedArchStyle !== '' || isAddLightActive || selectedInteriorStyle !== '' || selectedInteriorLighting !== '' || selectedCameraAngle !== '' || (sceneType === 'interior' && selectedRoomType !== '') || isCoveLightActive || isSpotlightActive;
+  const hasOtherOptions = selectedStyle !== '' || selectedBackgrounds.length > 0 || selectedForegrounds.length > 0 || selectedDecorativeItems.length > 0 || selectedTimeOfDay !== '' || selectedWeather !== '' || (treeAge !== 50) || (season !== 50) || selectedQuickAction !== '' || selectedFilter !== 'None' || selectedGardenStyle !== '' || selectedArchStyle !== '' || isAddLightActive || selectedInteriorStyle !== '' || selectedInteriorLighting !== '' || selectedCameraAngle !== '' || (sceneType === 'interior' && selectedRoomType !== '') || isCoveLightActive || isSpotlightActive || addFourWayAC;
   const isEditingWithMask = editingMode === 'object' && !isMaskEmpty;
   const hasColorAdjustments = brightness !== 100 || contrast !== 100 || saturation !== 100 || sharpness !== 100;
   const isPlanModeReady = sceneType === 'plan' && !!selectedRoomType && !!selectedInteriorStyle;
@@ -1010,7 +1042,7 @@ const ImageEditor: React.FC = () => {
     if (!isDeselecting) {
       setSelectedCameraAngle(''); // Clear camera angle when selecting a quick action
     }
-    setOpenSections(prev => ({...prev, quickActions: false, interiorQuickActions: false }));
+    setOpenSections(prev => ({...prev, quickActions: false, interiorQuickActions: false, livingRoomQuickActions: false }));
   };
 
   const handleGardenStyleChange = (style: string) => {
@@ -1063,26 +1095,25 @@ const ImageEditor: React.FC = () => {
   };
 
   const handleBackgroundToggle = (bg: string) => {
-    if (bg === 'Original Background') {
-        setSelectedBackgrounds(prev => {
-            if (prev.includes('Original Background')) {
-                return []; // deselect
-            }
-            return ['Original Background']; // select only this one
-        });
-    } else {
-        setSelectedBackgrounds(prev => {
-            // If other bg is selected, remove 'Original Background'
-            const withoutOriginal = prev.filter(item => item !== 'Original Background');
-            
-            // Toggle the clicked one
-            if (withoutOriginal.includes(bg)) {
-                return withoutOriginal.filter(item => item !== bg);
-            } else {
-                return [...withoutOriginal, bg];
-            }
-        });
+    if (bg === 'No Change') {
+        setSelectedBackgrounds([]);
+        return;
     }
+
+    if (sceneType === 'interior') {
+        // Single select for interior
+        setSelectedBackgrounds(prev => (prev.includes(bg) ? [] : [bg]));
+        return;
+    }
+    
+    // Multi-select for exterior
+    setSelectedBackgrounds(prev => {
+        if (prev.includes(bg)) {
+            return prev.filter(item => item !== bg);
+        } else {
+            return [...prev, bg];
+        }
+    });
   };
 
   const handleForegroundToggle = (fg: string) => {
@@ -1478,6 +1509,7 @@ const ImageEditor: React.FC = () => {
       setIsSpotlightActive(false);
       setSpotlightBrightness(60);
       setSpotlightColor('#FFFFE0');
+      setAddFourWayAC(false);
 
     } catch (err) {
       if (!mountedRef.current) return;
@@ -1622,11 +1654,17 @@ const ImageEditor: React.FC = () => {
 
       // Backgrounds
       selectedBackgrounds.forEach(bg => {
-          const generator = ADJUSTABLE_PROMPT_GENERATORS[bg];
-          if (generator) {
-              promptParts.push(generator(optionIntensities[bg]));
-          } else if (BACKGROUND_PROMPTS[bg as keyof typeof BACKGROUND_PROMPTS]) {
-              promptParts.push(BACKGROUND_PROMPTS[bg as keyof typeof BACKGROUND_PROMPTS]);
+          if (sceneType === 'interior') {
+              if (INTERIOR_BACKGROUND_PROMPTS[bg as keyof typeof INTERIOR_BACKGROUND_PROMPTS]) {
+                  promptParts.push(INTERIOR_BACKGROUND_PROMPTS[bg as keyof typeof INTERIOR_BACKGROUND_PROMPTS]);
+              }
+          } else { // exterior
+              const generator = ADJUSTABLE_PROMPT_GENERATORS[bg];
+              if (generator) {
+                  promptParts.push(generator(optionIntensities[bg]));
+              } else if (BACKGROUND_PROMPTS[bg as keyof typeof BACKGROUND_PROMPTS]) {
+                  promptParts.push(BACKGROUND_PROMPTS[bg as keyof typeof BACKGROUND_PROMPTS]);
+              }
           }
       });
       
@@ -1741,7 +1779,11 @@ const ImageEditor: React.FC = () => {
 
       if (isSpotlightActive) {
           const brightnessDesc = getIntensityDescriptor(spotlightBrightness, ['subtle accent', 'softly focused', 'moderately bright', 'strong, focused', 'very bright, dramatic']);
-          promptParts.push(`Incorporate ${spotlightColor} halogen-style spotlights. The spotlights should be ${brightnessDesc} and strategically placed to highlight specific features like artwork, plants, or architectural details, creating focused pools of light and adding depth to the scene.`);
+          promptParts.push(`Incorporate ${spotlightColor} modern spotlights or track lighting. The spotlights should be ${brightnessDesc} and strategically placed to highlight specific features like artwork, plants, or architectural details, creating focused pools of light and adding depth to the scene.`);
+      }
+       
+      if (addFourWayAC) {
+        promptParts.push('Add a modern, ceiling-mounted 4-way cassette air conditioner unit, integrating it naturally into the ceiling design.');
       }
     }
     
@@ -1763,7 +1805,7 @@ const ImageEditor: React.FC = () => {
   const handleRandomQuickAction = async () => {
     if (!activeImage || !sceneType || sceneType === 'plan') return;
 
-    const availableActions = sceneType === 'exterior' ? quickActions : interiorQuickActions;
+    const availableActions = sceneType === 'exterior' ? quickActions : [...interiorQuickActions, ...livingRoomQuickActions];
     if (availableActions.length === 0) return;
 
     const randomAction = availableActions[Math.floor(Math.random() * availableActions.length)];
@@ -2088,15 +2130,31 @@ const ImageEditor: React.FC = () => {
     { id: 'morningHousingEstate', label: 'Morning Estate', description: 'Warm morning sunlight in a peaceful housing estate.' },
     { id: 'pristineShowHome', label: 'Pristine Show Home', description: 'Creates a brand new look with a perfectly manicured lawn, road, and hedge fence.' },
     { id: 'highriseNature', label: 'High-rise & Nature', description: 'Blend the building with a lush landscape and a city skyline.' },
-    { id: 'urbanCondoDusk', label: 'Urban Condo Dusk', description: 'High-angle dusk shot of a condo with city lights.' },
-    { id: 'urbanCondoDay', label: 'Urban Condo Day', description: 'A high-angle daytime shot of a condo with a clear blue sky.' },
+    { id: 'fourSeasonsTwilight', label: 'Luxury Riverfront Twilight', description: 'A modern high-rise at dusk with city lights reflecting on a river.' },
+    { id: 'urbanCondoDayHighAngle', label: 'Urban Condo High Angle', description: 'A high-angle daytime shot of a modern building in a dense urban setting.' },
+    { id: 'modernWoodHouseTropical', label: 'Modern Wood & Tropical', description: 'A modern home with wood siding in a lush, warm tropical garden.' },
+    { id: 'classicMansionFormalGarden', label: 'Classic Mansion & Garden', description: 'An elegant white house with a symmetrical, formal garden in bright daylight.' },
     { id: 'urbanSketch', label: 'Urban Sketch', description: 'Convert into a lively, urban watercolor sketch.' },
     { id: 'sketchToPhoto', label: 'Sketch to Photo', description: 'Turn an architectural sketch into a photorealistic image.' },
     { id: 'architecturalSketch', label: 'Architectural Sketch', description: 'Convert into an architect\'s concept sketch.' },
+    { id: 'midjourneyArtlineSketch', label: 'Midjourney Artline', description: 'Create a photorealistic render blended with an artline sketch, Midjourney style.' },
   ];
   
   const interiorQuickActions = [
     { id: 'sketchupToPhotoreal', label: 'SketchUp to Photoreal', description: 'Convert a SketchUp model to a photorealistic 3D render.' },
+    { id: 'darkMoodyLuxuryBedroom', label: 'Dark & Moody Luxury', description: 'A sophisticated bedroom with dark wood, marble, and dramatic warm lighting.' },
+    { id: 'softModernSanctuary', label: 'Soft Modern Sanctuary', description: 'A serene bedroom with a large, curved, backlit headboard and a calming color palette.' },
+    { id: 'geometricChicBedroom', label: 'Geometric Chic Bedroom', description: 'An elegant, modern bedroom featuring a geometric patterned headboard and pendant lights.' },
+    { id: 'symmetricalGrandeurBedroom', label: 'Symmetrical Grandeur', description: 'A grand, luxurious bedroom with a symmetrical design and a modern sculptural chandelier.' },
+  ];
+
+  const livingRoomQuickActions = [
+    { id: 'classicSymmetryLivingRoom', label: 'Classic Symmetrical', description: 'A formal, elegant space with curved sofas, a fireplace, and ornate wall moldings in a soft, neutral palette.' },
+    { id: 'modernDarkMarbleLivingRoom', label: 'Modern Dark Marble', description: 'A sophisticated, moody living room with dark wood, a dramatic marble wall, and a modern suspended fireplace.' },
+    { id: 'contemporaryGoldAccentLivingRoom', label: 'Contemporary & Gold', description: 'A bright, airy, and modern space featuring a light marble wall, a large white sofa, and striking gold accents.' },
+    { id: 'modernEclecticArtLivingRoom', label: 'Modern Eclectic', description: 'An artistic and contemporary living room with mixed materials, integrated lighting, and a prominent abstract artwork.' },
+    { id: 'brightModernClassicLivingRoom', label: 'Bright Modern Classic', description: 'A bright and luxurious open-plan space with a marble feature wall, backlit shelving, and gold accents.' },
+    { id: 'parisianChicLivingRoom', label: 'Parisian Chic', description: 'An elegant, neoclassical living room with intricate wall paneling, a large arched window, and chic, modern furniture.' }
   ];
 
   const canUndo = activeImage ? activeImage.historyIndex >= 0 : false;
@@ -2166,19 +2224,23 @@ const ImageEditor: React.FC = () => {
     </CollapsibleSection>
   );
 
-  const BackgroundControls: React.FC = () => (
-      <CollapsibleSection title="Background" sectionKey="background" isOpen={openSections.background} onToggle={() => toggleSection('background')} icon={<LandscapeIcon className="w-5 h-5" />}>
+  const BackgroundControls: React.FC = () => {
+    const backgroundOptions = sceneType === 'interior' ? interiorBackgrounds : backgrounds;
+    const title = sceneType === 'interior' ? "Window View" : "Background";
+
+    return (
+      <CollapsibleSection title={title} sectionKey="background" isOpen={openSections.background} onToggle={() => toggleSection('background')} icon={<LandscapeIcon className="w-5 h-5" />}>
         <div className="flex flex-wrap gap-2">
-            {backgrounds.map(bg => (
+            {backgroundOptions.map(bg => (
                 <OptionButton
                     key={bg}
                     option={bg}
-                    isSelected={selectedBackgrounds.includes(bg)}
+                    isSelected={bg === 'No Change' ? selectedBackgrounds.length === 0 : selectedBackgrounds.includes(bg)}
                     onClick={() => handleBackgroundToggle(bg)}
                 />
             ))}
         </div>
-        {selectedBackgrounds.length > 0 && (
+        {sceneType === 'exterior' && selectedBackgrounds.length > 0 && (
             <div className="mt-4 pt-4 border-t border-gray-700 space-y-3">
                 {selectedBackgrounds.map(bg => {
                     const config = adjustableOptions[bg];
@@ -2200,7 +2262,8 @@ const ImageEditor: React.FC = () => {
             </div>
         )}
       </CollapsibleSection>
-  );
+    );
+  };
 
   const ForegroundControls: React.FC = () => (
       <CollapsibleSection title="Foreground Elements" sectionKey="foreground" isOpen={openSections.foreground} onToggle={() => toggleSection('foreground')} icon={<FlowerIcon className="w-5 h-5" />}>
@@ -2811,9 +2874,24 @@ const ImageEditor: React.FC = () => {
                   {/* --- Interior Scene Controls --- */}
                   {activeImage && sceneType === 'interior' && editingMode === 'default' && (
                       <>
-                        <CollapsibleSection title="Presets" sectionKey="interiorQuickActions" isOpen={openSections.interiorQuickActions} onToggle={() => toggleSection('interiorQuickActions')} icon={<StarIcon className="w-5 h-5" />}>
+                        <CollapsibleSection title="Bedroom Presets" sectionKey="interiorQuickActions" isOpen={openSections.interiorQuickActions} onToggle={() => toggleSection('interiorQuickActions')} icon={<StarIcon className="w-5 h-5" />}>
                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               {interiorQuickActions.map(({ id, label, description }) => (
+                                <PreviewCard
+                                   key={id}
+                                   label={label}
+                                   description={description}
+                                   isSelected={selectedQuickAction === id}
+                                   onClick={() => handleQuickActionClick(id)}
+                                   icon={<StarIcon className="w-5 h-5" />}
+                                />
+                              ))}
+                            </div>
+                        </CollapsibleSection>
+                        
+                        <CollapsibleSection title="Living Room Presets" sectionKey="livingRoomQuickActions" isOpen={openSections.livingRoomQuickActions} onToggle={() => toggleSection('livingRoomQuickActions')} icon={<StarIcon className="w-5 h-5" />}>
+                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {livingRoomQuickActions.map(({ id, label, description }) => (
                                 <PreviewCard
                                    key={id}
                                    label={label}
@@ -2872,7 +2950,7 @@ const ImageEditor: React.FC = () => {
                                 </div>
                             </CollapsibleSection>
 
-                            <CollapsibleSection title="Advanced Lighting" sectionKey="specialLighting" isOpen={openSections.specialLighting} onToggle={() => toggleSection('specialLighting')} icon={<LightbulbIcon className="w-5 h-5" />}>
+                            <CollapsibleSection title="Advanced Lighting & Fixtures" sectionKey="specialLighting" isOpen={openSections.specialLighting} onToggle={() => toggleSection('specialLighting')} icon={<LightbulbIcon className="w-5 h-5" />}>
                                 <div className="flex flex-col gap-6">
                                     {/* Cove Lighting */}
                                     <div className="p-3 bg-gray-900/50 rounded-lg">
@@ -2898,7 +2976,7 @@ const ImageEditor: React.FC = () => {
                                     {/* Spotlight */}
                                     <div className="p-3 bg-gray-900/50 rounded-lg">
                                         <label className="flex items-center cursor-pointer justify-between">
-                                            <span className="text-sm font-medium text-gray-300">Halogen Spotlight</span>
+                                            <span className="text-sm font-medium text-gray-300">Spotlight / Track Light</span>
                                             <div className="relative">
                                                 <input type="checkbox" checked={isSpotlightActive} onChange={(e) => setIsSpotlightActive(e.target.checked)} className="sr-only peer" />
                                                 <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
@@ -2914,6 +2992,16 @@ const ImageEditor: React.FC = () => {
                                                 <input type="color" value={spotlightColor} onChange={(e) => setSpotlightColor(e.target.value)} className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md cursor-pointer" />
                                             </div>
                                         </div>
+                                    </div>
+                                     {/* 4-way AC */}
+                                    <div className="p-3 bg-gray-900/50 rounded-lg">
+                                        <label className="flex items-center cursor-pointer justify-between">
+                                            <span className="text-sm font-medium text-gray-300">4-Way Air Conditioner</span>
+                                            <div className="relative">
+                                                <input type="checkbox" checked={addFourWayAC} onChange={(e) => setAddFourWayAC(e.target.checked)} className="sr-only peer" />
+                                                <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                                            </div>
+                                        </label>
                                     </div>
                                 </div>
                             </CollapsibleSection>
