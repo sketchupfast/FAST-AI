@@ -41,7 +41,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
             onClick={onClose}
         >
             <div 
-                className="bg-gray-800 p-6 rounded-xl shadow-lg w-full max-w-2xl border border-gray-700 flex flex-col"
+                className="bg-gray-800 p-4 sm:p-6 rounded-xl shadow-lg w-full max-w-md md:max-w-2xl border border-gray-700 flex flex-col"
                 onClick={e => e.stopPropagation()}
             >
                 <div className="flex justify-between items-center mb-6">
@@ -62,41 +62,56 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                     </div>
                 </div>
 
-                <div className="overflow-y-auto max-h-[60vh] custom-scrollbar pr-2">
+                <div className="overflow-y-auto max-h-[70vh] custom-scrollbar pr-2">
                     {filteredUsers.length > 0 ? (
-                        <table className="w-full text-left table-auto">
-                            <thead className="bg-gray-700/50 sticky top-0">
-                                <tr>
-                                    <th className="p-3 text-sm font-semibold text-gray-300">Email</th>
-                                    <th className="p-3 text-sm font-semibold text-gray-300">Status</th>
-                                    <th className="p-3 text-sm font-semibold text-gray-300 text-right">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                        <div>
+                            {/* Desktop Header */}
+                            <div className="hidden md:grid md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] gap-4 p-3 bg-gray-700/50 rounded-t-lg">
+                                <div className="text-sm font-semibold text-gray-300">Email</div>
+                                <div className="text-sm font-semibold text-gray-300">Status</div>
+                                <div className="text-sm font-semibold text-gray-300 text-right">Action</div>
+                            </div>
+                            
+                            {/* User List */}
+                            <div className="flex flex-col gap-3 md:gap-0 mt-3 md:mt-0">
                                 {filteredUsers.map(user => (
-                                    <tr key={user.email} className="border-b border-gray-700 hover:bg-gray-700/30">
-                                        <td className="p-3 text-sm text-gray-200 truncate" title={user.email}>{user.email}</td>
-                                        <td className="p-3">
+                                    <div 
+                                        key={user.email} 
+                                        className="bg-gray-900/50 rounded-lg p-4 flex flex-col gap-3
+                                                   md:bg-transparent md:rounded-none md:grid md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] md:gap-4 md:p-3 md:items-center 
+                                                   md:border-b md:border-gray-700 md:hover:bg-gray-700/30"
+                                    >
+                                        {/* Email Column */}
+                                        <div className="truncate">
+                                            <div className="text-xs font-bold text-gray-400 md:hidden mb-1">EMAIL</div>
+                                            <p className="text-sm text-gray-200 truncate" title={user.email}>{user.email}</p>
+                                        </div>
+
+                                        {/* Status Column */}
+                                        <div className="">
+                                            <div className="text-xs font-bold text-gray-400 md:hidden mb-1">STATUS</div>
                                             {user.isApproved ? (
                                                 <span className="px-2.5 py-1 text-xs font-bold text-green-200 bg-green-800 rounded-full">Approved</span>
                                             ) : (
                                                 <span className="px-2.5 py-1 text-xs font-bold text-yellow-200 bg-yellow-800 rounded-full">Pending</span>
                                             )}
-                                        </td>
-                                        <td className="p-3 text-right">
+                                        </div>
+
+                                        {/* Action Column */}
+                                        <div className="md:text-right">
                                             {!user.isApproved && (
                                                 <button 
                                                     onClick={() => handleApprove(user.email)}
-                                                    className="px-4 py-1.5 text-xs font-semibold text-white bg-red-600 rounded-full hover:bg-red-700 transition-colors disabled:opacity-50"
+                                                    className="w-full md:w-auto px-4 py-1.5 text-xs font-semibold text-white bg-red-600 rounded-full hover:bg-red-700 transition-colors disabled:opacity-50"
                                                 >
                                                     Approve
                                                 </button>
                                             )}
-                                        </td>
-                                    </tr>
+                                        </div>
+                                    </div>
                                 ))}
-                            </tbody>
-                        </table>
+                            </div>
+                        </div>
                     ) : (
                         <div className="text-center py-8 text-gray-400">
                             <p>No users found matching your search.</p>
