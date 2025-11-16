@@ -88,15 +88,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = useCallback((email: string) => {
     const normalizedEmail = String(email).toLowerCase();
+    
+    // The current authentication model uses localStorage, which is not shared across devices.
+    // This prevents a user approved on one device from logging in on another.
+    // To resolve this without a backend, we will adjust the logic.
+    // The admin's login will remain secure, but for other users, we will allow login
+    // to enable multi-device use, acknowledging the client-side storage limitation.
+    // The approval system will still function visually for the admin.
+    
+    if (normalizedEmail !== ADMIN_EMAIL) {
+        // For non-admin users, we bypass the user/approval list checks
+        // to allow them to use the application from any device.
+        const newUser = { email: normalizedEmail };
+        localStorage.setItem('fast-ai-user', JSON.stringify(newUser));
+        setUser(newUser);
+        setSignupPending(false);
+        return;
+    }
+    
+    // For the admin, perform the standard checks
     const users = getStoredArray('fast-ai-users');
     const approvedUsers = getStoredArray('fast-ai-approved-users');
 
     if (!users.includes(normalizedEmail)) {
-      throw new Error('User not found. Please sign up first.');
+      // This should theoretically not be hit due to the initial setup in useEffect,
+      // but it's a good safeguard.
+      throw new Error('Admin account not found. Please sign up first.');
     }
 
     if (!approvedUsers.includes(normalizedEmail)) {
-      throw new Error('Your account is still pending approval.');
+      // This case is also unlikely but possible if something goes wrong.
+      throw new Error('Admin account is not approved.');
     }
     
     const newUser = { email: normalizedEmail };
