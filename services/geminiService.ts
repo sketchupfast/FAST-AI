@@ -239,7 +239,6 @@ export const editImage = async (
         }
     }
 
-    // FIX: Add GenerateContentResponse type to the response from Gemini API.
     const response: GenerateContentResponse = await withRetry(() => ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: {
@@ -336,7 +335,6 @@ export const analyzeImage = async (
         required: ["architecturalStyle", "keyMaterials", "lightingConditions", "improvementSuggestions"]
     };
 
-    // FIX: Add GenerateContentResponse type to the response from Gemini API.
     const response: GenerateContentResponse = await withRetry(() => ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: {
@@ -404,7 +402,6 @@ export const suggestCameraAngles = async (
         items: { type: Type.STRING },
     };
 
-    // FIX: Add GenerateContentResponse type to the response from Gemini API.
     const response: GenerateContentResponse = await withRetry(() => ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: {

@@ -225,7 +225,6 @@ const tropicalPathwayGardenPrompt = "Transform the image to be highly realistic,
 
 const thaiStreamGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Inside the living and dining rooms, randomly turn on the lights. The image shows a shady and serene natural Thai garden. A crystal-clear stream with a pebble-lined bed flows among moss-covered river rocks of varying sizes. Both sides of the stream are filled with tall bamboo culms, Bodhi trees, and a lush ground cover of moss and creeping Jenny. The atmosphere feels cool and fresh, beautifully mimicking a rainforest. The textures of the wet rocks, tree bark, and diverse leaves should be hyper-realistic.";
 
-// FIX: Define GARDEN_STYLE_PROMPTS constant to resolve reference errors.
 const GARDEN_STYLE_PROMPTS: Record<string, string> = {
     'Thai Garden': "Transform the landscape into a traditional Thai garden, featuring elements like salas (pavilions), water features such as ponds with lotus flowers, intricate stone carvings, and lush tropical plants like banana trees and orchids, with a moderate amount of trees. The atmosphere should be serene and elegant.",
     'Japanese Garden': "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain original design and camera angle. The scene is a serene and beautiful traditional Japanese garden. It features a koi pond with colorful carp, a stone lantern (tōrō), a water basin (tsukubai), and a bamboo fence (takegaki). The vegetation includes Japanese maple (Acer palmatum) with delicate red leaves, meticulously pruned black pine trees (Pinus thunbergii), and rounded azalea bushes (tsutsuji). The textures of the moss on the rocks, the raked sand or gravel (samon), and the aged wood should be highly detailed, reflecting the simplicity and harmony of Zen philosophy.",
@@ -252,7 +251,6 @@ const QUICK_ACTION_PROMPTS: Record<string, string> = {
     architecturalSketch: "Transform the image into a sophisticated architectural concept sketch. The main subject should be rendered with a blend of clean linework and artistic, semi-realistic coloring, showcasing materials like wood, concrete, and glass. Superimpose this rendering over a background that resembles a technical blueprint or a working draft, complete with faint construction lines, dimensional annotations, and handwritten notes. The final result should look like a page from an architect's sketchbook, merging a polished design with the raw, creative process.",
     midjourneyArtlineSketch: "Transform the image into a stunning architectural artline sketch, in the style of a Midjourney AI generation. The image should feature a blend of photorealistic rendering of the building with clean, precise art lines overlaid. The background should be a vintage or parchment-like paper with faint blueprint lines, handwritten notes, and technical annotations, giving it the feel of an architect's creative draft. The final result must be a sophisticated and artistic representation, seamlessly merging technical drawing with a photorealistic render.",
     pristineShowHome: "Transform the image into a high-quality, photorealistic photograph of a modern house, as if it were brand new. Meticulously arrange the landscape to be neat and tidy, featuring a perfectly manicured lawn, a clean driveway and paths, and well-placed trees. Add a neat, green hedge fence around the property. The lighting should be bright, natural daylight, creating a clean and inviting atmosphere typical of a show home in a housing estate. Ensure the final result looks like a professional real estate photo, maintaining the original architecture.",
-    // FIX: Corrected a corrupted prompt for highriseNature and removed misplaced garden style prompts.
     highriseNature: "Transform the image into a hyper-detailed, 8k resolution photorealistic masterpiece, as if captured by a professional architectural photographer. The core concept is a harmonious blend of sleek, modern architecture with a lush, organic, and natural landscape. The building should be seamlessly integrated into its verdant surroundings. In the background, establish a dynamic and slightly distant city skyline, creating a powerful visual contrast between the tranquility of nature and the energy of urban life. The lighting must be bright, soft, natural daylight.",
     fourSeasonsTwilight: "Transform the image into a high-quality, photorealistic architectural photograph of a modern luxury high-rise building, maintaining the original architecture and camera angle. The scene is set at dusk, with a beautiful twilight sky blending from deep blue to soft orange tones. The building's interior and exterior architectural lights are turned on, creating a warm, inviting glow that reflects elegantly on the surface of a wide, calm river in the foreground. The background features a sophisticated, partially lit city skyline. The final image must be hyper-realistic, mimicking a professional photograph for a prestigious real estate project.",
     urbanCondoDayHighAngle: "Transform the image into a high-quality, photorealistic architectural photograph from a high-angle or aerial perspective, maintaining the original architecture. The scene should depict a clear, bright daytime setting. The main building should be a modern condominium with a glass facade. The surrounding area should be a dense urban or suburban landscape with smaller buildings and roads. The sky should be a clear blue with a few soft clouds. The overall feel must be clean, sharp, and professional, suitable for real estate marketing.",
@@ -1354,9 +1352,8 @@ const ImageEditor: React.FC = () => {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred during analysis.';
       setError(errorMessage);
     } finally {
-      if (mountedRef.current) {
-        setIsAnalyzing(false);
-      }
+      if (!mountedRef.current) return;
+      setIsAnalyzing(false);
     }
   };
 
@@ -1388,9 +1385,8 @@ const ImageEditor: React.FC = () => {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred while getting suggestions.';
       setError(errorMessage);
     } finally {
-      if (mountedRef.current) {
-        setIsSuggestingAngles(false);
-      }
+      if (!mountedRef.current) return;
+      setIsSuggestingAngles(false);
     }
   };
 
@@ -1516,9 +1512,8 @@ const ImageEditor: React.FC = () => {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
       setError(errorMessage);
     } finally {
-      if (mountedRef.current) {
-        setIsLoading(false);
-      }
+      if (!mountedRef.current) return;
+      setIsLoading(false);
     }
   };
   
@@ -1561,9 +1556,8 @@ const ImageEditor: React.FC = () => {
         const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred during resize.';
         setError(errorMessage);
     } finally {
-        if (mountedRef.current) {
-            setIsLoading(false);
-        }
+        if (!mountedRef.current) return;
+        setIsLoading(false);
     }
 };
 
@@ -1895,9 +1889,8 @@ const ImageEditor: React.FC = () => {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred during upscaling.';
       setError(errorMessage);
     } finally {
-      if (mountedRef.current) {
-        setIsLoading(false);
-      }
+      if (!mountedRef.current) return;
+      setIsLoading(false);
     }
   };
 
@@ -2063,9 +2056,8 @@ const ImageEditor: React.FC = () => {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred during image transformation.';
       setError(errorMessage);
     } finally {
-      if (mountedRef.current) {
-        setIsLoading(false);
-      }
+      if (!mountedRef.current) return;
+      setIsLoading(false);
     }
   };
 
