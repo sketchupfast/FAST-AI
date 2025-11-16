@@ -11,10 +11,35 @@ interface AdminPanelProps {
     onClose: () => void;
 }
 
+const FilterButton: React.FC<{
+    label: string;
+    count: number;
+    isActive: boolean;
+    onClick: () => void;
+}> = ({ label, count, isActive, onClick }) => (
+    <button
+        onClick={onClick}
+        className={`px-3 py-1.5 text-sm font-semibold rounded-full flex items-center gap-2 transition-colors ${
+            isActive
+                ? 'bg-red-600 text-white'
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+        }`}
+    >
+        {label}
+        <span className={`px-2 py-0.5 text-xs rounded-full font-bold ${
+            isActive ? 'bg-red-400 text-red-900' : 'bg-gray-600 text-gray-200'
+        }`}>
+            {count}
+        </span>
+    </button>
+);
+
+
 const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
     const { getAllUsers, approveUser } = useAuth();
     const [users, setUsers] = useState(() => getAllUsers());
     const [searchTerm, setSearchTerm] = useState('');
+    const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'approved'>('all');
 
     useEffect(() => {
         if (isOpen) {
@@ -28,10 +53,42 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
     };
     
     const filteredUsers = useMemo(() => {
-        return users.filter(user => 
-            user.email.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }, [users, searchTerm]);
+        return users.filter(user => {
+            const matchesSearch = user.email.toLowerCase().includes(searchTerm.toLowerCase());
+            if (!matchesSearch) return false;
+
+            if (filterStatus === 'pending') {
+                return !user.isApproved;
+            }
+            if (filterStatus === 'approved') {
+                return user.isApproved;
+            }
+            return true; // 'all'
+        });
+    }, [users, searchTerm, filterStatus]);
+
+    const userCounts = useMemo(() => ({
+        all: users.length,
+        pending: users.filter(u => !u.isApproved).length,
+        approved: users.filter(u => u.isApproved).length
+    }), [users]);
+
+    const emptyMessage = useMemo(() => {
+        if (users.length === 0) {
+            return "No users have signed up yet.";
+        }
+        if (searchTerm) {
+            return "No users found matching your search.";
+        }
+        switch (filterStatus) {
+            case 'pending':
+                return "There are no users awaiting approval.";
+            case 'approved':
+                return "There are no approved users.";
+            default:
+                return "No users found.";
+        }
+    }, [searchTerm, filterStatus, users.length]);
 
     if (!isOpen) return null;
 
@@ -49,20 +106,28 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                     <button onClick={onClose} className="text-gray-400 hover:text-white text-3xl font-bold leading-none">&times;</button>
                 </div>
 
-                <div className="relative mb-4">
-                    <input
-                        type="text"
-                        placeholder="Search by email..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 pl-10 pr-4 text-white focus:outline-none focus:ring-red-500 focus:border-red-500"
-                    />
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <SearchIcon className="w-5 h-5 text-gray-400" />
+                <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                    <div className="relative flex-grow">
+                        <input
+                            type="text"
+                            placeholder="Search by email..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 pl-10 pr-4 text-white focus:outline-none focus:ring-red-500 focus:border-red-500"
+                        />
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <SearchIcon className="w-5 h-5 text-gray-400" />
+                        </div>
+                    </div>
+                    <div className="flex items-center justify-center sm:justify-start gap-2 bg-gray-900/50 p-1.5 rounded-full">
+                         <FilterButton label="All" count={userCounts.all} isActive={filterStatus === 'all'} onClick={() => setFilterStatus('all')} />
+                         <FilterButton label="Pending" count={userCounts.pending} isActive={filterStatus === 'pending'} onClick={() => setFilterStatus('pending')} />
+                         <FilterButton label="Approved" count={userCounts.approved} isActive={filterStatus === 'approved'} onClick={() => setFilterStatus('approved')} />
                     </div>
                 </div>
 
-                <div className="overflow-y-auto max-h-[70vh] custom-scrollbar pr-2">
+
+                <div className="overflow-y-auto max-h-[60vh] custom-scrollbar pr-2">
                     {filteredUsers.length > 0 ? (
                         <div>
                             {/* Desktop Header */}
@@ -114,7 +179,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                         </div>
                     ) : (
                         <div className="text-center py-8 text-gray-400">
-                            <p>No users found matching your search.</p>
+                            <p>{emptyMessage}</p>
                         </div>
                     )}
                 </div>
