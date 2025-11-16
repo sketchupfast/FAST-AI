@@ -1,6 +1,6 @@
-
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { editImage, analyzeImage, suggestCameraAngles, type AnalysisResult, cropAndResizeImage } from '../services/geminiService';
+import { saveProjects, loadProjects, clearProjects } from '../services/dbService';
 import ImageDisplay, { type ImageDisplayHandle } from './ImageDisplay';
 import { UndoIcon } from './icons/UndoIcon';
 import { RedoIcon } from './icons/RedoIcon';
@@ -36,7 +36,7 @@ import { PhotoIcon } from './icons/PhotoIcon';
 import { CropIcon } from './icons/CropIcon';
 
 
-interface ImageState {
+export interface ImageState {
   id: string; // for react key
   file: File | null;
   base64: string | null;
@@ -115,7 +115,7 @@ const interiorStyleOptions = [
 const backgrounds = ["No Change", "Bangkok High-rise View", "Mountain View", "Bangkok Traffic View", "Farmland View", "Housing Estate View", "Chao Phraya River View", "View from Inside to Garden", "Forest", "Public Park", "Beach", "Cityscape", "Outer Space", "IMPACT Exhibition Hall", "Luxury Shopping Mall"];
 const interiorBackgrounds = ["No Change", "View from Inside to Garden", "Ground Floor View (Hedge & House)", "Upper Floor View (House)", "Bangkok High-rise View", "Mountain View", "Cityscape", "Beach", "Forest", "Chao Phraya River View", "Public Park"];
 
-const foregrounds = ["Foreground Large Tree", "Foreground River", "Top Corner Leaves", "Bottom Corner Bush"];
+const foregrounds = ["Foreground Large Tree", "Foreground River", "Foreground Road", "Foreground Flowers", "Foreground Fence", "Top Corner Leaves", "Bottom Corner Bush"];
 const filters = ['None', 'Black & White', 'Sepia', 'Invert', 'Grayscale', 'Vintage', 'Cool Tone', 'Warm Tone', 'HDR'];
 
 // --- New Time/Weather Controls ---
@@ -249,7 +249,7 @@ const QUICK_ACTION_PROMPTS: Record<string, string> = {
     morningHousingEstate: "Transform this architectural photo to capture the serene atmosphere of an early morning in a modern housing estate. The lighting should be soft, warm, and golden, characteristic of the hour just after sunrise, casting long, gentle shadows. The air should feel fresh and clean, with a hint of morning dew on the manicured lawns. The overall mood should be peaceful, pristine, and inviting, typical of a high-end, well-maintained residential village.",
     urbanSketch: "Transform this image into a beautiful urban watercolor sketch. It should feature loose, expressive ink linework combined with soft, atmospheric watercolor washes. The style should capture the gritty yet vibrant energy of a bustling city street, similar to the work of a professional urban sketch artist. Retain the core composition but reinterpret it in this artistic, hand-drawn style.",
     architecturalSketch: "Transform the image into a sophisticated architectural concept sketch. The main subject should be rendered with a blend of clean linework and artistic, semi-realistic coloring, showcasing materials like wood, concrete, and glass. Superimpose this rendering over a background that resembles a technical blueprint or a working draft, complete with faint construction lines, dimensional annotations, and handwritten notes. The final result should look like a page from an architect's sketchbook, merging a polished design with the raw, creative process.",
-    midjourneyArtlineSketch: "Transform the image into a stunning architectural artline sketch, in the style of a Midjourney AI generation. The image should feature a blend of photorealistic rendering of the building with clean, precise art lines overlaid. The background should be a vintage or parchment-like paper with faint blueprint lines, handwritten notes, and technical annotations, giving it the feel of an architect's creative draft. The final result must be a sophisticated and artistic representation, seamlessly merging technical drawing with a photorealistic render.",
+    midjourneyArtlineSketch: "Transform the image into a stunning architectural artline sketch, in the style of a midjourney AI generation. The image should feature a blend of photorealistic rendering of the building with clean, precise art lines overlaid. The background should be a vintage or parchment-like paper with faint blueprint lines, handwritten notes, and technical annotations, giving it the feel of an architect's creative draft. The final result must be a sophisticated and artistic representation, seamlessly merging technical drawing with a photorealistic render.",
     pristineShowHome: "Transform the image into a high-quality, photorealistic photograph of a modern house, as if it were brand new. Meticulously arrange the landscape to be neat and tidy, featuring a perfectly manicured lawn, a clean driveway and paths, and well-placed trees. Add a neat, green hedge fence around the property. The lighting should be bright, natural daylight, creating a clean and inviting atmosphere typical of a show home in a housing estate. Ensure the final result looks like a professional real estate photo, maintaining the original architecture.",
     highriseNature: "Transform the image into a hyper-detailed, 8k resolution photorealistic masterpiece, as if captured by a professional architectural photographer. The core concept is a harmonious blend of sleek, modern architecture with a lush, organic, and natural landscape. The building should be seamlessly integrated into its verdant surroundings. In the background, establish a dynamic and slightly distant city skyline, creating a powerful visual contrast between the tranquility of nature and the energy of urban life. The lighting must be bright, soft, natural daylight.",
     fourSeasonsTwilight: "Transform the image into a high-quality, photorealistic architectural photograph of a modern luxury high-rise building, maintaining the original architecture and camera angle. The scene is set at dusk, with a beautiful twilight sky blending from deep blue to soft orange tones. The building's interior and exterior architectural lights are turned on, creating a warm, inviting glow that reflects elegantly on the surface of a wide, calm river in the foreground. The background features a sophisticated, partially lit city skyline. The final image must be hyper-realistic, mimicking a professional photograph for a prestigious real estate project.",
@@ -344,9 +344,13 @@ const INTERIOR_BACKGROUND_PROMPTS: Record<string, string> = {
 };
 
 const FOREGROUND_PROMPTS: Record<string, string> = {
+    "Foreground Large Tree": "with a large tree in the foreground",
     "Foreground River": "with a river in the foreground",
+    "Foreground Road": "Add a clean, modern asphalt road and sidewalk in the immediate foreground",
     "Top Corner Leaves": "with out-of-focus leaves framing the top corner of the view, creating a natural foreground bokeh effect",
     "Bottom Corner Bush": "with a flowering bush in the bottom corner of the view, adding a touch of nature to the foreground",
+    "Foreground Flowers": "with a bed of colorful flowers in the foreground, adding a vibrant touch of nature",
+    "Foreground Fence": "with a stylish modern fence partially visible in the foreground, adding a sense of privacy and structure",
 };
 
 const TIME_OF_DAY_PROMPTS: Record<string, string> = {
@@ -402,8 +406,11 @@ const adjustableOptions: Record<string, { label: string; default: number }> = {
     // Foregrounds
     'Foreground Large Tree': { label: 'Tree Amount', default: 30 },
     "Foreground River": { label: 'River Width', default: 50 },
+    "Foreground Road": { label: 'Road Visibility', default: 50 },
     "Top Corner Leaves": { label: 'Leaf Amount', default: 40 },
     "Bottom Corner Bush": { label: 'Bush Size', default: 50 },
+    'Foreground Flowers': { label: 'Flower Density', default: 50 },
+    'Foreground Fence': { label: 'Fence Visibility', default: 40 },
 };
 
 
@@ -472,6 +479,10 @@ const ADJUSTABLE_PROMPT_GENERATORS: Record<string, (intensity: number) => string
         const width = getIntensityDescriptor(intensity, ['a small stream', 'a medium-sized river', 'a wide river', 'a very wide, expansive river', 'a massive, flowing river']);
         return `with ${width} in the foreground`;
     },
+     "Foreground Road": (intensity) => {
+        const visibility = getIntensityDescriptor(intensity, ['just the edge of a road visible', 'a small section of road visible', 'a clear road across the foreground', 'a wide two-lane road', 'a prominent multi-lane road']);
+        return `Add a clean, modern asphalt road and sidewalk in the immediate foreground. The road should be ${visibility}.`;
+    },
     "Top Corner Leaves": (intensity) => {
         const amount = getIntensityDescriptor(intensity, ['a few scattered leaves', 'a small branch with leaves', 'several branches', 'a thick canopy of leaves', 'a view almost completely obscured by leaves']);
         return `with ${amount} framing the top corner of the view, creating a natural foreground bokeh effect`;
@@ -479,6 +490,14 @@ const ADJUSTABLE_PROMPT_GENERATORS: Record<string, (intensity: number) => string
     "Bottom Corner Bush": (intensity) => {
         const size = getIntensityDescriptor(intensity, ['a small flowering bush', 'a medium-sized flowering bush', 'a large, dense flowering bush', 'multiple large bushes', 'an entire foreground filled with flowering bushes']);
         return `with ${size} in the bottom corner of the view, adding a touch of nature to the foreground`;
+    },
+    'Foreground Flowers': (intensity) => {
+        const density = getIntensityDescriptor(intensity, ['a few scattered flowers', 'small patches of flowers', 'a colorful flowerbed', 'a dense and vibrant flowerbed', 'an entire foreground filled with a lush variety of flowers']);
+        return `with ${density} in the foreground, adding a vibrant touch of nature.`;
+    },
+    'Foreground Fence': (intensity) => {
+        const visibility = getIntensityDescriptor(intensity, ['just a corner of a fence visible', 'a small section of a fence visible', 'a significant part of a fence visible', 'a fence clearly framing the foreground', 'a prominent fence across the foreground']);
+        return `with ${visibility}, adding a sense of privacy and structure. The fence should be a stylish, modern design.`;
     },
 };
 
@@ -664,6 +683,7 @@ const ImageToolbar: React.FC<{
 const ImageEditor: React.FC = () => {
   const [imageList, setImageList] = useState<ImageState[]>([]);
   const [activeImageIndex, setActiveImageIndex] = useState<number | null>(null);
+  const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
 
   const [prompt, setPrompt] = useState<string>('');
   const [negativePrompt, setNegativePrompt] = useState<string>('');
@@ -751,7 +771,6 @@ const ImageEditor: React.FC = () => {
     background: false,
     foreground: false,
     output: false,
-    advanced: false,
     lighting: false,
     vegetation: false,
     materialExamples: false,
@@ -762,35 +781,10 @@ const ImageEditor: React.FC = () => {
     brushTool: false,
     roomType: false,
     manualAdjustments: false,
-    advancedAdjustments: false,
+    projectHistory: true,
   });
   
   const [editingMode, setEditingMode] = useState<EditingMode>('default');
-
-  // Advanced settings state
-  const [advancedSettings, setAdvancedSettings] = useState({
-    temperature: 0.9,
-    topK: 32,
-    topP: 1.0,
-    seed: 0, // 0 for random
-  });
-
-  const handleAdvancedSettingsChange = (field: keyof typeof advancedSettings, value: number) => {
-    setAdvancedSettings(prev => ({ ...prev, [field]: value }));
-  };
-
-  const resetAdvancedSettings = () => {
-    setAdvancedSettings({
-      temperature: 0.9,
-      topK: 32,
-      topP: 1.0,
-      seed: 0,
-    });
-  };
-  
-  const randomizeSeed = () => {
-    setAdvancedSettings(prev => ({ ...prev, seed: Math.floor(Math.random() * 1000000000) }));
-  }
 
   const toggleSection = (sectionName: string) => {
     setOpenSections(prev => ({ ...prev, [sectionName]: !prev[sectionName] }));
@@ -824,6 +818,76 @@ const ImageEditor: React.FC = () => {
       mountedRef.current = false;
     };
   }, []);
+
+  // Load state from IndexedDB on component mount
+  useEffect(() => {
+    let isMounted = true;
+    const loadData = async () => {
+      try {
+        const savedProjects = await loadProjects();
+        if (isMounted && Array.isArray(savedProjects)) {
+          const restoredProjects = savedProjects.map(p => ({ ...p, file: null }));
+          const validatedProjects = restoredProjects.filter(p => p.id && p.dataUrl);
+          setImageList(validatedProjects);
+
+          const savedIndexJSON = localStorage.getItem('fast-ai-active-project-index');
+          if (savedIndexJSON) {
+            const savedIndex = parseInt(savedIndexJSON, 10);
+            if (savedIndex >= 0 && savedIndex < validatedProjects.length) {
+              setActiveImageIndex(savedIndex);
+            } else if (validatedProjects.length > 0) {
+              setActiveImageIndex(0);
+            }
+          } else if (validatedProjects.length > 0) {
+            setActiveImageIndex(0);
+          }
+        }
+      } catch (e) {
+        console.error("Error loading projects from IndexedDB:", e);
+        setError("Could not load your saved projects. Please try refreshing the page.");
+      } finally {
+        if (isMounted) {
+          setIsDataLoaded(true);
+        }
+      }
+    };
+
+    loadData();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Save state to IndexedDB whenever it changes
+  useEffect(() => {
+    if (!isDataLoaded) {
+      return; // Don't save until initial data has been loaded
+    }
+    
+    const saveData = async () => {
+      try {
+        const serializableImageList = imageList.map(({ file, ...rest }) => rest);
+        await saveProjects(serializableImageList);
+
+        if (activeImageIndex !== null) {
+          localStorage.setItem('fast-ai-active-project-index', activeImageIndex.toString());
+        } else {
+          localStorage.removeItem('fast-ai-active-project-index');
+        }
+        
+        // If the current error is a storage error, clear it after a successful save.
+        if (error && error.startsWith("Could not save")) {
+            setError(null);
+        }
+      } catch (e) {
+        console.error("Error saving projects to IndexedDB:", e);
+        setError("Could not save your project progress. Changes might not be saved.");
+      }
+    };
+    
+    saveData();
+  }, [imageList, activeImageIndex, isDataLoaded]);
   
   // Effect to close prompt history dropdown on outside click
   useEffect(() => {
@@ -868,7 +932,6 @@ const ImageEditor: React.FC = () => {
     setSharpness(100);
     setTreeAge(50);
     setSeason(50);
-    resetAdvancedSettings();
     setAnalysisResult(null);
     setSuggestedAngles([]);
     // Reset Plan to 3D state
@@ -972,6 +1035,20 @@ const ImageEditor: React.FC = () => {
     });
   };
   
+  const handleClearAllProjects = async () => {
+    if (window.confirm("Are you sure you want to delete all projects and their history? This action cannot be undone.")) {
+        try {
+            await clearProjects();
+            localStorage.removeItem('fast-ai-active-project-index');
+            setImageList([]);
+            setActiveImageIndex(null);
+        } catch (err) {
+            console.error("Failed to clear all projects from DB:", err);
+            setError("There was an error while trying to clear all projects.");
+        }
+    }
+  };
+
   const handleSceneTypeSelect = (type: SceneType) => {
     setSceneType(type);
     // Reset all sections to closed, then open the primary ones for the selected mode.
@@ -987,6 +1064,7 @@ const ImageEditor: React.FC = () => {
             prompt: true,
             interiorQuickActions: true,
             livingRoomQuickActions: true,
+            projectHistory: true,
         });
     } else if (type === 'plan') {
         setEditingMode('default');
@@ -995,6 +1073,7 @@ const ImageEditor: React.FC = () => {
             ...allClosed,
             planConfig: true,
             planView: true,
+            projectHistory: true,
         });
     } else { // exterior
         setEditingMode('default');
@@ -1003,6 +1082,7 @@ const ImageEditor: React.FC = () => {
             prompt: true,
             quickActions: true,
             foreground: true,
+            projectHistory: true,
         });
     }
   };
@@ -1164,12 +1244,6 @@ const ImageEditor: React.FC = () => {
     setIsLoading(true);
     setError(null);
     
-    const advancedConfig = {
-      temperature: advancedSettings.temperature,
-      topK: advancedSettings.topK,
-      topP: advancedSettings.topP,
-      seed: advancedSettings.seed,
-    };
     const sourceMimeType = sourceDataUrl.substring(5, sourceDataUrl.indexOf(';'));
     const sourceBase64 = sourceDataUrl.split(',')[1];
 
@@ -1194,7 +1268,7 @@ const ImageEditor: React.FC = () => {
       const generatedImagesBase64: string[] = [];
       for (const finalPrompt of promptsToGenerate) {
         if (!mountedRef.current) return;
-        const result = await editImage(sourceBase64, sourceMimeType, finalPrompt, null, advancedConfig);
+        const result = await editImage(sourceBase64, sourceMimeType, finalPrompt, null);
         generatedImagesBase64.push(result);
       }
       
@@ -1281,7 +1355,7 @@ const ImageEditor: React.FC = () => {
       for (const view of viewsToGenerate) {
         if (!mountedRef.current) return;
         const finalPrompt = `Critically interpret this 2D floor plan${maskBase64 ? ' (specifically the masked area)' : ''} and transform it into a high-quality, photorealistic 3D architectural visualization. The view should be ${view.prompt}. The space is ${roomPrompt}, designed in a ${stylePrompt}. Furnish the room with appropriate and modern furniture. ${furnitureLayoutPrompt} ${lightingPrompt ? `Set the lighting to be as follows: ${lightingPrompt}` : ''} ${materialsPrompt ? `Use a material palette of ${materialsPrompt}` : ''} Pay close attention to materials, textures, and realistic lighting to create a cohesive and inviting atmosphere. Ensure the final image is 8k resolution and hyper-detailed.`;
-        const result = await editImage(sourceBase64, sourceMimeType, finalPrompt, maskBase64, advancedSettings);
+        const result = await editImage(sourceBase64, sourceMimeType, finalPrompt, maskBase64);
         generatedImagesBase64.push(result);
       }
       
@@ -1415,20 +1489,13 @@ const ImageEditor: React.FC = () => {
     setIsLoading(true);
     setError(null);
 
-    const advancedConfig = {
-      temperature: advancedSettings.temperature,
-      topK: advancedSettings.topK,
-      topP: advancedSettings.topP,
-      seed: advancedSettings.seed,
-    };
-
     const finalPrompt = `As an expert photo editor, meticulously analyze the provided image and edit it based on the following instruction: "${promptForGeneration}". Strictly adhere to the user's request and generate the resulting image.`;
 
     const sourceMimeType = sourceDataUrl.substring(5, sourceDataUrl.indexOf(';'));
     const sourceBase64 = sourceDataUrl.split(',')[1];
 
     try {
-      const generatedImageBase64 = await editImage(sourceBase64, sourceMimeType, finalPrompt, maskBase64, advancedConfig);
+      const generatedImageBase64 = await editImage(sourceBase64, sourceMimeType, finalPrompt, maskBase64);
       if (!mountedRef.current) return;
 
       const newResult = `data:image/jpeg;base64,${generatedImageBase64}`;
@@ -1918,6 +1985,15 @@ const ImageEditor: React.FC = () => {
     });
   };
 
+  const handleHistoryClick = (index: number) => {
+    if (!activeImage) return;
+    updateActiveImage(img => ({
+      ...img,
+      historyIndex: index,
+      selectedResultIndex: index < 0 ? null : 0, // Reset to first result of that step
+    }));
+  };
+
   const handleResetEdits = () => {
     if (!activeImage || activeImage.history.length === 0) return;
     updateActiveImage(img => ({
@@ -2067,9 +2143,6 @@ const ImageEditor: React.FC = () => {
     const lastApiPrompt = activeImage.apiPromptHistory[activeImage.historyIndex];
     const lastGenType = activeImage.generationTypeHistory[activeImage.historyIndex];
     
-    // Randomize seed for a new result
-    randomizeSeed();
-
     if (lastApiPrompt.startsWith('VARIATION:')) {
         const variationType = lastApiPrompt.split(':')[1];
         if (variationType === 'style' || variationType === 'angle') {
@@ -2082,8 +2155,6 @@ const ImageEditor: React.FC = () => {
         await executeGeneration(lastApiPrompt, `(Regen) ${lastDisplayPrompt}`);
     } else {
         console.warn("This action cannot be regenerated.", lastGenType);
-        // If we can't regenerate, let's not keep the new seed.
-        // Or should we? Let's just warn and do nothing.
     }
   };
 
@@ -2373,39 +2444,102 @@ const ImageEditor: React.FC = () => {
           <div className="bg-gray-800/50 p-4 rounded-xl shadow-lg border border-gray-700">
             <form onSubmit={handleSubmit} className="flex flex-col gap-6">
                 <div>
-                  <label htmlFor="file-upload" className="block text-sm font-medium text-gray-300 mb-2">1. Upload Image</label>
+                  <label htmlFor="file-upload" className="block text-sm font-medium text-gray-300 mb-2">1. Start New Project / Upload</label>
                   <label htmlFor="file-upload" className="cursor-pointer flex justify-center items-center w-full px-4 py-6 bg-gray-700 text-gray-400 rounded-lg border-2 border-dashed border-gray-600 hover:border-red-400 hover:bg-gray-600 transition-colors">
                     <span className={imageList.length > 0 ? 'text-green-400' : ''}>
-                      {imageList.length > 0 ? `${imageList.length} image(s) uploaded. Add more?` : 'Click to select files'}
+                      {imageList.length > 0 ? `${imageList.length} project(s) loaded. Add more?` : 'Click to select files'}
                     </span>
                   </label>
                   <input id="file-upload" name="file-upload" type="file" className="sr-only" accept="image/*" onChange={handleImageChange} multiple />
                 </div>
 
                 {imageList.length > 0 && (
-                    <div className="flex flex-wrap gap-4 p-4 bg-gray-900/50 rounded-lg">
-                        {imageList.map((image, index) => (
-                            <div key={image.id} className="relative group">
-                                <button
-                                    type="button"
-                                    onClick={() => setActiveImageIndex(index)}
-                                    className={`block w-20 h-20 rounded-lg overflow-hidden border-4 transition-colors ${
-                                        index === activeImageIndex ? 'border-red-500' : 'border-transparent hover:border-gray-500'
-                                    }`}
-                                >
-                                    <img src={image.dataUrl} alt={`Uploaded thumbnail ${index + 1}`} className="w-full h-full object-cover" />
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => handleRemoveImage(index)}
-                                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold hover:bg-red-700 transition-colors z-10 opacity-0 group-hover:opacity-100"
-                                    title="Remove image"
-                                >
-                                    &times;
-                                </button>
-                            </div>
-                        ))}
+                    <div>
+                        <div className="flex justify-between items-center mb-2">
+                            <h3 className="text-sm font-medium text-gray-300">Your Projects</h3>
+                            <button
+                                type="button"
+                                onClick={handleClearAllProjects}
+                                className="px-2 py-1 text-xs font-semibold text-red-300 bg-red-900/50 rounded-md hover:bg-red-800/50 transition-colors"
+                            >
+                                Clear All
+                            </button>
+                        </div>
+                        <div className="flex flex-wrap gap-4 p-4 bg-gray-900/50 rounded-lg">
+                            {imageList.map((image, index) => (
+                                <div key={image.id} className="relative group">
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveImageIndex(index)}
+                                        className={`block w-20 h-20 rounded-lg overflow-hidden border-4 transition-colors ${
+                                            index === activeImageIndex ? 'border-red-500' : 'border-transparent hover:border-gray-500'
+                                        }`}
+                                    >
+                                        <img src={image.dataUrl} alt={`Uploaded thumbnail ${index + 1}`} className="w-full h-full object-cover" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRemoveImage(index)}
+                                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold hover:bg-red-700 transition-colors z-10 opacity-0 group-hover:opacity-100"
+                                        title="Remove image"
+                                    >
+                                        &times;
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
                     </div>
+                )}
+                
+                {activeImage && (
+                    <CollapsibleSection
+                      title="Project History"
+                      sectionKey="projectHistory"
+                      isOpen={openSections.projectHistory}
+                      onToggle={() => toggleSection('projectHistory')}
+                      icon={<HistoryIcon className="w-5 h-5" />}
+                    >
+                        <div className="flex flex-col gap-2 max-h-60 overflow-y-auto custom-scrollbar pr-1">
+                            {/* Original State */}
+                            <button
+                              type="button"
+                              onClick={() => handleHistoryClick(-1)}
+                              className={`w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors ${
+                                activeImage.historyIndex === -1
+                                  ? 'bg-red-900/50 ring-2 ring-red-500'
+                                  : 'bg-gray-900/50 hover:bg-gray-700/50'
+                              }`}
+                            >
+                              <img src={activeImage.dataUrl} className="w-12 h-12 rounded-md object-cover flex-shrink-0" alt="Original image" />
+                              <div className="flex-grow overflow-hidden">
+                                <p className="text-sm font-semibold text-gray-200">Original Image</p>
+                                {activeImage.historyIndex === -1 && <span className="text-xs text-red-400 font-bold">Current</span>}
+                              </div>
+                            </button>
+
+                            {/* Edit History States */}
+                            {activeImage.history.map((results, index) => (
+                              <button
+                                key={`${activeImage.id}-history-${index}`}
+                                type="button"
+                                onClick={() => handleHistoryClick(index)}
+                                className={`w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors ${
+                                  activeImage.historyIndex === index
+                                    ? 'bg-red-900/50 ring-2 ring-red-500'
+                                    : 'bg-gray-900/50 hover:bg-gray-700/50'
+                                }`}
+                              >
+                                <img src={results[0]} className="w-12 h-12 rounded-md object-cover flex-shrink-0" alt={`History step ${index + 1}`} />
+                                <div className="flex-grow overflow-hidden">
+                                  <p className="text-sm font-semibold text-gray-200 truncate" title={activeImage.promptHistory[index]}>
+                                    {activeImage.promptHistory[index] || `Edit ${index + 1}`}
+                                  </p>
+                                  {activeImage.historyIndex === index && <span className="text-xs text-red-400 font-bold">Current</span>}
+                                </div>
+                              </button>
+                            ))}
+                        </div>
+                    </CollapsibleSection>
                 )}
 
                 {!activeImage && (
@@ -3021,8 +3155,7 @@ const ImageEditor: React.FC = () => {
 
                   {/* --- Shared Controls for all non-plan modes --- */}
                   { activeImage && sceneType && (
-                     <>
-                      <CollapsibleSection
+                     <CollapsibleSection
                           title={`Output Size${outputSize !== 'Original' ? `: ${outputSize}` : ''}`}
                           sectionKey="output"
                           isOpen={openSections.output}
@@ -3044,31 +3177,6 @@ const ImageEditor: React.FC = () => {
                           </div>
                           {editingMode === 'object' && <p className="text-xs text-gray-400 mt-3 text-center">Output size changes are disabled in Inpainting mode.</p>}
                       </CollapsibleSection>
-                     <CollapsibleSection title="Advanced Settings" sectionKey="advanced" isOpen={openSections.advanced} onToggle={() => toggleSection('advanced')} icon={<CogIcon className="w-5 h-5" />}>
-                        <div className="flex flex-col gap-4 text-sm">
-                           <div>
-                             <label className="block text-gray-400">Temperature: <span className="font-mono text-gray-200">{advancedSettings.temperature.toFixed(2)}</span></label>
-                             <input type="range" min="0" max="1" step="0.01" value={advancedSettings.temperature} onChange={(e) => handleAdvancedSettingsChange('temperature', parseFloat(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600" />
-                           </div>
-                           <div>
-                             <label className="block text-gray-400">Top-K: <span className="font-mono text-gray-200">{advancedSettings.topK}</span></label>
-                             <input type="range" min="1" max="40" step="1" value={advancedSettings.topK} onChange={(e) => handleAdvancedSettingsChange('topK', parseInt(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600" />
-                           </div>
-                           <div>
-                             <label className="block text-gray-400">Top-P: <span className="font-mono text-gray-200">{advancedSettings.topP.toFixed(2)}</span></label>
-                             <input type="range" min="0" max="1" step="0.01" value={advancedSettings.topP} onChange={(e) => handleAdvancedSettingsChange('topP', parseFloat(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600" />
-                           </div>
-                           <div className="flex items-center gap-2">
-                              <div className="flex-grow">
-                                <label className="block text-gray-400">Seed: <span className="font-mono text-gray-200">{advancedSettings.seed}</span></label>
-                                <input type="number" value={advancedSettings.seed} onChange={(e) => handleAdvancedSettingsChange('seed', parseInt(e.target.value))} className="w-full bg-gray-700 border border-gray-600 rounded-md p-2 text-white focus:ring-1 focus:ring-red-500" />
-                              </div>
-                              <button type="button" onClick={randomizeSeed} title="Randomize Seed" className="p-2.5 mt-5 bg-gray-700 rounded-md hover:bg-gray-600"><ShuffleIcon className="w-5 h-5" /></button>
-                           </div>
-                           <button type="button" onClick={resetAdvancedSettings} className="text-sm text-red-400 hover:text-red-300 self-start mt-2">Reset to defaults</button>
-                        </div>
-                     </CollapsibleSection>
-                     </>
                   )}
 
 

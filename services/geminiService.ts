@@ -179,13 +179,7 @@ export const editImage = async (
   base64ImageData: string,
   mimeType: string,
   prompt: string,
-  maskBase64?: string | null,
-  advancedConfig?: {
-    temperature?: number;
-    topK?: number;
-    topP?: number;
-    seed?: number;
-  }
+  maskBase64?: string | null
 ): Promise<string> => {
   try {
     const { resizedBase64, resizedMimeType } = await resizeImage(
@@ -214,37 +208,14 @@ export const editImage = async (
       });
     }
 
-    const apiConfig: {
-        responseModalities: Modality[];
-        temperature?: number;
-        topK?: number;
-        topP?: number;
-        seed?: number;
-    } = {
-        responseModalities: [Modality.IMAGE],
-    };
-
-    if (advancedConfig) {
-        if (advancedConfig.temperature !== undefined) {
-            apiConfig.temperature = advancedConfig.temperature;
-        }
-        if (advancedConfig.topK !== undefined) {
-            apiConfig.topK = advancedConfig.topK;
-        }
-        if (advancedConfig.topP !== undefined) {
-            apiConfig.topP = advancedConfig.topP;
-        }
-        if (advancedConfig.seed !== undefined && advancedConfig.seed > 0) {
-            apiConfig.seed = advancedConfig.seed;
-        }
-    }
-
     const response: GenerateContentResponse = await withRetry(() => ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: {
         parts: parts,
       },
-      config: apiConfig,
+      config: {
+        responseModalities: [Modality.IMAGE],
+      },
     }));
     
     // Check for safety blocks or empty responses BEFORE trying to access candidates
