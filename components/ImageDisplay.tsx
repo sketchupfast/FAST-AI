@@ -352,10 +352,8 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
   );
 
   const baseFilterStyle = getFilterStyle(selectedFilter);
-  // Note: CSS filter for sharpness is not standard.
-  // We use contrast as a visual proxy for sharpness in the preview.
-  // The actual sharpening is handled by the Gemini model prompt.
-  const colorAdjustmentsStyle = `brightness(${brightness / 100}) contrast(${contrast / 100}) saturate(${saturation / 100}) contrast(${sharpness / 100})`;
+  // Note: Sharpness is handled by the Gemini model prompt, not a CSS preview filter.
+  const colorAdjustmentsStyle = `brightness(${brightness / 100}) contrast(${contrast / 100}) saturate(${saturation / 100})`;
   const filterStyle = [baseFilterStyle, colorAdjustmentsStyle].filter(Boolean).join(' ');
   
   const imageStyles: React.CSSProperties = {
