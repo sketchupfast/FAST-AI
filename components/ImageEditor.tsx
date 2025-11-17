@@ -450,7 +450,7 @@ const ADJUSTABLE_PROMPT_GENERATORS: Record<string, (intensity: number) => string
         return `Transform the landscape into ${density} and vibrant tropical garden. Fill it with large-leafed plants, colorful exotic flowers, and towering palm trees. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
     },
     'Mountain View': (intensity) => {
-        const grandeur = getIntensityDescriptor(intensity, ['rolling hills', 'medium-sized mountains', 'a high mountain range', 'a majestic, towering mountain range', 'an epic, cinematic mountain landscape']);
+        const grandeur = getIntensityDescriptor(intensity, ['rolling green hills', 'medium-sized forested mountains', 'a high, lush green mountain range', 'a majestic, towering, densely forested mountain range typical of northern Thailand', 'an epic, cinematic, lush green mountain landscape typical of Thailand']);
         return `with ${grandeur} in the background. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
     },
     'Bangkok Traffic View': (intensity) => {
@@ -778,6 +778,7 @@ const ImageEditor: React.FC = () => {
   const [spotlightBrightness, setSpotlightBrightness] = useState<number>(60);
   const [spotlightColor, setSpotlightColor] = useState<string>('#FFFFE0'); // Light Yellow - halogen-like
   const [addFourWayAC, setAddFourWayAC] = useState<boolean>(false);
+  const [addWallTypeAC, setAddWallTypeAC] = useState<boolean>(false);
 
 
   // UI state
@@ -974,6 +975,7 @@ const ImageEditor: React.FC = () => {
     setSpotlightBrightness(60);
     setSpotlightColor('#FFFFE0');
     setAddFourWayAC(false);
+    setAddWallTypeAC(false);
   }, [activeImage?.id]);
 
 
@@ -1125,7 +1127,7 @@ const ImageEditor: React.FC = () => {
   };
 
   const hasTextPrompt = prompt.trim() !== '';
-  const hasOtherOptions = selectedStyle !== '' || selectedBackgrounds.length > 0 || selectedForegrounds.length > 0 || selectedDecorativeItems.length > 0 || selectedTimeOfDay !== '' || selectedWeather !== '' || (treeAge !== 50) || (season !== 50) || selectedQuickAction !== '' || selectedFilter !== 'None' || selectedGardenStyle !== '' || selectedArchStyle !== '' || isAddLightActive || selectedInteriorStyle !== '' || selectedInteriorLighting !== '' || selectedCameraAngle !== '' || (sceneType === 'interior' && selectedRoomType !== '') || isCoveLightActive || isSpotlightActive || addFourWayAC;
+  const hasOtherOptions = selectedStyle !== '' || selectedBackgrounds.length > 0 || selectedForegrounds.length > 0 || selectedDecorativeItems.length > 0 || selectedTimeOfDay !== '' || selectedWeather !== '' || (treeAge !== 50) || (season !== 50) || selectedQuickAction !== '' || selectedFilter !== 'None' || selectedGardenStyle !== '' || selectedArchStyle !== '' || isAddLightActive || selectedInteriorStyle !== '' || selectedInteriorLighting !== '' || selectedCameraAngle !== '' || (sceneType === 'interior' && selectedRoomType !== '') || isCoveLightActive || isSpotlightActive || addFourWayAC || addWallTypeAC;
   const isEditingWithMask = editingMode === 'object' && !isMaskEmpty;
   const hasColorAdjustments = brightness !== 100 || contrast !== 100 || saturation !== 100 || sharpness !== 100;
   const isPlanModeReady = sceneType === 'plan' && !!selectedRoomType && !!selectedInteriorStyle;
@@ -1599,6 +1601,7 @@ const ImageEditor: React.FC = () => {
       setSpotlightBrightness(60);
       setSpotlightColor('#FFFFE0');
       setAddFourWayAC(false);
+      setAddWallTypeAC(false);
 
     } catch (err) {
       if (!mountedRef.current) return;
@@ -1871,6 +1874,9 @@ const ImageEditor: React.FC = () => {
        
       if (addFourWayAC) {
         promptParts.push('Add a modern, ceiling-mounted 4-way cassette air conditioner unit, integrating it naturally into the ceiling design.');
+      }
+      if (addWallTypeAC) {
+        promptParts.push('Add a modern, wall-mounted air conditioner unit (18000 btu), integrating it naturally onto a suitable wall.');
       }
     }
     
@@ -2984,6 +2990,22 @@ const ImageEditor: React.FC = () => {
                                       </div>
                                   </div>
                               </CollapsibleSection>
+                               <CollapsibleSection title="Color & Tone" sectionKey="colorAdjust" isOpen={openSections.colorAdjust} onToggle={() => toggleSection('colorAdjust')} icon={<AdjustmentsIcon className="w-5 h-5" />}>
+                                  <div className="flex flex-col gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-400 mb-1">Brightness ({brightness}%)</label>
+                                        <input type="range" min="50" max="150" value={brightness} onChange={(e) => setBrightness(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-400 mb-1">Contrast ({contrast}%)</label>
+                                        <input type="range" min="50" max="150" value={contrast} onChange={(e) => setContrast(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-400 mb-1">Saturation ({saturation}%)</label>
+                                        <input type="range" min="0" max="200" value={saturation} onChange={(e) => setSaturation(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600" />
+                                    </div>
+                                  </div>
+                              </CollapsibleSection>
                           </div>
                       </CollapsibleSection>
                       
@@ -3170,6 +3192,16 @@ const ImageEditor: React.FC = () => {
                                             <span className="text-sm font-medium text-gray-300">4-Way Air Conditioner</span>
                                             <div className="relative">
                                                 <input type="checkbox" checked={addFourWayAC} onChange={(e) => setAddFourWayAC(e.target.checked)} className="sr-only peer" />
+                                                <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                    {/* Wall Type AC */}
+                                    <div className="p-3 bg-gray-900/50 rounded-lg">
+                                        <label className="flex items-center cursor-pointer justify-between">
+                                            <span className="text-sm font-medium text-gray-300">Wall Type Air Conditioner (18000 BTU)</span>
+                                            <div className="relative">
+                                                <input type="checkbox" checked={addWallTypeAC} onChange={(e) => setAddWallTypeAC(e.target.checked)} className="sr-only peer" />
                                                 <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                                             </div>
                                         </label>
