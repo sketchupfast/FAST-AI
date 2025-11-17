@@ -75,18 +75,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
 
     const emptyMessage = useMemo(() => {
         if (users.length === 0) {
-            return "ยังไม่มีผู้ใช้งานลงทะเบียน";
+            return "No users have signed up yet.";
         }
         if (searchTerm) {
-            return "ไม่พบผู้ใช้งานที่ตรงกับการค้นหาของคุณ";
+            return "No users found matching your search.";
         }
         switch (filterStatus) {
             case 'pending':
-                return "ไม่มีผู้ใช้งานที่รอการอนุมัติ";
+                return "There are no users awaiting approval.";
             case 'approved':
-                return "ไม่มีผู้ใช้งานที่ได้รับการอนุมัติ";
+                return "There are no approved users.";
             default:
-                return "ไม่พบผู้ใช้งาน";
+                return "No users found.";
         }
     }, [searchTerm, filterStatus, users.length]);
 
@@ -102,7 +102,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                 onClick={e => e.stopPropagation()}
             >
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-bold text-gray-200">แผงควบคุม - จัดการผู้ใช้งาน</h2>
+                    <h2 className="text-xl font-bold text-gray-200">Creator Panel - User Management</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-white text-3xl font-bold leading-none">&times;</button>
                 </div>
 
@@ -110,7 +110,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                     <div className="relative flex-grow">
                         <input
                             type="text"
-                            placeholder="ค้นหาด้วยอีเมล..."
+                            placeholder="Search by email..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 pl-10 pr-4 text-white focus:outline-none focus:ring-red-500 focus:border-red-500"
@@ -120,9 +120,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                         </div>
                     </div>
                     <div className="flex items-center justify-center sm:justify-start gap-2 bg-gray-900/50 p-1.5 rounded-full">
-                         <FilterButton label="ทั้งหมด" count={userCounts.all} isActive={filterStatus === 'all'} onClick={() => setFilterStatus('all')} />
-                         <FilterButton label="รออนุมัติ" count={userCounts.pending} isActive={filterStatus === 'pending'} onClick={() => setFilterStatus('pending')} />
-                         <FilterButton label="อนุมัติแล้ว" count={userCounts.approved} isActive={filterStatus === 'approved'} onClick={() => setFilterStatus('approved')} />
+                         <FilterButton label="All" count={userCounts.all} isActive={filterStatus === 'all'} onClick={() => setFilterStatus('all')} />
+                         <FilterButton label="Pending" count={userCounts.pending} isActive={filterStatus === 'pending'} onClick={() => setFilterStatus('pending')} />
+                         <FilterButton label="Approved" count={userCounts.approved} isActive={filterStatus === 'approved'} onClick={() => setFilterStatus('approved')} />
                     </div>
                 </div>
 
@@ -132,9 +132,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                         <div>
                             {/* Desktop Header */}
                             <div className="hidden md:grid md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] gap-4 p-3 bg-gray-700/50 rounded-t-lg">
-                                <div className="text-sm font-semibold text-gray-300">อีเมล</div>
-                                <div className="text-sm font-semibold text-gray-300">สถานะ</div>
-                                <div className="text-sm font-semibold text-gray-300 text-right">คำสั่ง</div>
+                                <div className="text-sm font-semibold text-gray-300">Email</div>
+                                <div className="text-sm font-semibold text-gray-300">Status</div>
+                                <div className="text-sm font-semibold text-gray-300 text-right">Action</div>
                             </div>
                             
                             {/* User List */}
@@ -148,17 +148,17 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                                     >
                                         {/* Email Column */}
                                         <div className="truncate">
-                                            <div className="text-xs font-bold text-gray-400 md:hidden mb-1">อีเมล</div>
+                                            <div className="text-xs font-bold text-gray-400 md:hidden mb-1">EMAIL</div>
                                             <p className="text-sm text-gray-200 truncate" title={user.email}>{user.email}</p>
                                         </div>
 
                                         {/* Status Column */}
                                         <div className="">
-                                            <div className="text-xs font-bold text-gray-400 md:hidden mb-1">สถานะ</div>
+                                            <div className="text-xs font-bold text-gray-400 md:hidden mb-1">STATUS</div>
                                             {user.isApproved ? (
-                                                <span className="px-2.5 py-1 text-xs font-bold text-green-200 bg-green-800 rounded-full">อนุมัติแล้ว</span>
+                                                <span className="px-2.5 py-1 text-xs font-bold text-green-200 bg-green-800 rounded-full">Approved</span>
                                             ) : (
-                                                <span className="px-2.5 py-1 text-xs font-bold text-yellow-200 bg-yellow-800 rounded-full">รออนุมัติ</span>
+                                                <span className="px-2.5 py-1 text-xs font-bold text-yellow-200 bg-yellow-800 rounded-full">Pending</span>
                                             )}
                                         </div>
 
@@ -169,7 +169,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                                                     onClick={() => handleApprove(user.email)}
                                                     className="w-full md:w-auto px-4 py-1.5 text-xs font-semibold text-white bg-red-600 rounded-full hover:bg-red-700 transition-colors disabled:opacity-50"
                                                 >
-                                                    อนุมัติ
+                                                    Approve
                                                 </button>
                                             )}
                                         </div>
@@ -204,14 +204,14 @@ const App: React.FC = () => {
           <header className="relative text-center mb-8 flex flex-col items-center">
               <div className="absolute top-0 right-0 flex items-center gap-4">
                 <div className="text-right hidden sm:block">
-                  <span className="text-sm text-gray-400">ยินดีต้อนรับ,</span>
+                  <span className="text-sm text-gray-400">Welcome,</span>
                   <p className="font-semibold text-gray-200 truncate max-w-[150px]">{user?.email}</p>
                 </div>
                 {isAdmin && (
                   <button 
                     onClick={() => setIsAdminPanelOpen(true)}
                     className="p-2 text-sm font-semibold text-white bg-gray-700 rounded-full hover:bg-gray-600 transition-colors"
-                    title="แผงควบคุม"
+                    title="Admin Panel"
                   >
                     <CogIcon className="w-5 h-5" />
                   </button>
@@ -220,7 +220,7 @@ const App: React.FC = () => {
                   onClick={logout}
                   className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-full hover:bg-red-700 transition-colors"
                 >
-                  ออกจากระบบ
+                  Logout
                 </button>
               </div>
 
@@ -230,13 +230,13 @@ const App: React.FC = () => {
                 </h1>
               </div>
             <p className="mt-2 text-lg text-gray-400">
-              เปลี่ยนภาพถ่ายของคุณด้วยพลังของ AI เพียงอัปโหลดรูปภาพแล้วบอกเราว่าคุณต้องการเปลี่ยนแปลงอะไร
+              Transform your photos with the power of AI. Just upload an image and tell us what you want to change.
             </p>
           </header>
           <ImageEditor />
         </main>
         <footer className="text-center py-4 mt-8">
-          <p className="text-gray-500">ขับเคลื่อนโดย Gemini 2.5 Flash Image</p>
+          <p className="text-gray-500">Powered by Gemini 2.5 Flash Image</p>
         </footer>
       </div>
       {isAdmin && (

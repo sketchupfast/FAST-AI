@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { editImage, analyzeImage, suggestCameraAngles, type AnalysisResult, cropAndResizeImage } from '../services/geminiService';
 import { saveProjects, loadProjects, clearProjects } from '../services/dbService';
@@ -34,9 +35,7 @@ import { SearchIcon } from './icons/SearchIcon';
 import Spinner from './Spinner';
 import { PhotoIcon } from './icons/PhotoIcon';
 import { CropIcon } from './icons/CropIcon';
-import { IconPreview1x1 } from './icons/IconPreview1x1';
-import { IconPreview16x9 } from './icons/IconPreview16x9';
-import { IconPreview9x16 } from './icons/IconPreview9x16';
+import { DownlightIcon } from './icons/DownlightIcon';
 
 
 export interface ImageState {
@@ -55,179 +54,191 @@ export interface ImageState {
 }
 
 const styleOptions = [
-    { name: 'สไตล์ภาพยนตร์' },
-    { name: 'สไตล์วินเทจ' },
-    { name: 'สีน้ำ' },
-    { name: 'ภาพ 3D' },
-    { name: 'ภาพพิกเซล' },
-    { name: 'นีออนพังก์' },
-    { name: 'ภาพสเก็ตช์' },
-    { name: 'ป๊อปอาร์ต' }
+    { name: 'Cinematic' },
+    { name: 'Vintage' },
+    { name: 'Watercolor' },
+    { name: '3D Render' },
+    { name: 'Pixel Art' },
+    { name: 'Neon Punk' },
+    { name: 'Sketch' },
+    { name: 'Pop Art' }
 ];
 
 const cameraAngleOptions = [
-    { name: 'มุมกล้องเดิม', prompt: '' },
-    { name: 'ระดับสายตา', prompt: 'from an eye-level angle' },
-    { name: 'มุมสูง', prompt: 'from a high angle' },
-    { name: 'มุมต่ำ', prompt: 'from a low angle' },
-    { name: 'โคลสอัพ', prompt: 'as a close-up shot' },
-    { name: 'ภาพมุมกว้าง', prompt: 'as a wide shot' },
-    { name: 'ไอโซเมตริก', prompt: 'in an isometric view' },
-    { name: 'มุมมองจากด้านบน', prompt: 'from a bird\'s eye view' },
-    { name: 'มุมเอียง', prompt: 'with a Dutch angle tilt' },
-    { name: 'ภาพระยะไกล', prompt: 'as a long shot' },
-    { name: 'ข้ามไหล่', prompt: 'as an over-the-shoulder shot' },
+    { name: 'Original Angle (No Change)', prompt: '' },
+    { name: 'Eye-Level', prompt: 'from an eye-level angle' },
+    { name: 'High Angle', prompt: 'from a high angle' },
+    { name: 'Low Angle', prompt: 'from a low angle' },
+    { name: 'Close-up', prompt: 'as a close-up shot' },
+    { name: 'Wide Shot', prompt: 'as a wide shot' },
+    { name: 'Isometric', prompt: 'in an isometric view' },
+    { name: 'Bird\'s Eye View', prompt: 'from a bird\'s eye view' },
+    { name: 'Dutch Angle', prompt: 'with a Dutch angle tilt' },
+    { name: 'Long Shot', prompt: 'as a long shot' },
+    { name: 'Over-the-Shoulder', prompt: 'as an over-the-shoulder shot' },
 ];
 
 const gardenStyleOptions = [
-    { name: 'สวนไทย', description: 'สงบและสวยงามด้วยศาลา สระบัว และพรรณไม้เขตร้อน' },
-    { name: 'สวนญี่ปุ่น', description: 'สะท้อนปรัชญาเซนด้วยบ่อปลาคาร์ป หิน และต้นไม้ที่จัดวางอย่างพิถีพิถัน' },
-    { name: 'สวนอังกฤษ', description: 'บรรยากาศโรแมนติกด้วยดอกไม้บานสะพรั่งและทางเดินที่คดเคี้ยว' },
-    { name: 'สวนทรอปิคอล', description: 'เขียวชอุ่มเหมือนป่าด้วยพืชใบใหญ่และดอกไม้สีสันสดใส' },
-    { name: 'สวนดอกไม้', description: 'ทุ่งดอกไม้นานาพรรณหลากสีสันเหมือนสวนพฤกษศาสตร์' },
-    { name: 'สวนมหัศจรรย์', description: 'สวนในเทพนิยาย มีหมอก แสงส่อง และปลาคาร์ป' },
-    { name: 'สวนทรอปิคอลโมเดิร์น', description: 'ผสมผสานความเขียวขจีเข้ากับเส้นสายที่เฉียบคมทันสมัย' },
-    { name: 'สวนแบบเป็นทางการ', description: 'สมมาตร เป็นระเบียบ และเน้นความสง่างามแบบคลาสสิก' },
-    { name: 'สวนธรรมชาติโมเดิร์น', description: 'เรียบง่าย สะอาดตา มีทางเดินลายตารางหมากรุกและให้ความรู้สึกเป็นธรรมชาติ' },
-    { name: 'สวนทางเดินทรอปิคอล', description: 'ทางเดินหนาทึบสไตล์รีสอร์ทผ่านพืชพรรณเขตร้อน' },
-    { name: 'สวนลำธารไทย', description: 'ลำธารใสไหลผ่านโขดหินและต้นไม้ใหญ่ร่มรื่น' },
+    { name: 'Thai Garden', description: 'Serene and beautiful with salas, lotus ponds, and tropical flora.' },
+    { name: 'Japanese Garden', description: 'Reflects Zen philosophy with koi ponds, rocks, and carefully placed trees.' },
+    { name: 'English Garden', description: 'A romantic atmosphere with blooming flowers and winding paths.' },
+    { name: 'Tropical Garden', description: 'Lush and jungle-like with large-leafed plants and vibrant flowers.' },
+    { name: 'Flower Garden', description: 'A field of various flowers with vibrant colors, like a botanical garden.' },
+    { name: 'Magical Garden', description: 'A fairytale garden with mist, light rays, and koi fish.' },
+    { name: 'Modern Tropical Garden', description: 'Combines lush greenery with sharp, modern lines.' },
+    { name: 'Formal Garden', description: 'Symmetrical, orderly, and emphasizes classical elegance.' },
+    { name: 'Modern Natural Garden', description: 'Simple, clean, with a checkerboard path and natural feel.' },
+    { name: 'Tropical Pathway Garden', description: 'A dense, resort-style pathway through tropical plants.' },
+    { name: 'Thai Stream Garden', description: 'A clear stream flows through rocks and large, shady trees.' },
 ];
 
 const architecturalStyleOptions = [
-    { name: 'โมเดิร์น', description: 'เส้นสายสะอาด รูปทรงเรขาคณิต ใช้วัสดุเช่นคอนกรีตและกระจก' },
-    { name: 'ลอฟท์', description: 'โชว์อิฐ โครงสร้างเหล็ก เพดานสูง ได้รับแรงบันดาลใจจากโรงงาน' },
-    { name: 'คลาสสิก', description: 'สมมาตร เป็นระเบียบ มีเสาและบัวที่สง่างาม' },
-    { name: 'มินิมอล', description: 'เรียบง่ายสุดๆ ลดทอนองค์ประกอบให้เหลือแต่สิ่งจำเป็น ใช้โทนสีขาว/เทา' },
-    { name: 'ร่วมสมัย', description: 'ผสมผสานหลายสไตล์ มีเส้นโค้ง และใช้วัสดุจากธรรมชาติ' },
-    { name: 'ไทยโมเดิร์น', description: 'ผสมผสานองค์ประกอบไทย เช่น หลังคาทรงจั่วสูงกับความทันสมัย' },
+    { name: 'Modern', description: 'Clean lines, geometric shapes, and materials like concrete and glass.' },
+    { name: 'Loft', description: 'Exposed brick, steel structures, high ceilings, inspired by factories.' },
+    { name: 'Classic', description: 'Symmetrical, orderly, with elegant columns and moldings.' },
+    { name: 'Minimalist', description: 'Extreme simplicity, reducing elements to their essentials, using white/gray tones.' },
+    { name: 'Contemporary', description: 'A mix of styles, curved lines, and use of natural materials.' },
+    { name: 'Modern Thai', description: 'Combines Thai elements like high gabled roofs with modernism.' },
 ];
 
 const interiorStyleOptions = [
-    { name: 'ร่วมสมัย', description: 'เส้นสายสะอาดตา สีกลางๆ พื้นที่เปิดโล่ง และเน้นแสงธรรมชาติ' },
-    { name: 'สแกนดิเนเวียน', description: 'เรียบง่าย ใช้งานได้จริง ใช้ไม้สีอ่อนและผ้าจากธรรมชาติ' },
-    { name: 'ญี่ปุ่น', description: 'สงบ เรียบง่าย ใกล้ชิดธรรมชาติ ใช้วัสดุอย่างไม้ไผ่และกระดาษ' },
-    { name: 'ไทย', description: 'ใช้ไม้สัก การแกะสลักที่ประณีต และผ้าไหมไทยให้ความรู้สึกอบอุ่นหรูหรา' },
-    { name: 'จีน', description: 'เฟอร์นิเจอร์ไม้เคลือบเงา ฉากกั้น และใช้สีแดงทองเพื่อความมั่งคั่ง' },
-    { name: 'โมร็อกโก', description: 'สีสันสดใส กระเบื้องโมเสก โคมไฟโลหะ สร้างบรรยากาศอบอุ่น' },
-    { name: 'คลาสสิก', description: 'สง่างามและเป็นทางการ เน้นความสมมาตร วัสดุคุณภาพสูง และเฟอร์นิเจอร์แกะสลัก' },
-    { name: 'โมเดิร์น', description: 'เส้นสายเฉียบคม รูปทรงเรขาคณิต พื้นผิวขัดมัน และไม่มีลวดลายตกแต่ง' },
-    { name: 'โมเดิร์นลักซ์ชัวรี่', description: 'ผสมผสานความเรียบง่ายแบบโมเดิร์นกับวัสดุหรูหรา เช่น หินอ่อน ทอง และพื้นผิวมันวาว' },
+    { name: 'Contemporary', description: 'Clean lines, neutral colors, open spaces, and emphasis on natural light.' },
+    { name: 'Scandinavian', description: 'Simple, functional, using light-colored woods and natural fabrics.' },
+    { name: 'Japanese', description: 'Serene, simple, close to nature, using materials like bamboo and paper.' },
+    { name: 'Thai', description: 'Uses teak wood, intricate carvings, and Thai silk for a warm, luxurious feel.' },
+    { name: 'Chinese', description: 'Lacquered wood furniture, screens, and use of red and gold for prosperity.' },
+    { name: 'Moroccan', description: 'Vibrant colors, mosaic tiles, metal lanterns, creating a warm atmosphere.' },
+    { name: 'Classic', description: 'Elegant and formal, focusing on symmetry, high-quality materials, and carved furniture for a timeless and sophisticated look.' },
+    { name: 'Modern', description: 'Sharp lines, geometric shapes, polished surfaces, and no decorative patterns.' },
+    { name: 'Modern Luxury', description: 'Combines modern simplicity with luxurious materials like marble, gold accents, and high-gloss surfaces for a sophisticated and glamorous feel.' },
 ];
 
-const backgrounds = ["ไม่เปลี่ยนแปลง", "วิวตึกสูงกรุงเทพ", "วิวภูเขา", "วิวการจราจรกทม.", "วิวทุ่งนา", "วิวหมู่บ้านจัดสรร", "วิวแม่น้ำเจ้าพระยา", "มองจากในบ้านไปสวน", "ป่า", "สวนสาธารณะ", "ชายหาด", "วิวเมือง", "อวกาศ", "ศูนย์แสดงสินค้า", "ห้างสรรพสินค้าหรู"];
-const interiorBackgrounds = ["ไม่เปลี่ยนแปลง", "มองจากในบ้านไปสวน", "วิวชั้นล่าง (รั้วและบ้าน)", "วิวชั้นบน (บ้าน)", "วิวตึกสูงกรุงเทพ", "วิวภูเขา", "วิวเมือง", "ชายหาด", "ป่า", "วิวแม่น้ำเจ้าพระยา", "สวนสาธารณะ"];
 
-const foregrounds = ["ต้นไม้ใหญ่ด้านหน้า", "แม่น้ำด้านหน้า", "ถนนด้านหน้า", "ดอกไม้ด้านหน้า", "รั้วด้านหน้า", "ใบไม้บังมุมบน", "พุ่มไม้บังมุมล่าง", "สนามหญ้าด้านหน้า", "ทางเดินด้านหน้า", "น้ำพุ/บ่อน้ำด้านหน้า", "กำแพงเตี้ยด้านหน้า"];
-const filters = ['ไม่มี', 'ขาวดำ', 'ซีเปีย', 'สีตรงข้าม', 'โทนเทา', 'วินเทจ', 'โทนเย็น', 'โทนอุ่น', 'HDR'];
+const backgrounds = ["No Change", "Bangkok High-rise View", "Mountain View", "Bangkok Traffic View", "Farmland View", "Housing Estate View", "Chao Phraya River View", "View from Inside to Garden", "Forest", "Public Park", "Beach", "Cityscape", "Outer Space", "IMPACT Exhibition Hall", "Luxury Shopping Mall"];
+const interiorBackgrounds = ["No Change", "View from Inside to Garden", "Ground Floor View (Hedge & House)", "Upper Floor View (House)", "Bangkok High-rise View", "Mountain View", "Cityscape", "Beach", "Forest", "Chao Phraya River View", "Public Park"];
 
-const timeOfDayOptions = ['รุ่งอรุณ', 'กลางวัน', 'บ่าย', 'พระอาทิตย์ตก', 'กลางคืน'];
-const weatherOptions = ['แดดจ้า', 'มีเมฆมาก', 'ฝนตก (พื้นเปียก)', 'มีหมอก'];
-const interiorLightingOptions = ['แสงธรรมชาติ', 'แสงไฟอบอุ่นตอนเย็น', 'แสงในสตูดิโอ', 'แสงแบบภาพยนตร์'];
+const foregrounds = ["Foreground Large Tree", "Foreground River", "Foreground Road", "Foreground Flowers", "Foreground Fence", "Top Corner Leaves", "Bottom Corner Bush", "Foreground Lawn", "Foreground Pathway", "Foreground Water Feature", "Foreground Low Wall"];
+const filters = ['None', 'Black & White', 'Sepia', 'Invert', 'Grayscale', 'Vintage', 'Cool Tone', 'Warm Tone', 'HDR'];
 
+// --- New Time/Weather Controls ---
+const timeOfDayOptions = ['Dawn', 'Daytime', 'Afternoon', 'Sunset', 'Night'];
+const weatherOptions = ['Sunny', 'Overcast', 'Rainy (Wet Ground)', 'Misty'];
+const interiorLightingOptions = ['Natural Daylight', 'Warm Evening Light', 'Studio Light', 'Cinematic Light'];
+
+// --- New Material Quick Prompts for Object Mode ---
 const materialQuickPrompts = [
-    { name: 'อิฐขาว', prompt: 'white brick' },
-    { name: 'คอนกรีตขัดมัน', prompt: 'polished concrete' },
-    { name: 'ไม้สีเข้ม', prompt: 'dark wood paneling' },
-    { name: 'หินอ่อน', prompt: 'marble texture' },
-    { name: 'โลหะดำ', prompt: 'black matte metal' },
+    { name: 'White Brick', prompt: 'white brick' },
+    { name: 'Polished Concrete', prompt: 'polished concrete' },
+    { name: 'Dark Wood', prompt: 'dark wood paneling' },
+    { name: 'Marble', prompt: 'marble texture' },
+    { name: 'Black Metal', prompt: 'black matte metal' },
 ];
 
 const qualityOptions = [
-    { label: 'สูง (100%) / High', value: 1.0 },
-    { label: 'ดี (92%) / Good', value: 0.92 },
-    { label: 'ปานกลาง (75%) / Medium', value: 0.75 },
-    { label: 'ต่ำ (50%) / Low', value: 0.50 },
+    { label: 'High (100%)', value: 1.0 },
+    { label: 'Good (92%)', value: 0.92 },
+    { label: 'Medium (75%)', value: 0.75 },
+    { label: 'Low (50%)', value: 0.50 },
 ];
 
 const outputSizeOptions = [
-  { value: 'Original', label: 'ขนาดต้นฉบับ', description: 'คงขนาดเดิม', icon: PhotoIcon },
-  { value: '1024x1024', label: 'จัตุรัส (1:1)', description: '1024 x 1024 px', icon: IconPreview1x1 },
-  { value: '1920x1080', label: 'แนวนอน (16:9)', description: '1920 x 1080 px', icon: IconPreview16x9 },
-  { value: '1080x1920', label: 'แนวตั้ง (9:16)', description: '1080 x 1920 px', icon: IconPreview9x16 },
-  { value: '2048x2048', label: 'จัตุรัสใหญ่', description: '2048 x 2048 px', icon: IconPreview1x1 },
-  { value: '3840x2160', label: '4K แนวนอน', description: '3840 x 2160 px', icon: IconPreview16x9 },
+  { value: 'Original', label: 'Original Size', description: 'Keep original aspect ratio.' },
+  { value: '1024x1024', label: 'Standard Square', description: '1024 x 1024 px' },
+  { value: '1920x1080', label: 'Full HD Landscape', description: '1920 x 1080 px (16:9)' },
+  { value: '1080x1920', label: 'Full HD Portrait', description: '1080 x 1920 px (9:16)' },
+  { value: '2048x2048', label: 'Large Square', description: '2048 x 2048 px' },
+  { value: '3840x2160', label: '4K UHD (Landscape)', description: '3840 x 2160 px (16:9)' },
 ];
 
-const roomTypeOptions = ['ห้องนั่งเล่น', 'ห้องนอน', 'ห้องครัว', 'ห้องน้ำ', 'ห้องทำงาน', 'ห้องทานอาหาร'];
+// --- Plan to 3D Options ---
+const roomTypeOptions = ['Living Room', 'Bedroom', 'Kitchen', 'Bathroom', 'Office', 'Dining Room'];
+
 const planViewOptions = [
-    { name: 'มุมมองระดับสายตา', prompt: 'a realistic eye-level interior photo' },
-    { name: 'มุมมองไอโซเมตริก', prompt: 'a 3D isometric cutaway view' },
-    { name: 'มุมมองจากด้านบน', prompt: 'a 3D top-down view' },
-    { name: 'มุมมองเลนส์ไวด์', prompt: 'a realistic wide-angle interior photo' },
+    { name: 'Eye-Level View', prompt: 'a realistic eye-level interior photo' },
+    { name: 'Isometric View', prompt: 'a 3D isometric cutaway view' },
+    { name: 'Top-Down View', prompt: 'a 3D top-down view' },
+    { name: 'Wide-Angle View', prompt: 'a realistic wide-angle interior photo' },
 ];
-const planLightingOptions = ['แสงธรรมชาติ', 'แสงไฟอบอุ่นตอนเย็น', 'แสงในสตูดิโอ', 'แสงแบบภาพยนตร์'];
-const planMaterialsOptions = ['ไม้และคอนกรีตโมเดิร์น', 'หินอ่อนและทองคลาสสิก', 'มินิมอลขาวและเทา', 'เส้นใยธรรมชาติอบอุ่น'];
-const decorativeItemOptions = ['ภาพติดผนัง', 'แจกันดอกไม้', 'พรมปูพื้น', 'โคมไฟตั้งพื้น', 'ต้นไม้ในกระถาง', 'หนังสือกองเล็กๆ'];
+
+const planLightingOptions = ['Natural Daylight', 'Warm Evening Light', 'Studio Light', 'Cinematic Light'];
+const planMaterialsOptions = ['Modern Wood & Concrete', 'Classic Marble & Gold', 'Minimalist White & Gray', 'Warm Natural Fibers'];
+
+const decorativeItemOptions = ['Wall Art', 'Flower Vase', 'Rug on Floor', 'Floor Lamp', 'Potted Plant', 'Stack of Books'];
 
 type EditingMode = 'default' | 'object';
 type SceneType = 'exterior' | 'interior' | 'plan';
 
 // --- Prompt Constants ---
 const ROOM_TYPE_PROMPTS: Record<string, string> = {
-    'ห้องนั่งเล่น': 'a living room',
-    'ห้องนอน': 'a bedroom',
-    'ห้องครัว': 'a kitchen',
-    'ห้องน้ำ': 'a bathroom',
-    'ห้องทำงาน': 'an office space',
-    'ห้องทานอาหาร': 'a dining room',
+    'Living Room': 'a living room',
+    'Bedroom': 'a bedroom',
+    'Kitchen': 'a kitchen',
+    'Bathroom': 'a bathroom',
+    'Office': 'an office space',
+    'Dining Room': 'a dining room',
 };
 
 const PLAN_VIEW_PROMPTS: Record<string, string> = {
-    'มุมมองระดับสายตา': 'a realistic eye-level interior photo',
-    'มุมมองไอโซเมตริก': 'a 3D isometric cutaway view',
-    'มุมมองจากด้านบน': 'a 3D top-down view',
-    'มุมมองเลนส์ไวด์': 'a realistic wide-angle interior photo',
+    'Eye-Level View': 'a realistic eye-level interior photo',
+    'Isometric View': 'a 3D isometric cutaway view',
+    'Top-Down View': 'a 3D top-down view',
+    'Wide-Angle View': 'a realistic wide-angle interior photo',
 };
 
 const PLAN_LIGHTING_PROMPTS: Record<string, string> = {
-    'แสงธรรมชาติ': 'bright, natural daylight streaming through large windows, creating soft shadows and a fresh, airy atmosphere.',
-    'แสงไฟอบอุ่นตอนเย็น': 'warm, inviting evening light from multiple sources like floor lamps, recessed ceiling lights, and accent lighting, creating a cozy and intimate mood.',
-    'แสงในสตูดิโอ': 'clean, bright, and even studio-style lighting that clearly illuminates the entire space, minimizing shadows and highlighting the design details.',
-    'แสงแบบภาพยนตร์': 'dramatic and moody cinematic lighting, with high contrast between light and shadow, volumetric light rays, and a sophisticated, atmospheric feel.',
+    'Natural Daylight': 'bright, natural daylight streaming through large windows, creating soft shadows and a fresh, airy atmosphere.',
+    'Warm Evening Light': 'warm, inviting evening light from multiple sources like floor lamps, recessed ceiling lights, and accent lighting, creating a cozy and intimate mood.',
+    'Studio Light': 'clean, bright, and even studio-style lighting that clearly illuminates the entire space, minimizing shadows and highlighting the design details.',
+    'Cinematic Light': 'dramatic and moody cinematic lighting, with high contrast between light and shadow, volumetric light rays, and a sophisticated, atmospheric feel.',
 };
 
 const INTERIOR_LIGHTING_PROMPTS: Record<string, string> = {
-    'แสงธรรมชาติ': 'change the lighting to bright, natural daylight streaming through large windows, creating soft shadows and a fresh, airy atmosphere.',
-    'แสงไฟอบอุ่นตอนเย็น': 'change the lighting to warm, inviting evening light from multiple sources like floor lamps, recessed ceiling lights, and accent lighting, creating a cozy and intimate mood.',
-    'แสงในสตูดิโอ': 'change the lighting to clean, bright, and even studio-style lighting that clearly illuminates the entire space, minimizing shadows and highlighting the design details.',
-    'แสงแบบภาพยนตร์': 'change the lighting to dramatic and moody cinematic lighting, with high contrast between light and shadow, volumetric light rays, and a sophisticated, atmospheric feel.',
+    'Natural Daylight': 'change the lighting to bright, natural daylight streaming through large windows, creating soft shadows and a fresh, airy atmosphere.',
+    'Warm Evening Light': 'change the lighting to warm, inviting evening light from multiple sources like floor lamps, recessed ceiling lights, and accent lighting, creating a cozy and intimate mood.',
+    'Studio Light': 'change the lighting to clean, bright, and even studio-style lighting that clearly illuminates the entire space, minimizing shadows and highlighting the design details.',
+    'Cinematic Light': 'change the lighting to dramatic and moody cinematic lighting, with high contrast between light and shadow, volumetric light rays, and a sophisticated, atmospheric feel.',
 };
 
 const PLAN_MATERIALS_PROMPTS: Record<string, string> = {
-    'ไม้และคอนกรีตโมเดิร์น': 'a modern material palette dominated by light-toned wood, polished concrete floors, black metal accents, and large glass panes.',
-    'หินอ่อนและทองคลาสสิก': 'a classic and luxurious material palette featuring white marble with grey veining, polished gold or brass fixtures, dark wood furniture, and rich textiles.',
-    'มินิมอลขาวและเทา': 'a minimalist material palette with a focus on shades of white and light gray, matte finishes, simple textures, and light wood accents for warmth.',
-    'เส้นใยธรรมชาติอบอุ่น': 'a cozy and warm material palette that emphasizes natural fibers like linen and wool textiles, rattan or wicker furniture, light-colored woods, and numerous indoor plants.',
+    'Modern Wood & Concrete': 'a modern material palette dominated by light-toned wood, polished concrete floors, black metal accents, and large glass panes.',
+    'Classic Marble & Gold': 'a classic and luxurious material palette featuring white marble with grey veining, polished gold or brass fixtures, dark wood furniture, and rich textiles.',
+    'Minimalist White & Gray': 'a minimalist material palette with a focus on shades of white and light gray, matte finishes, simple textures, and light wood accents for warmth.',
+    'Warm Natural Fibers': 'a cozy and warm material palette that emphasizes natural fibers like linen and wool textiles, rattan or wicker furniture, light-colored woods, and numerous indoor plants.',
 };
 
 const DECORATIVE_ITEM_PROMPTS: Record<string, string> = {
-    'ภาพติดผนัง': 'Add a suitable piece of abstract or modern art in a frame on a prominent wall.',
-    'แจกันดอกไม้': 'Place an elegant vase with fresh flowers on a table or surface.',
-    'พรมปูพื้น': 'Add a stylish, textured rug on the floor that complements the room\'s design.',
-    'โคมไฟตั้งพื้น': 'Incorporate a modern, stylish floor lamp in a corner or next to a sofa.',
-    'ต้นไม้ในกระถาง': 'Add a large, healthy indoor plant in a beautiful pot to a corner of the room.',
-    'หนังสือกองเล็กๆ': 'Place a small, artfully arranged stack of books on a coffee table or shelf.'
+    'Wall Art': 'Add a suitable piece of abstract or modern art in a frame on a prominent wall.',
+    'Flower Vase': 'Place an elegant vase with fresh flowers on a table or surface.',
+    'Rug on Floor': 'Add a stylish, textured rug on the floor that complements the room\'s design.',
+    'Floor Lamp': 'Incorporate a modern, stylish floor lamp in a corner or next to a sofa.',
+    'Potted Plant': 'Add a large, healthy indoor plant in a beautiful pot to a corner of the room.',
+    'Stack of Books': 'Place a small, artfully arranged stack of books on a coffee table or shelf.'
 };
 
 const magicalGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Turn on the lights. Randomize the exterior atmosphere to be a large, beautiful, naturally landscaped garden. A clear stream creates a large pond where koi fish swim. Large trees and dense bushes surround the area. A curved, moss-covered stone path with detailed texture winds through lush tropical bushes, connecting to a wooden deck. The vegetation is hyper-realistic and diverse, featuring large plumeria trees, tree ferns with intricate fronds, colorful caladiums, anthuriums, and hostas. The entire scene is shrouded in a light, ethereal mist. Sunlight filters through the canopy, creating beautiful, volumetric light rays. The atmosphere is calm, shady, and natural after a rain, with visible dew drops on the leaves. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.";
+
 const modernTropicalGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. The setting is a house in a housing estate. Randomly turn on lights. The sky should be clear with few clouds. The main focus is to change the garden into a meticulously designed, luxurious, and contemporary modern tropical garden with the following details: - Key elements: Use a diverse array of large-leafed tropical plants like Monstera Deliciosa, Strelitzia nicolai (giant white bird of paradise), and various Alocasia species to create a dense, lush feel with detailed leaf textures. Use large, neatly arranged black slate or honed basalt slabs for the flooring to create a modern, minimalist contrast with visible texture. Incorporate large, smooth river stones as sculptural elements. Use dramatic uplighting from the ground to highlight the textures of plant leaves and architectural elements. - Overall feel: The design should blend tropical lushness with sharp, modern lines, creating a serene and private atmosphere like a high-end resort. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.";
+
 const formalGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Inside the living and dining rooms, randomly turn on the lights. Change the garden to a Formal Garden, designed with order and symmetry. Key elements include geometrically shaped topiary and meticulously trimmed low hedges made from Buxus sempervirens (boxwood) with detailed leaf textures. A multi-tiered classic marble fountain with flowing water is the centerpiece. An aged brick or crushed gravel path runs through a perfectly manicured lawn. Symmetrically placed beds of roses and lavender add color and fragrance. The design emphasizes balance and elegance, suitable for relaxation. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.";
+
 const modernNaturalGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Inside the living and dining rooms, randomly turn on the lights. Change the garden to a Modern Natural Garden. Key elements include a checkerboard path paved with large-format gray stone pavers with detailed texture, contrasting with a rich, dense lawn where individual blades are visible. The garden features a mix of ornamental grasses like Pennisetum and Miscanthus, and shrubs such as hydrangeas and viburnum. A seating area has a wooden bench, surrounded by ferns and hostas in minimalist concrete planters. The design emphasizes soft sunlight and a variety of green tones, creating a relaxing and private atmosphere. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.";
+
 const tropicalPathwayGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Inside the living and dining rooms, randomly turn on the lights. A textured flagstone or weathered brick pathway winds towards the house's door, surrounded by dense, multi-layered tropical vegetation. This includes plumeria trees, heliconias with vibrant flowers, elephant ear plants (Alocasia) with massive leaves, climbing philodendrons, and various species of ferns and orchids. The atmosphere is shady and humid, with visible dew drops on the leaves, giving the feeling of walking into a lush, tropical-style resort. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.";
+
 const thaiStreamGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Inside the living and dining rooms, randomly turn on the lights. The image shows a shady and serene natural Thai garden. A crystal-clear stream with a pebble-lined bed flows among moss-covered river rocks of varying sizes. Both sides of the stream are filled with tall bamboo culms, Bodhi trees, and a lush ground cover of moss and creeping Jenny. The atmosphere feels cool and fresh, beautifully mimicking a rainforest. The textures of the wet rocks, tree bark, and diverse leaves should be hyper-realistic. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.";
 
 const GARDEN_STYLE_PROMPTS: Record<string, string> = {
-    'สวนไทย': "Transform the landscape into a traditional Thai garden, featuring elements like salas (pavilions), water features such as ponds with lotus flowers, intricate stone carvings, and lush tropical plants like banana trees and orchids, with a moderate amount of trees. The atmosphere should be serene and elegant. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
-    'สวนญี่ปุ่น': "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain original design and camera angle. The scene is a serene and beautiful traditional Japanese garden. It features a koi pond with colorful carp, a stone lantern (tōrō), a water basin (tsukubai), and a bamboo fence (takegaki). The vegetation includes Japanese maple (Acer palmatum) with delicate red leaves, meticulously pruned black pine trees (Pinus thunbergii), and rounded azalea bushes (tsutsuji). The textures of the moss on the rocks, the raked sand or gravel (samon), and the aged wood should be highly detailed, reflecting the simplicity and harmony of Zen philosophy. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
-    'สวนอังกฤษ': "Transform the landscape into a classic English cottage garden, characterized by an informal, romantic design. It should feature overflowing flowerbeds packed with a diverse mix of climbing roses, foxgloves, delphiniums, and hollyhocks. A winding, textured brick or gravel path meanders through the garden. The scene should have a charming and abundant natural feel with a variety of textures from soft flower petals to silver-leafed plants like Lamb's Ear, creating a sense of layered beauty. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
-    'สวนทรอปิคอล': "Transform the landscape into a dense and vibrant tropical garden. Fill it with a diverse array of large-leafed plants like Monstera deliciosa, Alocasia, and philodendrons. Add vibrant, exotic flowers like hibiscus, bird of paradise, and orchids. Include various types of towering palm trees and lush ferns. The atmosphere should be humid and verdant, with detailed textures on leaves, bark, and wet ground. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
-    'สวนดอกไม้': "Transform the landscape into a magnificent and colorful flower garden. The scene should be filled with a wide variety of flowers in full bloom, such as roses, peonies, tulips, and lavender, showcasing different colors, shapes, and sizes. Create a stunning visual tapestry with detailed petal textures, visible pollen on stamens, and varying plant heights. It should look like a professional botanical garden at its peak, buzzing with life. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
-    'สวนมหัศจรรย์': magicalGardenPrompt,
-    'สวนทรอปิคอลโมเดิร์น': modernTropicalGardenPrompt,
-    'สวนแบบเป็นทางการ': formalGardenPrompt,
-    'สวนธรรมชาติโมเดิร์น': modernNaturalGardenPrompt,
-    'สวนทางเดินทรอปิคอล': tropicalPathwayGardenPrompt,
-    'สวนลำธารไทย': thaiStreamGardenPrompt,
+    'Thai Garden': "Transform the landscape into a traditional Thai garden, featuring elements like salas (pavilions), water features such as ponds with lotus flowers, intricate stone carvings, and lush tropical plants like banana trees and orchids, with a moderate amount of trees. The atmosphere should be serene and elegant. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
+    'Japanese Garden': "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain original design and camera angle. The scene is a serene and beautiful traditional Japanese garden. It features a koi pond with colorful carp, a stone lantern (tōrō), a water basin (tsukubai), and a bamboo fence (takegaki). The vegetation includes Japanese maple (Acer palmatum) with delicate red leaves, meticulously pruned black pine trees (Pinus thunbergii), and rounded azalea bushes (tsutsuji). The textures of the moss on the rocks, the raked sand or gravel (samon), and the aged wood should be highly detailed, reflecting the simplicity and harmony of Zen philosophy. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
+    'English Garden': "Transform the landscape into a classic English cottage garden, characterized by an informal, romantic design. It should feature overflowing flowerbeds packed with a diverse mix of climbing roses, foxgloves, delphiniums, and hollyhocks. A winding, textured brick or gravel path meanders through the garden. The scene should have a charming and abundant natural feel with a variety of textures from soft flower petals to silver-leafed plants like Lamb's Ear, creating a sense of layered beauty. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
+    'Tropical Garden': "Transform the landscape into a dense and vibrant tropical garden. Fill it with a diverse array of large-leafed plants like Monstera deliciosa, Alocasia, and philodendrons. Add vibrant, exotic flowers like hibiscus, bird of paradise, and orchids. Include various types of towering palm trees and lush ferns. The atmosphere should be humid and verdant, with detailed textures on leaves, bark, and wet ground. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
+    'Flower Garden': "Transform the landscape into a magnificent and colorful flower garden. The scene should be filled with a wide variety of flowers in full bloom, such as roses, peonies, tulips, and lavender, showcasing different colors, shapes, and sizes. Create a stunning visual tapestry with detailed petal textures, visible pollen on stamens, and varying plant heights. It should look like a professional botanical garden at its peak, buzzing with life. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
+    'Magical Garden': magicalGardenPrompt,
+    'Modern Tropical Garden': modernTropicalGardenPrompt,
+    'Formal Garden': formalGardenPrompt,
+    'Modern Natural Garden': modernNaturalGardenPrompt,
+    'Tropical Pathway Garden': tropicalPathwayGardenPrompt,
+    'Thai Stream Garden': thaiStreamGardenPrompt,
 };
 
 const QUICK_ACTION_PROMPTS: Record<string, string> = {
@@ -261,114 +272,107 @@ const QUICK_ACTION_PROMPTS: Record<string, string> = {
     modernEclecticArtLivingRoom: "Transform this living room into an artistic and contemporary eclectic space. Combine different materials like concrete, wood, and metal. The lighting should be modern and integrated, such as LED strips in shelving or ceiling coves. The focal point should be a large, prominent piece of abstract or modern artwork on the main wall. The furniture should be a curated mix of modern styles. The overall atmosphere must feel creative, unique, and sophisticated.",
     brightModernClassicLivingRoom: "Redesign this into a bright, luxurious, and open-plan living and dining space with a modern classic aesthetic. Create a feature wall using large slabs of light-colored marble. Incorporate built-in, backlit shelving to display decorative items. Use a sophisticated color palette of whites, creams, and grays, accented with polished gold details in the furniture and lighting. The space must feel grand, luminous, and impeccably designed.",
     parisianChicLivingRoom: "Transform this interior into an elegant Parisian-style living room. The architecture should feature high ceilings, intricate neoclassical wall paneling (boiserie), and a large, arched window that floods the space with natural light. Furnish the room with a mix of chic, modern furniture and classic pieces to create a timeless look. The color palette should be light and sophisticated. The overall atmosphere must feel effortlessly elegant and chic.",
-
-    // --- Dining Room Presets ---
-    classicLuxuryDining: "Redesign this dining room into a bright and luxurious space with a classic aesthetic. Use a sophisticated color palette of whites, creams, and grays, accented with polished gold or brass details in the furniture and a large crystal chandelier. The walls should feature classic, decorative moldings (boiserie). The atmosphere must feel grand, luminous, and impeccably designed.",
-    modernGreenOasisDining: "Transform this dining room into a chic, modern space with a strong connection to nature. The centerpiece should be a large, dark-toned dining table contrasted with comfortable chairs in a rich, natural color like deep green velvet. Incorporate large, leafy indoor plants or branches as decoration. The lighting should be a mix of warm, modern wall sconces and natural light to create a fresh and inviting atmosphere.",
-    modernNaturalistDining: "Redesign this dining room with a modern naturalist and minimalist aesthetic, seamlessly blending the interior with the outdoors. Use a palette of natural materials like exposed concrete walls, dark wood for the table and chairs, and a light wood ceiling. The key feature must be massive floor-to-ceiling windows that offer an expansive view of a lush, green garden. Lighting should be simple, with modern pendant lights hanging over the table. The overall mood should be serene, spacious, and deeply connected to nature.",
-    darkMoodyRestaurantDining: "Transform this dining area into an intimate and moody, high-end restaurant-style space. Use a dark color palette with materials like dark wood paneling, black marble, or charcoal gray walls. The lighting should be dramatic and focused, using spotlights or a modern low-hanging chandelier to highlight the dining table. Furniture should be sleek and luxurious. The atmosphere should be sophisticated, private, and perfect for an elegant dinner.",
-    cozyScandinavianDining: "Redesign this dining room with a cozy and bright Scandinavian aesthetic. Use light-colored wood for the table and chairs, and a neutral color palette of whites and grays. Keep the design simple and functional, with clean lines and no clutter. Add warmth with natural textiles, a simple area rug, and a minimalist pendant light. The space should feel airy, comfortable, and inviting.",
 };
 
 const ARCHITECTURAL_STYLE_PROMPTS: Record<string, string> = {
-    'โมเดิร์น': "Change the building to a modern architectural style, characterized by clean lines, simple geometric shapes, a lack of ornamentation, and large glass windows. Use materials like concrete, steel, and glass. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
-    'ลอฟท์': "Change the building to an industrial loft architectural style, featuring exposed brick walls, steel beams, large open spaces, high ceilings, and factory-style windows. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
-    'คลาสสิก': "Change the building to a classic architectural style, inspired by Greek and Roman principles. It should emphasize symmetry, order, and formality, incorporating elements like columns, pediments, and decorative moldings. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
-    'มินิมอล': "Change the building to a minimalist architectural style, focusing on extreme simplicity. Strip away all non-essential elements. Use a monochromatic color palette, clean lines, and a focus on pure geometric forms. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
-    'ร่วมสมัย': "Change the building to a 21st-century contemporary architectural style. It should feature a mix of styles, curved lines, unconventional forms, a focus on sustainability, and the use of natural materials. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
-    'ไทยโมเดิร์น': "Change the building to a Modern Thai architectural style, blending traditional Thai elements like high-gabled roofs and ornate details with modern construction techniques and materials. The result should be elegant, culturally rooted, yet functional for modern living. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
+    'Modern': "Change the building to a modern architectural style, characterized by clean lines, simple geometric shapes, a lack of ornamentation, and large glass windows. Use materials like concrete, steel, and glass. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
+    'Loft': "Change the building to an industrial loft architectural style, featuring exposed brick walls, steel beams, large open spaces, high ceilings, and factory-style windows. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
+    'Classic': "Change the building to a classic architectural style, inspired by Greek and Roman principles. It should emphasize symmetry, order, and formality, incorporating elements like columns, pediments, and decorative moldings. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
+    'Minimalist': "Change the building to a minimalist architectural style, focusing on extreme simplicity. Strip away all non-essential elements. Use a monochromatic color palette, clean lines, and a focus on pure geometric forms. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
+    'Contemporary': "Change the building to a 21st-century contemporary architectural style. It should feature a mix of styles, curved lines, unconventional forms, a focus on sustainability, and the use of natural materials. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
+    'Modern Thai': "Change the building to a Modern Thai architectural style, blending traditional Thai elements like high-gabled roofs and ornate details with modern construction techniques and materials. The result should be elegant, culturally rooted, yet functional for modern living. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
 };
 
 const INTERIOR_STYLE_PROMPTS: Record<string, string> = {
-    'ร่วมสมัย': "Change the interior of this space to a contemporary style. It should feature clean lines, a neutral color palette with occasional bold accents, uncluttered spaces, and an emphasis on natural light. Use materials like metal, glass, and stone with simple, unadorned furniture.",
-    'สแกนดิเนเวียน': "Redesign the interior to reflect Scandinavian style. Emphasize simplicity, utility, and minimalism. Use a light and neutral color palette (whites, grays, light blues), natural wood elements (especially light woods like birch and pine), cozy textiles (wool, linen), and abundant natural light. The space should feel airy and uncluttered.",
-    'ญี่ปุ่น': "Transform the interior into a Japanese style, focusing on Zen principles of simplicity and harmony with nature. Incorporate elements like sliding shoji screens, tatami mats, low-to-the-ground furniture, natural materials like bamboo and light wood, and a calm, neutral color palette. The space should feel serene, orderly, and connected to the outdoors.",
-    'ไทย': "Redesign the interior in a traditional Thai style. Use warm and rich materials like teak wood, intricate carvings on furniture and wall panels, and luxurious Thai silk for textiles. Incorporate elements like low seating with triangular cushions (mon khwan), traditional Thai patterns, and perhaps gold leaf accents. The ambiance should be elegant, warm, and inviting.",
-    'จีน': "Change the interior to a classic Chinese style. Feature ornate, dark lacquered wood furniture, intricate screens and latticework, and symbolic colors like red for good fortune and gold for wealth. Incorporate traditional motifs such as dragons, peonies, and bamboo. The overall feel should be one of balance, opulence, and rich cultural heritage.",
-    'โมร็อกโก': "Redesign the interior with a vibrant Moroccan style. Use bold, rich colors like deep blues, reds, and oranges. Incorporate complex geometric tilework (Zellige), arched doorways, pierced metal lanterns, and plush textiles like layered rugs and floor cushions. The atmosphere should be exotic, warm, and richly detailed.",
-    'คลาสสิก': "Change the interior to a classic European style. It should be elegant and formal, emphasizing order, symmetry, and ornate details. Use high-quality materials like marble and fine woods, furniture with detailed carvings and luxurious upholstery, decorative moldings, and perhaps a crystal chandelier. The style should evoke a sense of timeless sophistication.",
-    'โมเดิร์น': "Redesign the interior with a modern design aesthetic. Emphasize sharp, clean lines, simple geometric shapes, and a lack of ornamentation. Use a neutral color palette, polished surfaces, and materials like metal, chrome, and glass. Furniture should be sleek and streamlined. The space should feel open and uncluttered.",
-    'โมเดิร์นลักซ์ชัวรี่': "Redesign the interior with a Modern Luxury aesthetic. This style combines the clean lines and uncluttered spaces of modern design with opulent materials and finishes. Key elements should include: polished marble floors or walls, metallic accents in gold or brass for fixtures and furniture details, high-gloss lacquered surfaces, and plush, high-quality textiles like velvet or silk. The color palette should be sophisticated, often using neutrals like white, gray, and black, accented with rich jewel tones. The overall atmosphere must feel glamorous, sophisticated, and impeccably curated.",
+    'Contemporary': "Change the interior of this space to a contemporary style. It should feature clean lines, a neutral color palette with occasional bold accents, uncluttered spaces, and an emphasis on natural light. Use materials like metal, glass, and stone with simple, unadorned furniture.",
+    'Scandinavian': "Redesign the interior to reflect Scandinavian style. Emphasize simplicity, utility, and minimalism. Use a light and neutral color palette (whites, grays, light blues), natural wood elements (especially light woods like birch and pine), cozy textiles (wool, linen), and abundant natural light. The space should feel airy and uncluttered.",
+    'Japanese': "Transform the interior into a Japanese style, focusing on Zen principles of simplicity and harmony with nature. Incorporate elements like sliding shoji screens, tatami mats, low-to-the-ground furniture, natural materials like bamboo and light wood, and a calm, neutral color palette. The space should feel serene, orderly, and connected to the outdoors.",
+    'Thai': "Redesign the interior in a traditional Thai style. Use warm and rich materials like teak wood, intricate carvings on furniture and wall panels, and luxurious Thai silk for textiles. Incorporate elements like low seating with triangular cushions (mon khwan), traditional Thai patterns, and perhaps gold leaf accents. The ambiance should be elegant, warm, and inviting.",
+    'Chinese': "Change the interior to a classic Chinese style. Feature ornate, dark lacquered wood furniture, intricate screens and latticework, and symbolic colors like red for good fortune and gold for wealth. Incorporate traditional motifs such as dragons, peonies, and bamboo. The overall feel should be one of balance, opulence, and rich cultural heritage.",
+    'Moroccan': "Redesign the interior with a vibrant Moroccan style. Use bold, rich colors like deep blues, reds, and oranges. Incorporate complex geometric tilework (Zellige), arched doorways, pierced metal lanterns, and plush textiles like layered rugs and floor cushions. The atmosphere should be exotic, warm, and richly detailed.",
+    'Classic': "Change the interior to a classic European style. It should be elegant and formal, emphasizing order, symmetry, and ornate details. Use high-quality materials like marble and fine woods, furniture with detailed carvings and luxurious upholstery, decorative moldings, and perhaps a crystal chandelier. The style should evoke a sense of timeless sophistication.",
+    'Modern': "Redesign the interior with a modern design aesthetic. Emphasize sharp, clean lines, simple geometric shapes, and a lack of ornamentation. Use a neutral color palette, polished surfaces, and materials like metal, chrome, and glass. Furniture should be sleek and streamlined. The space should feel open and uncluttered.",
+    'Modern Luxury': "Redesign the interior with a Modern Luxury aesthetic. This style combines the clean lines and uncluttered spaces of modern design with opulent materials and finishes. Key elements should include: polished marble floors or walls, metallic accents in gold or brass for fixtures and furniture details, high-gloss lacquered surfaces, and plush, high-quality textiles like velvet or silk. The color palette should be sophisticated, often using neutrals like white, gray, and black, accented with rich jewel tones. The overall atmosphere must feel glamorous, sophisticated, and impeccably curated.",
 };
 
 const FILTER_PROMPTS: Record<string, string> = {
-    'ขาวดำ': 'give the image a black and white photographic treatment.',
-    'ซีเปีย': 'give the image a sepia tone.',
-    'สีตรงข้าม': 'give the image an inverted color effect.',
-    'โทนเทา': 'give the image a grayscale treatment.',
-    'วินเทจ': 'give the image a vintage, faded look.',
-    'โทนเย็น': 'adjust the color balance to give the image a cool, blueish tone.',
-    'โทนอุ่น': 'adjust the color balance to give the image a warm, yellowish tone.',
+    'Black & White': 'give the image a black and white photographic treatment.',
+    'Sepia': 'give the image a sepia tone.',
+    'Invert': 'give the image an inverted color effect.',
+    'Grayscale': 'give the image a grayscale treatment.',
+    'Vintage': 'give the image a vintage, faded look.',
+    'Cool Tone': 'adjust the color balance to give the image a cool, blueish tone.',
+    'Warm Tone': 'adjust the color balance to give the image a warm, yellowish tone.',
     'HDR': 'regenerate the image with a High Dynamic Range (HDR) effect, enhancing details in both shadows and highlights, increasing local contrast, and making the colors more vibrant and saturated to create a dramatic and detailed look.',
 };
 
 const STYLE_PROMPTS: Record<string, string> = {
-    'สไตล์ภาพยนตร์': 'in a Cinematic style',
-    'สไตล์วินเทจ': 'in a Vintage style',
-    'สีน้ำ': 'in a Watercolor style',
-    'ภาพ 3D': 'in a 3D Render style',
-    'ภาพพิกเซล': 'in a Pixel Art style',
-    'นีออนพังก์': 'in a Neon Punk style',
-    'ภาพสเก็ตช์': 'in a Sketch style',
-    'ป๊อปอาร์ต': 'in a Pop Art style'
+    'Cinematic': 'in a Cinematic style',
+    'Vintage': 'in a Vintage style',
+    'Watercolor': 'in a Watercolor style',
+    '3D Render': 'in a 3D Render style',
+    'Pixel Art': 'in a Pixel Art style',
+    'Neon Punk': 'in a Neon Punk style',
+    'Sketch': 'in a Sketch style',
+    'Pop Art': 'in a Pop Art style'
 };
 
 const BACKGROUND_PROMPTS: Record<string, string> = {
-    "ป่า": "with a Forest background",
-    "สวนสาธารณะ": "with a beautifully composed public park in the background. It is crucial that the image is shown from an eye-level perspective. The park should feature a lush green lawn, large shady trees, benches for relaxation, and winding pathways. The atmosphere should be peaceful and serene, with natural daylight.",
-    "ชายหาด": "with a Beach background",
-    "วิวเมือง": "with a Cityscape background",
-    "อวกาศ": "with an Outer Space background",
-    "วิวภูเขา": "with a majestic mountain range in the background",
-    "วิวการจราจรกทม.": "with a bustling Bangkok street with heavy traffic in the background",
-    "วิวทุ่งนา": "with a lush green farmland and agricultural fields in the background",
-    "วิวหมู่บ้านจัดสรร": "with a modern, landscaped housing estate project in the background",
-    "วิวแม่น้ำเจ้าพระยา": "with a scenic view of the Chao Phraya River in Bangkok in the background",
-    "มองจากในบ้านไปสวน": "change the background to a view looking out from inside a room into a beautifully landscaped front garden. The foreground should subtly include elements of the interior, such as a window frame, a curtain, or the edge of a wall, to create a clear sense of looking out from within the house. The garden should be lush and well-maintained.",
-    "ศูนย์แสดงสินค้า": "with the background of a large, modern exhibition hall like IMPACT Muang Thong Thani during a trade show. The scene should feature high ceilings, professional lighting, various exhibition booths, and a bustling atmosphere with crowds of people.",
-    "ห้างสรรพสินค้าหรู": "with the background of a modern, luxurious shopping mall interior. The scene should feature high ceilings, polished marble floors, and bright, elegant lighting. In the background, include blurred storefronts of high-end brands and a few shoppers to create a realistic, bustling yet sophisticated atmosphere. The main subject should appear as if it is an exhibition booth within this upscale mall."
+    "Forest": "with a Forest background",
+    "Public Park": "with a beautifully composed public park in the background. It is crucial that the image is shown from an eye-level perspective. The park should feature a lush green lawn, large shady trees, benches for relaxation, and winding pathways. The atmosphere should be peaceful and serene, with natural daylight.",
+    "Beach": "with a Beach background",
+    "Cityscape": "with a Cityscape background",
+    "Outer Space": "with an Outer Space background",
+    "Mountain View": "with a majestic mountain range in the background",
+    "Bangkok Traffic View": "with a bustling Bangkok street with heavy traffic in the background",
+    "Farmland View": "with a lush green farmland and agricultural fields in the background",
+    "Housing Estate View": "with a modern, landscaped housing estate project in the background",
+    "Chao Phraya River View": "with a scenic view of the Chao Phraya River in Bangkok in the background",
+    "View from Inside to Garden": "change the background to a view looking out from inside a room into a beautifully landscaped front garden. The foreground should subtly include elements of the interior, such as a window frame, a curtain, or the edge of a wall, to create a clear sense of looking out from within the house. The garden should be lush and well-maintained.",
+    "IMPACT Exhibition Hall": "with the background of a large, modern exhibition hall like IMPACT Muang Thong Thani during a trade show. The scene should feature high ceilings, professional lighting, various exhibition booths, and a bustling atmosphere with crowds of people.",
+    "Luxury Shopping Mall": "with the background of a modern, luxurious shopping mall interior. The scene should feature high ceilings, polished marble floors, and bright, elegant lighting. In the background, include blurred storefronts of high-end brands and a few shoppers to create a realistic, bustling yet sophisticated atmosphere. The main subject should appear as if it is an exhibition booth within this upscale mall."
 };
 
 const INTERIOR_BACKGROUND_PROMPTS: Record<string, string> = {
-    "มองจากในบ้านไปสวน": "change the background to a view looking out from inside a room into a beautifully landscaped front garden. The foreground should subtly include elements of the interior, such as a window frame, a curtain, or the edge of a wall, to create a clear sense of looking out from within the house. The garden should be lush and well-maintained.",
-    "วิวชั้นล่าง (รั้วและบ้าน)": "change the view outside the window to be a ground floor perspective looking out onto a neat hedge fence with a modern house from a housing estate visible across the street.",
-    "วิวชั้นบน (บ้าน)": "change the view outside the window to be an upper floor perspective, looking slightly down onto the upper parts and roofs of neighboring houses in a modern housing estate.",
-    "วิวตึกสูงกรุงเทพ": "change the view outside the window to a modern, dense Bangkok skyscraper cityscape.",
-    "วิวภูเขา": "change the view outside the window to a majestic mountain range.",
-    "วิวเมือง": "change the view outside the window to a dense, sprawling metropolis cityscape.",
-    "ชายหาด": "change the view outside the window to a beautiful, serene beach with a clear ocean.",
-    "ป่า": "change the view outside the window to a dense forest.",
-    "วิวแม่น้ำเจ้าพระยา": "change the view outside the window to a scenic view of the Chao Phraya River in Bangkok, with boats on the water.",
-    "สวนสาธารณะ": "change the view outside the window to a beautifully composed public park with a lush green lawn, large shady trees, and pathways."
+    "View from Inside to Garden": "change the background to a view looking out from inside a room into a beautifully landscaped front garden. The foreground should subtly include elements of the interior, such as a window frame, a curtain, or the edge of a wall, to create a clear sense of looking out from within the house. The garden should be lush and well-maintained.",
+    "Ground Floor View (Hedge & House)": "change the view outside the window to be a ground floor perspective looking out onto a neat hedge fence with a modern house from a housing estate visible across the street.",
+    "Upper Floor View (House)": "change the view outside the window to be an upper floor perspective, looking slightly down onto the upper parts and roofs of neighboring houses in a modern housing estate.",
+    "Bangkok High-rise View": "change the view outside the window to a modern, dense Bangkok skyscraper cityscape.",
+    "Mountain View": "change the view outside the window to a majestic mountain range.",
+    "Cityscape": "change the view outside the window to a dense, sprawling metropolis cityscape.",
+    "Beach": "change the view outside the window to a beautiful, serene beach with a clear ocean.",
+    "Forest": "change the view outside the window to a dense forest.",
+    "Chao Phraya River View": "change the view outside the window to a scenic view of the Chao Phraya River in Bangkok, with boats on the water.",
+    "Public Park": "change the view outside the window to a beautifully composed public park with a lush green lawn, large shady trees, and pathways."
 };
 
 const FOREGROUND_PROMPTS: Record<string, string> = {
-    "ต้นไม้ใหญ่ด้านหน้า": "with a large tree in the foreground",
-    "แม่น้ำด้านหน้า": "with a river in the foreground",
-    "ถนนด้านหน้า": "Add a clean, modern asphalt road and sidewalk in the immediate foreground",
-    "ใบไม้บังมุมบน": "with out-of-focus leaves framing the top corner of the view, creating a natural foreground bokeh effect",
-    "พุ่มไม้บังมุมล่าง": "with a flowering bush in the bottom corner of the view, adding a touch of nature to the foreground",
-    "ดอกไม้ด้านหน้า": "with a bed of colorful flowers in the foreground, adding a vibrant touch of nature",
-    "รั้วด้านหน้า": "with a stylish modern fence partially visible in the foreground, adding a sense of privacy and structure",
-    "สนามหญ้าด้านหน้า": "Add a lush, green, manicured lawn in the immediate foreground.",
-    "ทางเดินด้านหน้า": "Add a winding stone or brick pathway in the foreground leading towards the subject.",
-    "น้ำพุ/บ่อน้ำด้านหน้า": "Add a small, modern water feature like a small pond or fountain in the foreground.",
-    "กำแพงเตี้ยด้านหน้า": "Add a low, decorative stone or brick wall in the foreground.",
+    "Foreground Large Tree": "with a large tree in the foreground",
+    "Foreground River": "with a river in the foreground",
+    "Foreground Road": "Add a clean, modern asphalt road and sidewalk in the immediate foreground",
+    "Top Corner Leaves": "with out-of-focus leaves framing the top corner of the view, creating a natural foreground bokeh effect",
+    "Bottom Corner Bush": "with a flowering bush in the bottom corner of the view, adding a touch of nature to the foreground",
+    "Foreground Flowers": "with a bed of colorful flowers in the foreground, adding a vibrant touch of nature",
+    "Foreground Fence": "with a stylish modern fence partially visible in the foreground, adding a sense of privacy and structure",
+    "Foreground Lawn": "Add a lush, green, manicured lawn in the immediate foreground.",
+    "Foreground Pathway": "Add a winding stone or brick pathway in the foreground leading towards the subject.",
+    "Foreground Water Feature": "Add a small, modern water feature like a small pond or fountain in the foreground.",
+    "Foreground Low Wall": "Add a low, decorative stone or brick wall in the foreground.",
 };
 
 const TIME_OF_DAY_PROMPTS: Record<string, string> = {
-    'รุ่งอรุณ': 'Change the time of day to early morning, with soft, warm, golden sunrise light and long gentle shadows.',
-    'กลางวัน': 'Change the time of day to midday, with bright, clear, natural daylight.',
-    'บ่าย': 'Change the time of day to afternoon, with warm, slightly angled sunlight.',
-    'พระอาทิตย์ตก': 'Change the time of day to sunset, with a dramatic sky filled with orange, pink, and purple hues. The lighting should be warm and golden, casting long shadows. If there are buildings, their lights should be starting to turn on.',
-    'กลางคืน': 'Change the scene to nighttime, illuminated by moonlight and artificial light sources.'
+    'Dawn': 'Change the time of day to early morning, with soft, warm, golden sunrise light and long gentle shadows.',
+    'Daytime': 'Change the time of day to midday, with bright, clear, natural daylight.',
+    'Afternoon': 'Change the time of day to afternoon, with warm, slightly angled sunlight.',
+    'Sunset': 'Change the time of day to sunset, with a dramatic sky filled with orange, pink, and purple hues. The lighting should be warm and golden, casting long shadows. If there are buildings, their lights should be starting to turn on.',
+    'Night': 'Change the scene to nighttime, illuminated by moonlight and artificial light sources.'
 };
 
 const WEATHER_PROMPTS: Record<string, string> = {
-    'แดดจ้า': 'Change the weather to a clear, sunny day with sharp shadows.',
-    'มีเมฆมาก': 'Change the weather to a bright but overcast day with soft, diffused lighting and minimal shadows.',
-    'ฝนตก (พื้นเปียก)': 'Change the scene to be during or just after a light rain, with wet, reflective surfaces on the ground and building.',
-    'มีหมอก': 'Change the weather to a misty or foggy day, creating a soft, atmospheric, and mysterious mood.',
+    'Sunny': 'Change the weather to a clear, sunny day with sharp shadows.',
+    'Overcast': 'Change the weather to a bright but overcast day with soft, diffused lighting and minimal shadows.',
+    'Rainy (Wet Ground)': 'Change the scene to be during or just after a light rain, with wet, reflective surfaces on the ground and building.',
+    'Misty': 'Change the weather to a misty or foggy day, creating a soft, atmospheric, and mysterious mood.',
 };
 
 
@@ -391,134 +395,134 @@ const getIntensityDescriptor = (intensity: number, descriptors: [string, string,
 
 const adjustableOptions: Record<string, { label: string; default: number }> = {
     // Garden
-    'สวนไทย': { label: 'จำนวนต้นไม้', default: 50 },
-    'สวนดอกไม้': { label: 'จำนวนดอกไม้', default: 50 },
-    'สวนอังกฤษ': { label: 'ความหนาแน่นของดอกไม้', default: 50 },
-    'สวนทรอปิคอล': { label: 'ความหนาแน่นของป่า', default: 60 },
+    'Thai Garden': { label: 'Tree Amount', default: 50 },
+    'Flower Garden': { label: 'Flower Amount', default: 50 },
+    'English Garden': { label: 'Flower Density', default: 50 },
+    'Tropical Garden': { label: 'Jungle Density', default: 60 },
     // Backgrounds
-    'วิวตึกสูงกรุงเทพ': { label: 'ความหนาแน่นของตึก', default: 50 },
-    'วิวภูเขา': { label: 'ความยิ่งใหญ่', default: 50 },
-    'วิวการจราจรกทม.': { label: 'ความหนาแน่นของการจราจร', default: 50 },
-    'วิวทุ่งนา': { label: 'ความเขียวขจี', default: 60 },
-    'วิวหมู่บ้านจัดสรร': { label: 'ความหนาแน่นของบ้าน', default: 40 },
-    'วิวแม่น้ำเจ้าพระยา': { label: 'ความกว้างของแม่น้ำ', default: 50 },
-    'ป่า': { label: 'ความหนาแน่นของป่า', default: 70 },
-    'ชายหาด': { label: 'ความกว้างของชายหาด', default: 50 },
-    'วิวเมือง': { label: 'ความหนาแน่นของตึก', default: 50 },
-    'อวกาศ': { label: 'ความหนาแน่นของดาว', default: 50 },
+    'Bangkok High-rise View': { label: 'Building Density', default: 50 },
+    'Mountain View': { label: 'Grandeur', default: 50 },
+    'Bangkok Traffic View': { label: 'Traffic Density', default: 50 },
+    'Farmland View': { label: 'Lushness', default: 60 },
+    'Housing Estate View': { label: 'House Density', default: 40 },
+    'Chao Phraya River View': { label: 'River Width', default: 50 },
+    'Forest': { label: 'Forest Density', default: 70 },
+    'Beach': { label: 'Beach Width', default: 50 },
+    'Cityscape': { label: 'Building Density', default: 50 },
+    'Outer Space': { label: 'Star Density', default: 50 },
     // Foregrounds
-    'ต้นไม้ใหญ่ด้านหน้า': { label: 'จำนวนต้นไม้', default: 30 },
-    "แม่น้ำด้านหน้า": { label: 'ความกว้างของแม่น้ำ', default: 50 },
-    "ถนนด้านหน้า": { label: 'การมองเห็นถนน', default: 50 },
-    "ใบไม้บังมุมบน": { label: 'จำนวนใบไม้', default: 40 },
-    "พุ่มไม้บังมุมล่าง": { label: 'ขนาดพุ่มไม้', default: 50 },
-    'ดอกไม้ด้านหน้า': { label: 'ความหนาแน่นของดอกไม้', default: 50 },
-    'รั้วด้านหน้า': { label: 'การมองเห็นรั้ว', default: 40 },
-    'สนามหญ้าด้านหน้า': { label: 'สภาพสนามหญ้า', default: 70 },
-    'ทางเดินด้านหน้า': { label: 'การมองเห็นทางเดิน', default: 50 },
-    'น้ำพุ/บ่อน้ำด้านหน้า': { label: 'ขนาดองค์ประกอบ', default: 40 },
-    'กำแพงเตี้ยด้านหน้า': { label: 'การมองเห็นกำแพง', default: 50 },
+    'Foreground Large Tree': { label: 'Tree Amount', default: 30 },
+    "Foreground River": { label: 'River Width', default: 50 },
+    "Foreground Road": { label: 'Road Visibility', default: 50 },
+    "Top Corner Leaves": { label: 'Leaf Amount', default: 40 },
+    "Bottom Corner Bush": { label: 'Bush Size', default: 50 },
+    'Foreground Flowers': { label: 'Flower Density', default: 50 },
+    'Foreground Fence': { label: 'Fence Visibility', default: 40 },
+    'Foreground Lawn': { label: 'Lawn Condition', default: 70 },
+    'Foreground Pathway': { label: 'Pathway Visibility', default: 50 },
+    'Foreground Water Feature': { label: 'Feature Size', default: 40 },
+    'Foreground Low Wall': { label: 'Wall Visibility', default: 50 },
 };
 
 
 const ADJUSTABLE_PROMPT_GENERATORS: Record<string, (intensity: number) => string> = {
-    'สวนไทย': (intensity) => {
+    'Thai Garden': (intensity) => {
         const amount = getIntensityDescriptor(intensity, ['a very small amount of', 'a few', 'a moderate amount of', 'many', 'a very large amount of']);
         return `Transform the landscape into a traditional Thai garden, featuring elements like salas (pavilions), water features such as ponds with lotus flowers, intricate stone carvings, and lush tropical plants like banana trees and orchids, with ${amount} trees. The atmosphere should be serene and elegant. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
     },
-    'วิวตึกสูงกรุงเทพ': (intensity) => {
+    'Bangkok High-rise View': (intensity) => {
         const density = getIntensityDescriptor(intensity, ['very sparse', 'sparse', 'a standard density of', 'dense', 'very dense']);
         return `with a ${density}, modern Bangkok skyscraper cityscape in the background. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
     },
-    'สวนดอกไม้': (intensity) => {
+    'Flower Garden': (intensity) => {
         const density = getIntensityDescriptor(intensity, ['with a few scattered flowers', 'with patches of flowers', 'filled with a moderate amount of flowers', 'densely packed with many flowers', 'completely overflowing with a vast amount of flowers']);
         return `Transform the landscape into a magnificent and colorful flower garden. The scene should be ${density}, creating a stunning visual tapestry. It should look like a professional botanical garden in full bloom. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
     },
-    'ต้นไม้ใหญ่ด้านหน้า': (intensity) => {
+    'Foreground Large Tree': (intensity) => {
         const amount = getIntensityDescriptor(intensity, ['a single, small tree', 'a single large tree', 'a couple of trees', 'a small grove of trees', 'a dense cluster of trees']);
         return `with ${amount} in the foreground. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
     },
-    'สวนอังกฤษ': (intensity) => {
+    'English Garden': (intensity) => {
         const density = getIntensityDescriptor(intensity, ['with sparse flowerbeds', 'with neatly arranged flowers', 'with overflowing flowerbeds', 'with densely packed flowers', 'with a charmingly chaotic and overgrown abundance of flowers']);
         return `Transform the landscape into a classic English cottage garden, characterized by an informal, romantic design ${density}, climbing roses, and winding paths. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
     },
-    'สวนทรอปิคอล': (intensity) => {
+    'Tropical Garden': (intensity) => {
         const density = getIntensityDescriptor(intensity, ['a sparse', 'a moderately lush', 'a dense', 'a very dense and overgrown', 'an impenetrable jungle-like']);
         return `Transform the landscape into ${density} and vibrant tropical garden. Fill it with large-leafed plants, colorful exotic flowers, and towering palm trees. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
     },
-    'วิวภูเขา': (intensity) => {
+    'Mountain View': (intensity) => {
         const grandeur = getIntensityDescriptor(intensity, ['rolling green hills', 'medium-sized forested mountains', 'a high, lush green mountain range', 'a majestic, towering, densely forested mountain range typical of northern Thailand', 'an epic, cinematic, lush green mountain landscape typical of Thailand']);
         return `with ${grandeur} in the background. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
     },
-    'วิวการจราจรกทม.': (intensity) => {
+    'Bangkok Traffic View': (intensity) => {
         const traffic = getIntensityDescriptor(intensity, ['light traffic', 'moderate traffic', 'heavy traffic', 'a traffic jam', 'a complete gridlock with bumper-to-bumper traffic']);
         return `with a bustling Bangkok street with ${traffic} in the background. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
     },
-    'วิวทุ่งนา': (intensity) => {
+    'Farmland View': (intensity) => {
         const lushness = getIntensityDescriptor(intensity, ['dry and sparse fields', 'newly planted fields', 'lush green fields', 'fields ripe for harvest', 'extremely abundant and verdant fields']);
         return `with ${lushness} and agricultural fields in the background. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
     },
-    'วิวหมู่บ้านจัดสรร': (intensity) => {
+    'Housing Estate View': (intensity) => {
         const density = getIntensityDescriptor(intensity, ['a few scattered houses', 'a low-density', 'a medium-density', 'a high-density', 'a very crowded']);
         return `with ${density}, modern, landscaped housing estate project in the background. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
     },
-    'วิวแม่น้ำเจ้าพระยา': (intensity) => {
+    'Chao Phraya River View': (intensity) => {
         const width = getIntensityDescriptor(intensity, ['a narrow, scenic view of', 'a medium-width view of', 'a wide view of', 'a very wide, expansive view of', 'a panoramic, almost sea-like view of']);
         return `with ${width} the Chao Phraya River in Bangkok as the background. The scene should be dynamic, featuring various boats such as long-tail boats, ferries, and yachts on the water in the foreground, with the bustling Bangkok cityscape and temples visible along the riverbanks. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
     },
-    'ป่า': (intensity) => {
+    'Forest': (intensity) => {
         const density = getIntensityDescriptor(intensity, ['a sparse', 'a moderately dense', 'a dense', 'a very dense', 'an ancient, overgrown']);
         return `with ${density} forest background. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
     },
-    'ชายหาด': (intensity) => {
+    'Beach': (intensity) => {
         const width = getIntensityDescriptor(intensity, ['a narrow strip of sand', 'a medium-sized', 'a wide', 'a very wide, expansive', 'an endless']);
         return `with ${width} beach background. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
     },
-    'วิวเมือง': (intensity) => {
+    'Cityscape': (intensity) => {
         const density = getIntensityDescriptor(intensity, ['a small town', 'a sparse city skyline', 'a standard city skyline', 'a dense, sprawling metropolis', 'a futuristic, hyper-dense megacity']);
         return `with ${density} cityscape background. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
     },
-    'อวกาศ': (intensity) => {
+    'Outer Space': (intensity) => {
         const density = getIntensityDescriptor(intensity, ['a few distant stars', 'a clear night sky with constellations', 'a sky full of stars and a faint milky way', 'a vibrant, star-filled nebula', 'an intensely colorful and complex galactic core']);
         return `with ${density} background. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
     },
-    "แม่น้ำด้านหน้า": (intensity) => {
+    "Foreground River": (intensity) => {
         const width = getIntensityDescriptor(intensity, ['a small stream', 'a medium-sized river', 'a wide river', 'a very wide, expansive river', 'a massive, flowing river']);
         return `with ${width} in the foreground. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
     },
-     "ถนนด้านหน้า": (intensity) => {
+     "Foreground Road": (intensity) => {
         const visibility = getIntensityDescriptor(intensity, ['just the edge of a road visible', 'a small section of road visible', 'a clear road across the foreground', 'a wide two-lane road', 'a prominent multi-lane road']);
         return `Add a clean, modern asphalt road and sidewalk in the immediate foreground. The road should be ${visibility}. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
     },
-    "ใบไม้บังมุมบน": (intensity) => {
+    "Top Corner Leaves": (intensity) => {
         const amount = getIntensityDescriptor(intensity, ['a few scattered leaves', 'a small branch with leaves', 'several branches', 'a thick canopy of leaves', 'a view almost completely obscured by leaves']);
         return `with ${amount} framing the top corner of the view, creating a natural foreground bokeh effect. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
     },
-    "พุ่มไม้บังมุมล่าง": (intensity) => {
+    "Bottom Corner Bush": (intensity) => {
         const size = getIntensityDescriptor(intensity, ['a small flowering bush', 'a medium-sized flowering bush', 'a large, dense flowering bush', 'multiple large bushes', 'an entire foreground filled with flowering bushes']);
         return `with ${size} in the bottom corner of the view, adding a touch of nature to the foreground. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
     },
-    'ดอกไม้ด้านหน้า': (intensity) => {
+    'Foreground Flowers': (intensity) => {
         const density = getIntensityDescriptor(intensity, ['a few scattered flowers', 'small patches of flowers', 'a colorful flowerbed', 'a dense and vibrant flowerbed', 'an entire foreground filled with a lush variety of flowers']);
         return `with ${density} in the foreground, adding a vibrant touch of nature. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
     },
-    'รั้วด้านหน้า': (intensity) => {
+    'Foreground Fence': (intensity) => {
         const visibility = getIntensityDescriptor(intensity, ['just a corner of a fence visible', 'a small section of a fence visible', 'a significant part of a fence visible', 'a fence clearly framing the foreground', 'a prominent fence across the foreground']);
         return `with ${visibility}, adding a sense of privacy and structure. The fence should be a stylish, modern design. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
     },
-    'สนามหญ้าด้านหน้า': (intensity) => {
+    'Foreground Lawn': (intensity) => {
         const condition = getIntensityDescriptor(intensity, ['patchy and dry', 'short and neat', 'lush and green', 'perfectly manicured', 'a thick, deep green carpet of']);
         return `Add ${condition} lawn in the immediate foreground. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
     },
-    'ทางเดินด้านหน้า': (intensity) => {
+    'Foreground Pathway': (intensity) => {
         const visibility = getIntensityDescriptor(intensity, ['just the edge of a path', 'a small section of a path', 'a clear path', 'a wide path', 'a prominent, winding path']);
         return `Add a winding stone or brick pathway in the foreground. The path should be ${visibility}. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
     },
-    'น้ำพุ/บ่อน้ำด้านหน้า': (intensity) => {
+    'Foreground Water Feature': (intensity) => {
         const size = getIntensityDescriptor(intensity, ['a very small, subtle', 'a small', 'a medium-sized', 'a large', 'a very large and prominent']);
         return `Add ${size} modern water feature like a small pond or fountain in the foreground. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
     },
-    'กำแพงเตี้ยด้านหน้า': (intensity) => {
+    'Foreground Low Wall': (intensity) => {
         const visibility = getIntensityDescriptor(intensity, ['just a corner of a low wall', 'a small section of a low wall', 'a low wall across part of the foreground', 'a clear low wall across the foreground', 'a prominent, decorative low wall']);
         return `Add ${visibility} made of stone or brick in the foreground. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
     },
@@ -678,28 +682,28 @@ const ImageToolbar: React.FC<{
   canUpscaleAndSave: boolean;
   isLoading: boolean;
 }> = ({ onUndo, onRedo, onReset, onUpscale, onOpenSaveModal, onTransform, canUndo, canRedo, canReset, canUpscaleAndSave, isLoading }) => (
-    <div className="bg-gray-800/50 p-3 rounded-xl border border-gray-700 flex flex-wrap items-center justify-center gap-3">
-        {/* History */}
-        <div className="flex items-center gap-2 p-1 bg-gray-900/50 rounded-full">
-            <ActionButton onClick={onUndo} disabled={!canUndo || isLoading} title="ยกเลิก"><UndoIcon className="w-5 h-5" /></ActionButton>
-            <ActionButton onClick={onRedo} disabled={!canRedo || isLoading} title="ทำซ้ำ"><RedoIcon className="w-5 h-5" /></ActionButton>
-        </div>
-        
-        {/* Transformations */}
-        <div className="flex items-center gap-2 p-1 bg-gray-900/50 rounded-full">
-            <ActionButton onClick={() => onTransform('rotateLeft')} disabled={!canUpscaleAndSave || isLoading} title="หมุนซ้าย 90°"><RotateLeftIcon className="w-5 h-5" /></ActionButton>
-            <ActionButton onClick={() => onTransform('rotateRight')} disabled={!canUpscaleAndSave || isLoading} title="หมุนขวา 90°"><RotateRightIcon className="w-5 h-5" /></ActionButton>
-            <ActionButton onClick={() => onTransform('flipHorizontal')} disabled={!canUpscaleAndSave || isLoading} title="พลิกแนวนอน"><FlipHorizontalIcon className="w-5 h-5" /></ActionButton>
-            <ActionButton onClick={() => onTransform('flipVertical')} disabled={!canUpscaleAndSave || isLoading} title="พลิกแนวตั้ง"><FlipVerticalIcon className="w-5 h-5" /></ActionButton>
-        </div>
-
-        {/* Main Actions */}
-        <div className="flex items-center flex-wrap justify-center gap-3">
-            <ActionButton onClick={onUpscale} disabled={!canUpscaleAndSave || isLoading} title="เพิ่มความละเอียดรูปภาพ" color="purple"><UpscaleIcon className="w-5 h-5" /><span>เพิ่มความละเอียด</span></ActionButton>
-            <ActionButton onClick={onOpenSaveModal} disabled={!canUpscaleAndSave || isLoading} title="ดาวน์โหลดรูปภาพ" color="blue"><DownloadIcon className="w-5 h-5" /><span>ดาวน์โหลด</span></ActionButton>
-            <ActionButton onClick={onReset} disabled={!canReset || isLoading} title="รีเซ็ตการแก้ไขทั้งหมด" color="red"><ResetEditsIcon className="w-5 h-5" /><span>รีเซ็ต</span></ActionButton>
-        </div>
+  <div className="bg-gray-800/50 p-3 rounded-xl border border-gray-700 flex flex-col sm:flex-row sm:flex-wrap items-center justify-center gap-3">
+    {/* History */}
+    <div className="flex items-center gap-2 p-1 bg-gray-900/50 rounded-full">
+      <ActionButton onClick={onUndo} disabled={!canUndo || isLoading} title="Undo"><UndoIcon className="w-5 h-5" /></ActionButton>
+      <ActionButton onClick={onRedo} disabled={!canRedo || isLoading} title="Redo"><RedoIcon className="w-5 h-5" /></ActionButton>
     </div>
+    
+    {/* Transformations */}
+    <div className="flex items-center gap-2 p-1 bg-gray-900/50 rounded-full">
+      <ActionButton onClick={() => onTransform('rotateLeft')} disabled={!canUpscaleAndSave || isLoading} title="Rotate Left 90°"><RotateLeftIcon className="w-5 h-5" /></ActionButton>
+      <ActionButton onClick={() => onTransform('rotateRight')} disabled={!canUpscaleAndSave || isLoading} title="Rotate Right 90°"><RotateRightIcon className="w-5 h-5" /></ActionButton>
+      <ActionButton onClick={() => onTransform('flipHorizontal')} disabled={!canUpscaleAndSave || isLoading} title="Flip Horizontal"><FlipHorizontalIcon className="w-5 h-5" /></ActionButton>
+      <ActionButton onClick={() => onTransform('flipVertical')} disabled={!canUpscaleAndSave || isLoading} title="Flip Vertical"><FlipVerticalIcon className="w-5 h-5" /></ActionButton>
+    </div>
+
+    {/* Main Actions */}
+    <div className="flex flex-col xs:flex-row items-center gap-3">
+      <ActionButton onClick={onUpscale} disabled={!canUpscaleAndSave || isLoading} title="Upscale selected image" color="purple"><UpscaleIcon className="w-5 h-5" /><span>Upscale</span></ActionButton>
+      <ActionButton onClick={onOpenSaveModal} disabled={!canUpscaleAndSave || isLoading} title="Download selected image" color="blue"><DownloadIcon className="w-5 h-5" /><span>Download</span></ActionButton>
+      <ActionButton onClick={onReset} disabled={!canReset || isLoading} title="Reset all edits" color="red"><ResetEditsIcon className="w-5 h-5" /><span>Reset</span></ActionButton>
+    </div>
+  </div>
 );
 
 
@@ -722,7 +726,7 @@ const ImageEditor: React.FC = () => {
   const [selectedTimeOfDay, setSelectedTimeOfDay] = useState<string>('');
   const [selectedWeather, setSelectedWeather] = useState<string>('');
   const [selectedCameraAngle, setSelectedCameraAngle] = useState<string>('');
-  const [selectedFilter, setSelectedFilter] = useState<string>('ไม่มี');
+  const [selectedFilter, setSelectedFilter] = useState<string>('None');
   const [selectedQuickAction, setSelectedQuickAction] = useState<string>('');
   const [photorealisticIntensity, setPhotorealisticIntensity] = useState<number>(100);
   const [isAddLightActive, setIsAddLightActive] = useState<boolean>(false);
@@ -774,6 +778,11 @@ const ImageEditor: React.FC = () => {
   const [isSpotlightActive, setIsSpotlightActive] = useState<boolean>(false);
   const [spotlightBrightness, setSpotlightBrightness] = useState<number>(60);
   const [spotlightColor, setSpotlightColor] = useState<string>('#FFFFE0'); // Light Yellow - halogen-like
+  
+  const [isDownlightActive, setIsDownlightActive] = useState<boolean>(false);
+  const [downlightBrightness, setDownlightBrightness] = useState<number>(80);
+  const [downlightColor, setDownlightColor] = useState<string>('#FFFFFF');
+
   const [addFourWayAC, setAddFourWayAC] = useState<boolean>(false);
   const [addWallTypeAC, setAddWallTypeAC] = useState<boolean>(false);
 
@@ -791,7 +800,6 @@ const ImageEditor: React.FC = () => {
     interiorStyle: false,
     interiorQuickActions: false,
     livingRoomQuickActions: false,
-    diningRoomQuickActions: false,
     artStyle: false,
     background: false,
     foreground: false,
@@ -869,7 +877,7 @@ const ImageEditor: React.FC = () => {
         }
       } catch (e) {
         console.error("Error loading projects from IndexedDB:", e);
-        setError("ไม่สามารถโหลดโปรเจกต์ที่บันทึกไว้ได้ กรุณาลองรีเฟรชหน้า");
+        setError("Could not load your saved projects. Please try refreshing the page.");
       } finally {
         if (isMounted) {
           setIsDataLoaded(true);
@@ -907,7 +915,7 @@ const ImageEditor: React.FC = () => {
         }
       } catch (e) {
         console.error("Error saving projects to IndexedDB:", e);
-        setError("ไม่สามารถบันทึกความคืบหน้าของโปรเจกต์ได้ การเปลี่ยนแปลงอาจไม่ถูกบันทึก");
+        setError("Could not save your project progress. Changes might not be saved.");
       }
     };
     
@@ -945,7 +953,7 @@ const ImageEditor: React.FC = () => {
     setSelectedTimeOfDay('');
     setSelectedWeather('');
     setSelectedCameraAngle('');
-    setSelectedFilter('ไม่มี');
+    setSelectedFilter('None');
     setSelectedQuickAction('');
     setIsAddLightActive(false);
     setOutputSize('Original');
@@ -972,6 +980,9 @@ const ImageEditor: React.FC = () => {
     setIsSpotlightActive(false);
     setSpotlightBrightness(60);
     setSpotlightColor('#FFFFE0');
+    setIsDownlightActive(false);
+    setDownlightBrightness(80);
+    setDownlightColor('#FFFFFF');
     setAddFourWayAC(false);
     setAddWallTypeAC(false);
   }, [activeImage?.id]);
@@ -1027,7 +1038,7 @@ const ImageEditor: React.FC = () => {
           }
       } catch (err) {
           if (mountedRef.current) {
-              setError("ไม่สามารถโหลดรูปภาพบางส่วนหรือทั้งหมดได้");
+              setError("Could not load some or all of the images.");
           }
       }
     }
@@ -1062,7 +1073,7 @@ const ImageEditor: React.FC = () => {
   };
   
   const handleClearAllProjects = async () => {
-    if (window.confirm("คุณแน่ใจหรือไม่ว่าต้องการลบโปรเจกต์และประวัติทั้งหมด? การกระทำนี้ไม่สามารถย้อนกลับได้")) {
+    if (window.confirm("Are you sure you want to delete all projects and their history? This action cannot be undone.")) {
         try {
             await clearProjects();
             localStorage.removeItem('fast-ai-active-project-index');
@@ -1070,7 +1081,7 @@ const ImageEditor: React.FC = () => {
             setActiveImageIndex(null);
         } catch (err) {
             console.error("Failed to clear all projects from DB:", err);
-            setError("เกิดข้อผิดพลาดขณะพยายามล้างโปรเจกต์ทั้งหมด");
+            setError("There was an error while trying to clear all projects.");
         }
     }
   };
@@ -1090,7 +1101,6 @@ const ImageEditor: React.FC = () => {
             prompt: true,
             interiorQuickActions: true,
             livingRoomQuickActions: true,
-            diningRoomQuickActions: true,
             projectHistory: true,
         });
     } else if (type === 'plan') {
@@ -1126,7 +1136,7 @@ const ImageEditor: React.FC = () => {
   };
 
   const hasTextPrompt = prompt.trim() !== '';
-  const hasOtherOptions = selectedStyle !== '' || selectedBackgrounds.length > 0 || selectedForegrounds.length > 0 || selectedDecorativeItems.length > 0 || selectedTimeOfDay !== '' || selectedWeather !== '' || (treeAge !== 50) || (season !== 50) || selectedQuickAction !== '' || selectedFilter !== 'ไม่มี' || selectedGardenStyle !== '' || selectedArchStyle !== '' || isAddLightActive || selectedInteriorStyle !== '' || selectedInteriorLighting !== '' || selectedCameraAngle !== '' || (sceneType === 'interior' && selectedRoomType !== '') || isCoveLightActive || isSpotlightActive || addFourWayAC || addWallTypeAC;
+  const hasOtherOptions = selectedStyle !== '' || selectedBackgrounds.length > 0 || selectedForegrounds.length > 0 || selectedDecorativeItems.length > 0 || selectedTimeOfDay !== '' || selectedWeather !== '' || (treeAge !== 50) || (season !== 50) || selectedQuickAction !== '' || selectedFilter !== 'None' || selectedGardenStyle !== '' || selectedArchStyle !== '' || isAddLightActive || selectedInteriorStyle !== '' || selectedInteriorLighting !== '' || selectedCameraAngle !== '' || (sceneType === 'interior' && selectedRoomType !== '') || isCoveLightActive || isSpotlightActive || isDownlightActive || addFourWayAC || addWallTypeAC;
   const isEditingWithMask = editingMode === 'object' && !isMaskEmpty;
   const hasColorAdjustments = brightness !== 100 || contrast !== 100 || saturation !== 100 || sharpness !== 100;
   const isPlanModeReady = sceneType === 'plan' && !!selectedRoomType && !!selectedInteriorStyle;
@@ -1147,7 +1157,7 @@ const ImageEditor: React.FC = () => {
     if (!isDeselecting) {
       setSelectedCameraAngle(''); // Clear camera angle when selecting a quick action
     }
-    setOpenSections(prev => ({...prev, quickActions: false, interiorQuickActions: false, livingRoomQuickActions: false, diningRoomQuickActions: false }));
+    setOpenSections(prev => ({...prev, quickActions: false, interiorQuickActions: false, livingRoomQuickActions: false }));
   };
 
   const handleGardenStyleChange = (style: string) => {
@@ -1161,7 +1171,7 @@ const ImageEditor: React.FC = () => {
   }
 
   const handleRandomArchStyle = () => {
-    const stylesToChooseFrom = ['โมเดิร์น', 'คลาสสิก', 'มินิมอล', 'ร่วมสมัย'];
+    const stylesToChooseFrom = ['Modern', 'Classic', 'Minimalist', 'Contemporary'];
     const randomStyle = stylesToChooseFrom[Math.floor(Math.random() * stylesToChooseFrom.length)];
     setSelectedArchStyle(randomStyle);
   };
@@ -1192,7 +1202,7 @@ const ImageEditor: React.FC = () => {
   };
   
   const handleFilterChange = (filter: string) => {
-      setSelectedFilter(prev => prev === filter ? 'ไม่มี' : filter);
+      setSelectedFilter(prev => prev === filter ? 'None' : filter);
   };
   
   const handleArtStyleChange = (style: string) => {
@@ -1200,7 +1210,7 @@ const ImageEditor: React.FC = () => {
   };
 
   const handleBackgroundToggle = (bg: string) => {
-    if (bg === 'ไม่เปลี่ยนแปลง') {
+    if (bg === 'No Change') {
         setSelectedBackgrounds([]);
         return;
     }
@@ -1264,7 +1274,7 @@ const ImageEditor: React.FC = () => {
       : activeImage.dataUrl;
 
     if (!sourceDataUrl) {
-      setError('กรุณาเลือกรูปภาพเพื่อสร้างรูปแบบต่างๆ');
+      setError('Please select an image to generate variations.');
       return;
     }
     
@@ -1281,13 +1291,13 @@ const ImageEditor: React.FC = () => {
     if (variationType === 'style') {
         const stylesToGenerate = [...styleOptions].sort(() => 0.5 - Math.random()).slice(0, 4);
         labelsForResults = stylesToGenerate.map(s => s.name);
-        promptForHistory = 'สร้างรูปแบบสไตล์ 4 แบบ';
+        promptForHistory = 'Generated 4 style variations';
         promptsToGenerate = stylesToGenerate.map(style => `Transform the entire image to be ${STYLE_PROMPTS[style.name as keyof typeof STYLE_PROMPTS]}.`);
 
     } else { // angle
         const anglesToGenerate = [...cameraAngleOptions.filter(opt => opt.prompt)].sort(() => 0.5 - Math.random()).slice(0, 4);
         labelsForResults = anglesToGenerate.map(a => a.name);
-        promptForHistory = 'สร้างมุมกล้อง 4 แบบ';
+        promptForHistory = 'Generated 4 camera angle variations';
         promptsToGenerate = anglesToGenerate.map(angle => `Re-render the image ${angle.prompt}.`);
     }
 
@@ -1329,7 +1339,7 @@ const ImageEditor: React.FC = () => {
       
     } catch (err) {
       if (!mountedRef.current) return;
-      const errorMessage = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดที่ไม่รู้จัก';
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
       setError(errorMessage);
     } finally {
       if (mountedRef.current) {
@@ -1346,7 +1356,7 @@ const ImageEditor: React.FC = () => {
       : activeImage.dataUrl;
 
     if (!sourceDataUrl) {
-      setError('กรุณาเลือกรูปภาพ');
+      setError('Please select an image.');
       return;
     }
 
@@ -1357,7 +1367,7 @@ const ImageEditor: React.FC = () => {
     if (editingMode === 'object') {
         maskBase64 = await imageDisplayRef.current?.exportMask() ?? null;
         if (!maskBase64) {
-            setError("ไม่สามารถส่งออก mask จากภาพวาดของคุณได้ กรุณาลองอีกครั้ง");
+            setError("Could not export mask from your drawing. Please try again.");
             setIsLoading(false);
             return;
         }
@@ -1375,7 +1385,7 @@ const ImageEditor: React.FC = () => {
     const viewsToGenerate = planViewOptions;
 
     const labelsForResults = viewsToGenerate.map(v => v.name);
-    const promptForHistory = `สร้างมุมมอง 3D 4 แบบสำหรับ ${selectedRoomType}, สไตล์ ${selectedInteriorStyle}`;
+    const promptForHistory = `Generated 4 3D views for ${selectedRoomType}, ${selectedInteriorStyle} style`;
 
     try {
       const generatedImagesBase64: string[] = [];
@@ -1416,7 +1426,7 @@ const ImageEditor: React.FC = () => {
 
     } catch (err) {
       if (!mountedRef.current) return;
-      const errorMessage = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดที่ไม่รู้จัก';
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
       setError(errorMessage);
     } finally {
       if (mountedRef.current) {
@@ -1431,7 +1441,7 @@ const ImageEditor: React.FC = () => {
     const sourceDataUrl = selectedImageUrl || activeImage.dataUrl;
 
     if (!sourceDataUrl) {
-      setError('กรุณาเลือกรูปภาพเพื่อวิเคราะห์');
+      setError('Please select an image to analyze.');
       return;
     }
 
@@ -1450,7 +1460,7 @@ const ImageEditor: React.FC = () => {
 
     } catch (err) {
       if (!mountedRef.current) return;
-      const errorMessage = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดที่ไม่รู้จักระหว่างการวิเคราะห์';
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred during analysis.';
       setError(errorMessage);
     } finally {
       if (!mountedRef.current) return;
@@ -1464,7 +1474,7 @@ const ImageEditor: React.FC = () => {
     const sourceDataUrl = selectedImageUrl || activeImage.dataUrl;
 
     if (!sourceDataUrl) {
-      setError('กรุณาเลือกรูปภาพเพื่อรับคำแนะนำ');
+      setError('Please select an image to get suggestions.');
       return;
     }
 
@@ -1483,7 +1493,7 @@ const ImageEditor: React.FC = () => {
 
     } catch (err) {
       if (!mountedRef.current) return;
-      const errorMessage = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดที่ไม่รู้จักขณะรับคำแนะนำ';
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred while getting suggestions.';
       setError(errorMessage);
     } finally {
       if (!mountedRef.current) return;
@@ -1499,7 +1509,7 @@ const ImageEditor: React.FC = () => {
     if (editingMode === 'object') {
       maskBase64 = await imageDisplayRef.current?.exportMask() ?? null;
       if (!maskBase64) {
-        setError("ไม่สามารถส่งออก mask จากภาพวาดของคุณได้ กรุณาลองอีกครั้ง");
+        setError("Could not export mask from your drawing. Please try again.");
         return;
       }
     }
@@ -1509,7 +1519,7 @@ const ImageEditor: React.FC = () => {
       : activeImage.dataUrl;
 
     if (!sourceDataUrl) {
-      setError('กรุณาเลือกรูปภาพและป้อนคำสั่งแก้ไข');
+      setError('Please select an image and provide an edit instruction.');
       return;
     }
 
@@ -1533,10 +1543,10 @@ const ImageEditor: React.FC = () => {
       if (outputSize !== 'Original' && editingMode !== 'object') {
           try {
               finalResult = await cropAndResizeImage(newResult, outputSize);
-              finalPromptForHistory += ` (ปรับขนาดเป็น ${outputSize})`;
+              finalPromptForHistory += ` (Resized to ${outputSize})`;
           } catch (err) {
               console.error("Client-side resize failed:", err);
-              setError("สร้างภาพ AI สำเร็จ แต่การปรับขนาดฝั่งไคลเอนต์ล้มเหลว กำลังแสดงผลลัพธ์ดั้งเดิม");
+              setError("AI generation succeeded, but client-side resizing failed. Displaying original result.");
               // Fallback to the original result, the user gets an error message
           }
       }
@@ -1557,7 +1567,7 @@ const ImageEditor: React.FC = () => {
               selectedResultIndex: 0,
               promptHistory: newPromptHistory,
               apiPromptHistory: newApiPromptHistory,
-              lastGeneratedLabels: ['แก้ไขแล้ว'],
+              lastGeneratedLabels: ['Edited'],
               generationTypeHistory: newGenerationTypeHistory,
           };
       });
@@ -1579,7 +1589,7 @@ const ImageEditor: React.FC = () => {
       setSelectedCameraAngle('');
       setSelectedQuickAction('');
       setIsAddLightActive(false);
-      setSelectedFilter('ไม่มี');
+      setSelectedFilter('None');
       setPhotorealisticIntensity(100);
       setLightingBrightness(50);
       setLightingTemperature(50);
@@ -1599,12 +1609,15 @@ const ImageEditor: React.FC = () => {
       setIsSpotlightActive(false);
       setSpotlightBrightness(60);
       setSpotlightColor('#FFFFE0');
+      setIsDownlightActive(false);
+      setDownlightBrightness(80);
+      setDownlightColor('#FFFFFF');
       setAddFourWayAC(false);
       setAddWallTypeAC(false);
 
     } catch (err) {
       if (!mountedRef.current) return;
-      const errorMessage = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดที่ไม่รู้จัก';
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
       setError(errorMessage);
     } finally {
       if (!mountedRef.current) return;
@@ -1627,7 +1640,7 @@ const ImageEditor: React.FC = () => {
             newHistory.push([resizedDataUrl]);
             const newIndex = newHistory.length - 1;
 
-            const newPromptHistory = [...img.promptHistory.slice(0, img.historyIndex + 1), `ปรับขนาดเป็น ${outputSize}`];
+            const newPromptHistory = [...img.promptHistory.slice(0, img.historyIndex + 1), `Resized to ${outputSize}`];
             const newApiPromptHistory = [...img.apiPromptHistory.slice(0, img.historyIndex + 1), 'TRANSFORM:RESIZE'];
             const newGenerationTypeHistory: ImageState['generationTypeHistory'] = [...img.generationTypeHistory.slice(0, img.historyIndex + 1), 'transform'];
             
@@ -1639,7 +1652,7 @@ const ImageEditor: React.FC = () => {
                 promptHistory: newPromptHistory,
                 apiPromptHistory: newApiPromptHistory,
                 generationTypeHistory: newGenerationTypeHistory,
-                lastGeneratedLabels: ['ปรับขนาดแล้ว'],
+                lastGeneratedLabels: ['Resized'],
             };
         });
         
@@ -1648,7 +1661,7 @@ const ImageEditor: React.FC = () => {
 
     } catch (err) {
         if (!mountedRef.current) return;
-        const errorMessage = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดที่ไม่รู้จักระหว่างการปรับขนาด';
+        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred during resize.';
         setError(errorMessage);
     } finally {
         if (!mountedRef.current) return;
@@ -1661,7 +1674,7 @@ const ImageEditor: React.FC = () => {
     event.preventDefault();
     if (!activeImage || !hasEditInstruction) {
       if (activeImage && !hasEditInstruction) {
-        setError('กรุณาป้อนคำสั่งแก้ไขหรือเลือกตัวเลือก');
+        setError('Please provide an edit instruction or select an option.');
       }
       return;
     }
@@ -1676,7 +1689,7 @@ const ImageEditor: React.FC = () => {
     // --- Plan to 3D Generation Logic ---
     if (sceneType === 'plan') {
         if (!selectedRoomType || !selectedInteriorStyle) {
-            setError('กรุณาเลือกประเภทห้องและสไตล์การตกแต่งภายใน');
+            setError('Please select a room type and interior style.');
             return;
         }
         
@@ -1688,7 +1701,7 @@ const ImageEditor: React.FC = () => {
         const furnitureLayoutPrompt = furniturePrompt.trim() ? `Crucially, follow this specific furniture layout: "${furniturePrompt.trim()}".` : '';
 
         const finalPrompt = `Critically interpret this 2D floor plan and transform it into a high-quality, photorealistic 3D architectural visualization. The view should be ${viewPrompt}. The space is ${roomPrompt}, designed in a ${stylePrompt}. Furnish the room with appropriate and modern furniture. ${furnitureLayoutPrompt} ${lightingPrompt ? `Set the lighting to be as follows: ${lightingPrompt}` : ''} ${materialsPrompt ? `Use a material palette of ${materialsPrompt}` : ''} Pay close attention to materials, textures, and realistic lighting to create a cohesive and inviting atmosphere. Ensure the final image is 8k resolution and hyper-detailed.`;
-        const promptForHistory = `มุมมอง 3D: ${selectedPlanView}, ${selectedRoomType}, สไตล์ ${selectedInteriorStyle}`;
+        const promptForHistory = `3D View: ${selectedPlanView}, ${selectedRoomType}, ${selectedInteriorStyle} Style`;
         
         executeGeneration(finalPrompt, promptForHistory);
         return; 
@@ -1698,7 +1711,7 @@ const ImageEditor: React.FC = () => {
     
     if (sceneType === 'interior' && editingMode !== 'object') {
       if (selectedRoomType && ROOM_TYPE_PROMPTS[selectedRoomType]) {
-          promptParts.push(`สำหรับภาพถ่าย${ROOM_TYPE_PROMPTS[selectedRoomType]}นี้,`);
+          promptParts.push(`For this photo of ${ROOM_TYPE_PROMPTS[selectedRoomType]},`);
       }
     }
 
@@ -1740,25 +1753,20 @@ const ImageEditor: React.FC = () => {
             promptParts.push(DECORATIVE_ITEM_PROMPTS[item as keyof typeof DECORATIVE_ITEM_PROMPTS]);
         }
       });
-      
-      // Time of Day
-      if (selectedTimeOfDay && TIME_OF_DAY_PROMPTS[selectedTimeOfDay as keyof typeof TIME_OF_DAY_PROMPTS]) {
-        promptParts.push(TIME_OF_DAY_PROMPTS[selectedTimeOfDay as keyof typeof TIME_OF_DAY_PROMPTS]);
-      }
-      
-      // Weather
-      if (selectedWeather && WEATHER_PROMPTS[selectedWeather as keyof typeof WEATHER_PROMPTS]) {
-        promptParts.push(WEATHER_PROMPTS[selectedWeather as keyof typeof WEATHER_PROMPTS]);
-      }
-      
+
       // Backgrounds
-      const bgPromptKey = sceneType === 'interior' ? INTERIOR_BACKGROUND_PROMPTS : BACKGROUND_PROMPTS;
       selectedBackgrounds.forEach(bg => {
-          const generator = ADJUSTABLE_PROMPT_GENERATORS[bg];
-          if (generator) {
-              promptParts.push(generator(optionIntensities[bg]));
-          } else if (bgPromptKey[bg as keyof typeof bgPromptKey]) {
-              promptParts.push(bgPromptKey[bg as keyof typeof bgPromptKey]);
+          if (sceneType === 'interior') {
+              if (INTERIOR_BACKGROUND_PROMPTS[bg as keyof typeof INTERIOR_BACKGROUND_PROMPTS]) {
+                  promptParts.push(INTERIOR_BACKGROUND_PROMPTS[bg as keyof typeof INTERIOR_BACKGROUND_PROMPTS]);
+              }
+          } else { // exterior
+              const generator = ADJUSTABLE_PROMPT_GENERATORS[bg];
+              if (generator) {
+                  promptParts.push(generator(optionIntensities[bg]));
+              } else if (BACKGROUND_PROMPTS[bg as keyof typeof BACKGROUND_PROMPTS]) {
+                  promptParts.push(BACKGROUND_PROMPTS[bg as keyof typeof BACKGROUND_PROMPTS]);
+              }
           }
       });
       
@@ -1771,171 +1779,392 @@ const ImageEditor: React.FC = () => {
               promptParts.push(FOREGROUND_PROMPTS[fg as keyof typeof FOREGROUND_PROMPTS]);
           }
       });
-
-      // Camera Angle
-      if (selectedCameraAngle && CAMERA_ANGLE_PROMPTS[selectedCameraAngle as keyof typeof CAMERA_ANGLE_PROMPTS]) {
-        promptParts.push(CAMERA_ANGLE_PROMPTS[selectedCameraAngle as keyof typeof CAMERA_ANGLE_PROMPTS]);
+      
+      // Time of Day
+      if (selectedTimeOfDay && TIME_OF_DAY_PROMPTS[selectedTimeOfDay as keyof typeof TIME_OF_DAY_PROMPTS]) {
+        promptParts.push(TIME_OF_DAY_PROMPTS[selectedTimeOfDay as keyof typeof TIME_OF_DAY_PROMPTS]);
+      }
+      
+      // Weather
+      if (selectedWeather && WEATHER_PROMPTS[selectedWeather as keyof typeof WEATHER_PROMPTS]) {
+          promptParts.push(WEATHER_PROMPTS[selectedWeather as keyof typeof WEATHER_PROMPTS]);
       }
 
-      // Art Style
-      if (selectedStyle && STYLE_PROMPTS[selectedStyle as keyof typeof STYLE_PROMPTS]) {
-          let stylePrompt = `Transform the entire image to be ${STYLE_PROMPTS[selectedStyle as keyof typeof STYLE_PROMPTS]}`;
-          if (styleIntensity < 100) {
-              stylePrompt += ` with an intensity of ${styleIntensity}%.`;
-          }
-          promptParts.push(stylePrompt);
+      // Vegetation
+      const treeAgePromptText = getTreeAgePrompt(treeAge);
+      if (treeAgePromptText) promptParts.push(treeAgePromptText);
+      const seasonPromptText = getSeasonPrompt(season);
+      if (seasonPromptText) promptParts.push(seasonPromptText);
+
+      // Camera Angle
+      if (selectedCameraAngle) {
+        const predefinedPrompt = CAMERA_ANGLE_PROMPTS[selectedCameraAngle];
+        if (predefinedPrompt !== undefined && predefinedPrompt !== '') {
+          // It's a predefined angle like 'High Angle'
+          promptParts.push(predefinedPrompt);
+        } else if (predefinedPrompt === undefined) {
+          // It's a custom/suggested angle string, not a key in CAMERA_ANGLE_PROMPTS
+          promptParts.push(`Re-render the image as a ${selectedCameraAngle}.`);
+        }
+        // if predefinedPrompt is '', do nothing.
       }
       
       // Filter
-      if (selectedFilter !== 'ไม่มี' && FILTER_PROMPTS[selectedFilter as keyof typeof FILTER_PROMPTS]) {
-        promptParts.push(FILTER_PROMPTS[selectedFilter as keyof typeof FILTER_PROMPTS]);
+      if (selectedFilter && selectedFilter !== 'None' && FILTER_PROMPTS[selectedFilter as keyof typeof FILTER_PROMPTS]) {
+          promptParts.push(FILTER_PROMPTS[selectedFilter as keyof typeof FILTER_PROMPTS]);
       }
       
-      // Vegetation
-      const treePrompt = getTreeAgePrompt(treeAge);
-      if (treePrompt) promptParts.push(treePrompt);
-      const seasonPrompt = getSeasonPrompt(season);
-      if (seasonPrompt) promptParts.push(seasonPrompt);
-      
-      // General Lighting
+      // Art Style
+      if (selectedStyle && STYLE_PROMPTS[selectedStyle as keyof typeof STYLE_PROMPTS]) {
+          let stylePrompt = `transform the image to be ${STYLE_PROMPTS[selectedStyle as keyof typeof STYLE_PROMPTS]}`;
+          // Use the existing helper for more granular control and consistency
+          const intensityDesc = getIntensityDescriptor(styleIntensity, ['a very subtle', 'a subtle', 'a moderate', 'a strong', 'a very strong and exaggerated']);
+          // Only add the intensity descriptor if it's not the default "moderate" level.
+          if (intensityDesc !== 'a moderate') {
+            stylePrompt += ` with ${intensityDesc} intensity.`;
+          }
+          promptParts.push(stylePrompt);
+      }
+
+      const colorAdjustments = [];
+      if (brightness !== 100) {
+        const change = brightness - 100;
+        colorAdjustments.push(`${change > 0 ? 'increase the' : 'decrease the'} brightness`);
+      }
+      if (contrast !== 100) {
+        const change = contrast - 100;
+        colorAdjustments.push(`${change > 0 ? 'increase the' : 'decrease the'} contrast`);
+      }
+      if (saturation !== 100) {
+        const change = saturation - 100;
+        colorAdjustments.push(`${change > 0 ? 'increase the' : 'decrease the'} color saturation`);
+      }
+      if (sharpness !== 100) {
+        const change = sharpness - 100;
+        colorAdjustments.push(`${change > 0 ? 'increase the' : 'decrease the'} sharpness`);
+      }
+
+      if (colorAdjustments.length > 0) {
+          promptParts.push(`Regenerate the image to ${colorAdjustments.join(', and to ')}.`);
+      }
+
       if (isAddLightActive) {
-          const brightnessDesc = getIntensityDescriptor(lightingBrightness, ['very dim', 'dim', 'moderate', 'bright', 'very bright']);
-          const tempDesc = getIntensityDescriptor(lightingTemperature, ['very cool, blueish', 'cool, white', 'neutral', 'warm, yellowish', 'very warm, orange']);
-          promptParts.push(`Add ${brightnessDesc}, ${tempDesc} artificial lighting to the scene.`);
+          let brightnessDesc;
+          if (lightingBrightness <= 33) {
+              brightnessDesc = "subtle and dim";
+          } else if (lightingBrightness > 66) {
+              brightnessDesc = "bright and strong";
+          } else {
+              brightnessDesc = "a natural medium";
+          }
+          
+          let tempDesc;
+          if (lightingTemperature <= 20) {
+              tempDesc = "a very cool, almost blue light";
+          } else if (lightingTemperature <= 40) {
+              tempDesc = "a cool white light";
+          } else if (lightingTemperature > 80) {
+              tempDesc = "a very warm, orange-toned light";
+          } else if (lightingTemperature > 60) {
+              tempDesc = "a warm yellow light";
+          } else {
+              tempDesc = "a neutral white light";
+          }
+
+          promptParts.push(`Add realistic interior lighting coming from within the windows and open doorways of the building, making it look as though the lights are on inside at dusk or night. The light should have ${tempDesc} and have ${brightnessDesc} brightness.`);
       }
 
-      // Special Interior Lighting
-      if (sceneType === 'interior') {
-        if (isCoveLightActive) {
-            const brightness = getIntensityDescriptor(coveLightBrightness, ['subtle', 'soft', 'moderate', 'bright', 'intense']);
-            promptParts.push(`Add ${brightness} warm white indirect cove lighting to the ceiling to create a cozy, ambient glow.`);
-        }
-        if (isSpotlightActive) {
-            const brightness = getIntensityDescriptor(spotlightBrightness, ['subtle', 'soft', 'moderate', 'bright', 'intense']);
-            promptParts.push(`Add ${brightness} focused spotlights to highlight specific architectural features or decor items like artwork.`);
-        }
-        if (addFourWayAC) {
-            promptParts.push('Integrate a modern, ceiling-mounted 4-way cassette type air conditioner seamlessly into the ceiling design.');
-        }
-        if (addWallTypeAC) {
-            promptParts.push('Integrate a modern, wall-mounted air conditioner unit seamlessly onto a suitable wall.');
-        }
+      if (isCoveLightActive) {
+          const brightnessDesc = getIntensityDescriptor(coveLightBrightness, ['very dim', 'soft', 'medium', 'bright', 'very bright']);
+          promptParts.push(`Add decorative indirect LED cove lighting with a color of ${coveLightColor}. The light should be ${brightnessDesc} and concealed along ceiling edges or under furniture to create a soft, ambient glow.`);
       }
 
-      // Color Adjustments
-      if (brightness !== 100) promptParts.push(`Adjust brightness to ${brightness}%.`);
-      if (contrast !== 100) promptParts.push(`Adjust contrast to ${contrast}%.`);
-      if (saturation !== 100) promptParts.push(`Adjust saturation to ${saturation}%.`);
-      if (sharpness !== 100) promptParts.push(`Adjust sharpness to ${sharpness}%.`);
+      if (isSpotlightActive) {
+          const brightnessDesc = getIntensityDescriptor(spotlightBrightness, ['subtle accent', 'softly focused', 'moderately bright', 'strong, focused', 'very bright, dramatic']);
+          promptParts.push(`Incorporate ${spotlightColor} modern spotlights or track lighting. The spotlights should be ${brightnessDesc} and strategically placed to highlight specific features like artwork, plants, or architectural details, creating focused pools of light and adding depth to the scene.`);
+      }
+      
+      if (isDownlightActive) {
+          const brightnessDesc = getIntensityDescriptor(downlightBrightness, ['subtle', 'soft', 'moderately bright', 'bright', 'very bright']);
+          promptParts.push(`Add modern, recessed ceiling downlights with a color of ${downlightColor}. The downlights should be ${brightnessDesc} and cast clean, focused pools of light downwards, enhancing the ambiance and highlighting the space below.`);
+      }
+       
+      if (addFourWayAC) {
+        promptParts.push('Add a modern, ceiling-mounted 4-way cassette air conditioner unit, integrating it naturally into the ceiling design.');
+      }
+      if (addWallTypeAC) {
+        promptParts.push('Add a modern, wall-mounted air conditioner unit (18000 btu), integrating it naturally onto a suitable wall.');
+      }
     }
-
-    // Negative Prompt
-    if (negativePrompt.trim() !== '') {
-        promptParts.push(`Ensure the image does not contain the following: ${negativePrompt.trim()}`);
-    }
-
-    const finalPrompt = cleanPrompt(promptParts.join('. '));
-    const promptForHistory = finalPrompt.length > 150 ? `${finalPrompt.substring(0, 150)}...` : finalPrompt;
     
-    executeGeneration(finalPrompt, promptForHistory);
+    if (negativePrompt.trim()) {
+      promptParts.push(`Avoid: ${negativePrompt.trim()}`);
+    }
+
+    const finalPromptBody = cleanPrompt(promptParts.join('. '));
+    const promptForHistoryDisplay = finalPromptBody;
+    
+    if (!finalPromptBody) {
+        setError('Please provide an edit instruction or select an option.');
+        return;
+    }
+    
+    executeGeneration(finalPromptBody, promptForHistoryDisplay);
+  };
+  
+  const handleRandomQuickAction = async () => {
+    if (!activeImage || !sceneType || sceneType === 'plan') return;
+
+    const availableActions = sceneType === 'exterior' ? quickActions : [...interiorQuickActions, ...livingRoomQuickActions];
+    if (availableActions.length === 0) return;
+
+    const randomAction = availableActions[Math.floor(Math.random() * availableActions.length)];
+    const randomPrompt = QUICK_ACTION_PROMPTS[randomAction.id];
+
+    if (!randomPrompt) return;
+
+    // Reset other inputs to prevent them from being applied.
+    setPrompt('');
+    setNegativePrompt('');
+    setSelectedStyle('');
+    setSelectedGardenStyle('');
+    setSelectedArchStyle('');
+    setSelectedInteriorStyle('');
+    setSelectedBackgrounds([]);
+    setSelectedForegrounds([]);
+    setSelectedTimeOfDay('');
+    setSelectedWeather('');
+    setSelectedCameraAngle('');
+    setSelectedFilter('None');
+    setBrightness(100);
+    setContrast(100);
+    setSaturation(100);
+    setSharpness(100);
+    setTreeAge(50);
+    setSeason(50);
+    setOutputSize('Original');
+    setIsAddLightActive(false);
+
+    // Set the selected action for UI feedback
+    setSelectedQuickAction(randomAction.id);
+
+    // Execute the generation
+    executeGeneration(randomPrompt, `Random Preset: ${randomAction.label}`);
+  };
+
+
+  const handleUpscale = async () => {
+    if (!activeImage || activeImage.historyIndex < 0 || activeImage.selectedResultIndex === null) {
+      setError('No image selected to upscale.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    
+    const sourceUrl = activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex];
+    const mimeType = sourceUrl.substring(5, sourceUrl.indexOf(';'));
+    const base64 = sourceUrl.split(',')[1];
+    const upscalePrompt = "Upscale this image to a higher resolution, significantly enhance fine details, and make it photorealistically sharp without adding new elements.";
+
+    try {
+      const generatedImageBase64 = await editImage(base64, mimeType, upscalePrompt);
+      if (!mountedRef.current) return;
+
+      const newImageDataUrl = `data:image/jpeg;base64,${generatedImageBase64}`;
+      
+       updateActiveImage(img => {
+          const newHistory = img.history.slice(0, img.historyIndex + 1);
+          const previousResults = img.history[img.historyIndex];
+          const newResults = [...previousResults];
+          // Replace the upscaled image in the result set
+          newResults[img.selectedResultIndex!] = newImageDataUrl;
+          
+          // Add this modified result set as a new history step
+          newHistory.push(newResults);
+          const newIndex = newHistory.length - 1;
+
+          const newPromptHistory = [...img.promptHistory.slice(0, img.historyIndex + 1)];
+          newPromptHistory.push(upscalePrompt);
+          const newApiPromptHistory = [...img.apiPromptHistory.slice(0, img.historyIndex + 1), upscalePrompt];
+          const newGenerationTypeHistory: ImageState['generationTypeHistory'] = [...img.generationTypeHistory.slice(0, img.historyIndex + 1), 'upscale'];
+          
+          return {
+              ...img,
+              history: newHistory,
+              historyIndex: newIndex,
+              promptHistory: newPromptHistory,
+              apiPromptHistory: newApiPromptHistory,
+              generationTypeHistory: newGenerationTypeHistory,
+              lastGeneratedLabels: img.lastGeneratedLabels, // Preserve labels from previous step
+          };
+      });
+
+    } catch (err) {
+      if (!mountedRef.current) return;
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred during upscaling.';
+      setError(errorMessage);
+    } finally {
+      if (!mountedRef.current) return;
+      setIsLoading(false);
+    }
   };
 
   const handleUndo = () => {
-    if (!activeImage || activeImage.historyIndex < 0) return;
-    updateActiveImage(img => ({
-        ...img,
-        historyIndex: img.historyIndex - 1,
-        selectedResultIndex: (img.historyIndex > 0) ? 0 : null,
-    }));
-  };
-
-  const handleRedo = () => {
-    if (!activeImage || activeImage.historyIndex >= activeImage.history.length - 1) return;
-    updateActiveImage(img => ({
-        ...img,
-        historyIndex: img.historyIndex + 1,
-        selectedResultIndex: 0,
-    }));
-  };
-  
-  const handleReset = () => {
-    if (!activeImage) return;
-    if (window.confirm("คุณแน่ใจหรือไม่ว่าต้องการรีเซ็ตการแก้ไขทั้งหมดสำหรับรูปภาพนี้? การกระทำนี้จะลบประวัติที่สร้างขึ้นทั้งหมด")) {
-        updateActiveImage(img => ({
+    if (!activeImage || !canUndo) return;
+    updateActiveImage(img => {
+        const newIndex = img.historyIndex - 1;
+        return {
             ...img,
-            history: [],
-            historyIndex: -1,
-            selectedResultIndex: null,
-            promptHistory: [],
-            apiPromptHistory: [],
-            lastGeneratedLabels: [],
-            generationTypeHistory: [],
-        }));
-    }
+            historyIndex: newIndex,
+            selectedResultIndex: newIndex < 0 ? null : 0,
+        };
+    });
   };
   
-  const handleUpscale = () => {
-      if (!activeImage || selectedImageUrl === null) return;
-      
-      const upscalePrompt = "Upscale this image to the highest possible resolution, enhancing all details to be extremely sharp and clear. The final result should be a hyper-realistic, 8k resolution photograph. Ensure there are no artifacts and that all textures are preserved and refined.";
-      const upscalePromptForHistory = "เพิ่มความละเอียดและปรับปรุงภาพเป็น 8k";
-      
-      executeGeneration(upscalePrompt, upscalePromptForHistory);
-  }
+  const handleRedo = () => {
+    if (!activeImage || !canRedo) return;
+    updateActiveImage(img => {
+        const newIndex = img.historyIndex + 1;
+        return {
+            ...img,
+            historyIndex: newIndex,
+            selectedResultIndex: 0,
+        };
+    });
+  };
 
-  const handleImageTransform = async (type: 'rotateLeft' | 'rotateRight' | 'flipHorizontal' | 'flipVertical') => {
+  const handleHistoryClick = (index: number) => {
+    if (!activeImage) return;
+    updateActiveImage(img => ({
+      ...img,
+      historyIndex: index,
+      selectedResultIndex: index < 0 ? null : 0, // Reset to first result of that step
+    }));
+  };
+
+  const handleResetEdits = () => {
+    if (!activeImage || activeImage.history.length === 0) return;
+    updateActiveImage(img => ({
+        ...img,
+        history: [],
+        historyIndex: -1,
+        selectedResultIndex: null,
+        promptHistory: [],
+        apiPromptHistory: [],
+        lastGeneratedLabels: [],
+        generationTypeHistory: [],
+    }));
+  };
+  
+  const handleOpenSaveModal = () => {
+    const currentResults = activeImage && activeImage.historyIndex > -1 ? activeImage.history[activeImage.historyIndex] : null;
+    const selectedImageUrl = currentResults && activeImage.selectedResultIndex !== null ? currentResults[activeImage.selectedResultIndex] : null;
     if (!selectedImageUrl) return;
+    setIsSaveModalOpen(true);
+  };
+
+  const handleConfirmSave = () => {
+      const currentResults = activeImage && activeImage.historyIndex > -1 ? activeImage.history[activeImage.historyIndex] : null;
+      const selectedImageUrl = currentResults && activeImage.selectedResultIndex !== null ? currentResults[activeImage.selectedResultIndex] : null;
+      if (!selectedImageUrl) return;
+
+      const img = new Image();
+      img.onload = () => {
+          if (!mountedRef.current) return;
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+              ctx.drawImage(img, 0, 0);
+              const dataUrl = canvas.toDataURL('image/jpeg', saveQuality);
+              const link = document.createElement('a');
+              link.href = dataUrl;
+              link.download = `edited-image-${Date.now()}.jpeg`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+          }
+          setIsSaveModalOpen(false);
+      };
+      img.onerror = () => {
+          if (!mountedRef.current) return;
+          setError("Could not process image for saving.");
+          setIsSaveModalOpen(false);
+      };
+      img.src = selectedImageUrl;
+  };
+  
+  const currentResults = activeImage && activeImage.historyIndex > -1 ? activeImage.history[activeImage.historyIndex] : null;
+  const selectedImageUrl = currentResults && activeImage?.selectedResultIndex !== null ? currentResults[activeImage.selectedResultIndex] : null;
+  const currentLabels = activeImage && activeImage.historyIndex > -1 ? activeImage.lastGeneratedLabels : [];
+  
+  const applyTransformation = async (transformation: 'rotateLeft' | 'rotateRight' | 'flipHorizontal' | 'flipVertical') => {
+    if (!activeImage || !selectedImageUrl) return;
 
     setIsLoading(true);
     setError(null);
 
     try {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const img = new Image();
-
-        const transformedDataUrl = await new Promise<string>((resolve, reject) => {
+        const newTransformedDataUrl = await new Promise<string>((resolve, reject) => {
+            const img = new Image();
             img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
                 if (!ctx) {
-                    reject(new Error("Could not create canvas context."));
+                    reject(new Error("Could not get canvas context"));
                     return;
                 }
                 
-                let w = img.width;
-                let h = img.height;
-
-                if (type === 'rotateLeft' || type === 'rotateRight') {
-                    canvas.width = h;
-                    canvas.height = w;
-                    ctx.translate(h / 2, w / 2);
-                    ctx.rotate((type === 'rotateLeft' ? -90 : 90) * Math.PI / 180);
-                    ctx.drawImage(img, -w / 2, -h / 2);
-                } else { // flip
-                    canvas.width = w;
-                    canvas.height = h;
-                    ctx.translate(type === 'flipHorizontal' ? w : 0, type === 'flipVertical' ? h : 0);
-                    ctx.scale(type === 'flipHorizontal' ? -1 : 1, type === 'flipVertical' ? -1 : 1);
-                    ctx.drawImage(img, 0, 0, w, h);
+                if (transformation === 'rotateLeft' || transformation === 'rotateRight') {
+                    canvas.width = img.height;
+                    canvas.height = img.width;
+                    ctx.translate(canvas.width / 2, canvas.height / 2);
+                    ctx.rotate(transformation === 'rotateLeft' ? -Math.PI / 2 : Math.PI / 2);
+                    ctx.drawImage(img, -img.width / 2, -img.height / 2);
+                } else { // Flips
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    if (transformation === 'flipHorizontal') {
+                        ctx.translate(img.width, 0);
+                        ctx.scale(-1, 1);
+                    } else { // flipVertical
+                        ctx.translate(0, img.height);
+                        ctx.scale(1, -1);
+                    }
+                    ctx.drawImage(img, 0, 0);
                 }
                 
-                resolve(canvas.toDataURL('image/jpeg', 0.92));
+                resolve(canvas.toDataURL('image/png'));
             };
-            img.onerror = () => reject(new Error("Failed to load image for transformation."));
+            img.onerror = () => reject(new Error("Could not load image to transform."));
             img.src = selectedImageUrl;
         });
 
         if (!mountedRef.current) return;
 
+        const transformLabels: Record<typeof transformation, string> = {
+            rotateLeft: 'Rotate Left 90°',
+            rotateRight: 'Rotate Right 90°',
+            flipHorizontal: 'Flip Horizontal',
+            flipVertical: 'Flip Vertical',
+        };
+
         updateActiveImage(img => {
             const newHistory = img.history.slice(0, img.historyIndex + 1);
-            newHistory.push([transformedDataUrl]);
+            newHistory.push([newTransformedDataUrl]);
             const newIndex = newHistory.length - 1;
 
-            const promptForHistory = `ปรับเปลี่ยน: ${type.replace(/([A-Z])/g, ' $1').trim()}`;
-            const newPromptHistory = [...img.promptHistory.slice(0, img.historyIndex + 1), promptForHistory];
-            const newApiPromptHistory = [...img.apiPromptHistory.slice(0, img.historyIndex + 1), `TRANSFORM:${type.toUpperCase()}`];
-            const newGenerationTypeHistory: ImageState['generationTypeHistory'] = [...img.generationTypeHistory.slice(0, img.historyIndex + 1), 'transform'];
-            
+            const newPromptHistory = [...img.promptHistory.slice(0, img.historyIndex + 1)];
+            newPromptHistory.push(transformLabels[transformation]);
+            const newApiPromptHistory = [...img.apiPromptHistory.slice(0, img.historyIndex + 1), 'TRANSFORM'];
+
+            const newGenerationTypeHistory: ImageState['generationTypeHistory'] = [
+                ...img.generationTypeHistory.slice(0, img.historyIndex + 1),
+                'transform'
+            ];
+          
             return {
                 ...img,
                 history: newHistory,
@@ -1944,974 +2173,1326 @@ const ImageEditor: React.FC = () => {
                 promptHistory: newPromptHistory,
                 apiPromptHistory: newApiPromptHistory,
                 generationTypeHistory: newGenerationTypeHistory,
-                lastGeneratedLabels: ['ปรับเปลี่ยนแล้ว'],
+                lastGeneratedLabels: ['Transformed'],
             };
         });
-
     } catch (err) {
-        if (mountedRef.current) {
-            const errorMessage = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดที่ไม่รู้จักระหว่างการปรับเปลี่ยน';
-            setError(errorMessage);
-        }
+      if (!mountedRef.current) return;
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred during image transformation.';
+      setError(errorMessage);
     } finally {
-        if (mountedRef.current) {
-            setIsLoading(false);
-        }
+      if (!mountedRef.current) return;
+      setIsLoading(false);
     }
   };
 
-  const handleDownload = () => {
-    if (!activeImage || selectedImageUrl === null) return;
-    const link = document.createElement('a');
-    link.href = selectedImageUrl;
+  const handleRegenerate = async () => {
+    if (!activeImage || activeImage.historyIndex < 0) return;
+
+    const lastApiPrompt = activeImage.apiPromptHistory[activeImage.historyIndex];
+    const lastGenType = activeImage.generationTypeHistory[activeImage.historyIndex];
     
-    // Create a filename from the prompt history or a default name
-    const latestPrompt = activeImage.promptHistory[activeImage.historyIndex] || 'edited-image';
-    const filename = `${latestPrompt.replace(/[^a-z0-9]/gi, '_').toLowerCase().substring(0, 50)}.jpg`;
-    
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-  
-  const handleOpenSaveModal = () => {
-    if (!activeImage || selectedImageUrl === null) return;
-    setIsSaveModalOpen(true);
-  };
-
-  const handleSaveWithQuality = async () => {
-    if (!activeImage || selectedImageUrl === null) return;
-
-    try {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const img = new Image();
-        
-        await new Promise<void>((resolve, reject) => {
-            img.onload = () => {
-                if (!ctx) {
-                    reject(new Error("Could not create canvas context."));
-                    return;
-                }
-                canvas.width = img.width;
-                canvas.height = img.height;
-                ctx.drawImage(img, 0, 0);
-                
-                const dataUrl = canvas.toDataURL('image/jpeg', saveQuality);
-                const link = document.createElement('a');
-                link.href = dataUrl;
-                
-                const latestPrompt = activeImage.promptHistory[activeImage.historyIndex] || 'edited-image';
-                const filename = `${latestPrompt.replace(/[^a-z0-9]/gi, '_').toLowerCase().substring(0, 50)}.jpg`;
-                
-                link.download = filename;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                resolve();
-            };
-            img.onerror = () => reject(new Error("Failed to load image for saving."));
-            img.src = selectedImageUrl;
-        });
-
-    } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดที่ไม่รู้จักขณะบันทึก';
-        setError(errorMessage);
-    } finally {
-        setIsSaveModalOpen(false);
+    if (lastApiPrompt.startsWith('VARIATION:')) {
+        const variationType = lastApiPrompt.split(':')[1];
+        if (variationType === 'style' || variationType === 'angle') {
+            await handleVariationSubmit(variationType as 'style' | 'angle');
+        } else if (variationType === 'plan') {
+            await handleGenerate4PlanViews();
+        }
+    } else if (lastGenType === 'edit' || lastGenType === 'upscale') {
+        const lastDisplayPrompt = activeImage.promptHistory[activeImage.historyIndex];
+        await executeGeneration(lastApiPrompt, `(Regen) ${lastDisplayPrompt}`);
+    } else {
+        console.warn("This action cannot be regenerated.", lastGenType);
     }
   };
-  
-  const selectedImageUrl = activeImage
-    ? (activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null)
-      ? activeImage.history[activeImage.historyIndex]?.[activeImage.selectedResultIndex] ?? null
-      : activeImage.dataUrl
-    : null;
 
-  const originalImageUrl = activeImage
-    ? (activeImage.historyIndex > 0 && activeImage.history.length > 0)
-      ? activeImage.history[activeImage.historyIndex - 1]?.[0] ?? activeImage.dataUrl
-      : activeImage.dataUrl
-    : null;
+  const getResultsTitle = () => {
+    if (!activeImage || activeImage.historyIndex < 0 || !currentResults) return 'Results';
+    const currentType = activeImage.generationTypeHistory[activeImage.historyIndex];
+    const currentPrompt = activeImage.promptHistory[activeImage.historyIndex];
+    switch (currentType) {
+        case 'style':
+            return 'Style Variations';
+        case 'angle':
+            return 'Camera Angle Variations';
+        case 'variation':
+             if (currentPrompt?.includes('3D views')) {
+                return 'Four 3D View Results';
+            }
+            return 'Variations';
+        case 'edit':
+            return 'Edit Result';
+        case 'upscale':
+            return 'Upscale Result';
+        case 'transform':
+            return 'Transform Result';
+        default:
+            return 'Results';
+    }
+  };
+
+  const quickActions = [
+    { id: 'sereneTwilightEstate', label: 'Serene Twilight Estate', description: 'A dusk setting with specific tree framing (large tree left, pine right) for a modern, serene look.' },
+    { id: 'sereneHomeWithGarden', label: 'Serene Garden Home', description: 'Adds a lush garden, foreground trees, and warm interior lights for a peaceful, high-end look.' },
+    { id: 'modernTwilightHome', label: 'Modern Twilight', description: 'A dusk setting with warm interior lights and a manicured garden.' },
+    { id: 'vibrantModernEstate', label: 'Vibrant Modern Estate', description: 'Creates a perfect sunny day with a blue sky and lush green trees, like the example photo.' },
+    { id: 'modernPineEstate', label: 'Modern Pine Estate', description: 'A serene, professional look with a pine forest background and warm interior lighting.' },
+    { id: 'proPhotoFinish', label: 'Photorealistic', description: 'Transform into an 8K ultra-sharp, pro-camera shot.' },
+    { id: 'luxuryHomeDusk', label: 'Luxury Home', description: 'Atmosphere of a luxury home at dusk after rain.' },
+    { id: 'morningHousingEstate', label: 'Morning Estate', description: 'Warm morning sunlight in a peaceful housing estate.' },
+    { id: 'pristineShowHome', label: 'Pristine Show Home', description: 'Creates a brand new look with a perfectly manicured lawn, road, and hedge fence.' },
+    { id: 'highriseNature', label: 'High-rise & Nature', description: 'Blend the building with a lush landscape and a city skyline.' },
+    { id: 'fourSeasonsTwilight', label: 'Luxury Riverfront Twilight', description: 'A modern high-rise at dusk with city lights reflecting on a river.' },
+    { id: 'urbanCondoDayHighAngle', label: 'Urban Condo High Angle', description: 'A high-angle daytime shot of a modern building in a dense urban setting.' },
+    { id: 'modernWoodHouseTropical', label: 'Modern Wood & Tropical', description: 'A modern home with wood siding in a lush, warm tropical garden.' },
+    { id: 'classicMansionFormalGarden', label: 'Classic Mansion & Garden', description: 'An elegant white house with a symmetrical, formal garden in bright daylight.' },
+    { id: 'urbanSketch', label: 'Urban Sketch', description: 'Convert into a lively, urban watercolor sketch.' },
+    { id: 'sketchToPhoto', label: 'Sketch to Photo', description: 'Turn an architectural sketch into a photorealistic image.' },
+    { id: 'architecturalSketch', label: 'Architectural Sketch', description: 'Convert into an architect\'s concept sketch.' },
+    { id: 'midjourneyArtlineSketch', label: 'Midjourney Artline', description: 'Create a photorealistic render blended with an artline sketch, Midjourney style.' },
+  ];
+  
+  const interiorQuickActions = [
+    { id: 'sketchupToPhotoreal', label: 'SketchUp to Photoreal', description: 'Convert a SketchUp model to a photorealistic 3D render.' },
+    { id: 'darkMoodyLuxuryBedroom', label: 'Dark & Moody Luxury', description: 'A sophisticated bedroom with dark wood, marble, and dramatic warm lighting.' },
+    { id: 'softModernSanctuary', label: 'Soft Modern Sanctuary', description: 'A serene bedroom with a large, curved, backlit headboard and a calming color palette.' },
+    { id: 'geometricChicBedroom', label: 'Geometric Chic Bedroom', description: 'An elegant, modern bedroom featuring a geometric patterned headboard and pendant lights.' },
+    { id: 'symmetricalGrandeurBedroom', label: 'Symmetrical Grandeur', description: 'A grand, luxurious bedroom with a symmetrical design and a modern sculptural chandelier.' },
+  ];
+
+  const livingRoomQuickActions = [
+    { id: 'classicSymmetryLivingRoom', label: 'Classic Symmetrical', description: 'A formal, elegant space with curved sofas, a fireplace, and ornate wall moldings in a soft, neutral palette.' },
+    { id: 'modernDarkMarbleLivingRoom', label: 'Modern Dark Marble', description: 'A sophisticated, moody living room with dark wood, a dramatic marble wall, and a modern suspended fireplace.' },
+    { id: 'contemporaryGoldAccentLivingRoom', label: 'Contemporary & Gold', description: 'A bright, airy, and modern space featuring a light marble wall, a large white sofa, and striking gold accents.' },
+    { id: 'modernEclecticArtLivingRoom', label: 'Modern Eclectic', description: 'An artistic and contemporary living room with mixed materials, integrated lighting, and a prominent abstract artwork.' },
+    { id: 'brightModernClassicLivingRoom', label: 'Bright Modern Classic', description: 'A bright and luxurious open-plan space with a marble feature wall, backlit shelving, and gold accents.' },
+    { id: 'parisianChicLivingRoom', label: 'Parisian Chic', description: 'An elegant, neoclassical living room with intricate wall paneling, a large arched window, and chic, modern furniture.' }
+  ];
 
   const canUndo = activeImage ? activeImage.historyIndex >= 0 : false;
   const canRedo = activeImage ? activeImage.historyIndex < activeImage.history.length - 1 : false;
-  const canReset = activeImage ? activeImage.history.length > 0 : false;
-  const canUpscaleAndSave = activeImage ? selectedImageUrl !== null : false;
+  const canRegenerate = activeImage && activeImage.historyIndex >= 0 && activeImage.generationTypeHistory[activeImage.historyIndex] !== 'transform';
 
-  const currentHistoryStep = activeImage && activeImage.historyIndex > -1 ? activeImage.history[activeImage.historyIndex] : null;
+  const isPlanResultsView = activeImage && sceneType === 'plan' && activeImage.historyIndex > -1;
 
-  if (!isDataLoaded) {
-      return (
-          <div className="flex items-center justify-center h-96">
-              <Spinner />
+  const imageForDisplay = selectedImageUrl || (activeImage ? activeImage.dataUrl : null);
+  const imageForMasking = (sceneType === 'plan' ? (activeImage ? activeImage.dataUrl : null) : imageForDisplay);
+
+  const LightingAndAtmosphereControls: React.FC<{ sceneType: SceneType | null }> = ({ sceneType }) => (
+    <CollapsibleSection title="Lighting & Atmosphere" sectionKey="lighting" isOpen={openSections.lighting} onToggle={() => toggleSection('lighting')} icon={<SunriseIcon className="w-5 h-5" />}>
+      <div className="flex flex-col gap-4">
+        <div>
+          <h4 className="text-sm font-semibold text-gray-300 mb-2">Time of Day</h4>
+          <div className="flex flex-wrap gap-2">
+            {timeOfDayOptions.map(option => (
+              <OptionButton key={option} option={option} isSelected={selectedTimeOfDay === option} onClick={() => handleLightingSelection(setSelectedTimeOfDay, option)} />
+            ))}
           </div>
-      );
-  }
+        </div>
+        <div>
+          <h4 className="text-sm font-semibold text-gray-300 mb-2">Weather</h4>
+          <div className="flex flex-wrap gap-2">
+            {weatherOptions.map(option => (
+              <OptionButton key={option} option={option} isSelected={selectedWeather === option} onClick={() => handleLightingSelection(setSelectedWeather, option)} />
+            ))}
+          </div>
+        </div>
+        {sceneType === 'interior' && (
+          <div className="pt-4 border-t border-gray-700">
+            <h4 className="text-sm font-semibold text-gray-300 mb-2">Interior Lighting Presets</h4>
+            <div className="flex flex-wrap gap-2">
+              {interiorLightingOptions.map(option => (
+                <OptionButton
+                  key={option}
+                  option={option}
+                  isSelected={selectedInteriorLighting === option}
+                  onClick={() => handleLightingSelection(setSelectedInteriorLighting, option)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+        {sceneType === 'exterior' && (
+          <div className="pt-4 border-t border-gray-700">
+            <h4 className="text-sm font-semibold text-gray-300 mb-2">Add Building Lights</h4>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" checked={isAddLightActive} onChange={(e) => setIsAddLightActive(e.target.checked)} className="sr-only peer" />
+              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+              <span className="ml-3 text-sm font-medium text-gray-300">Enable</span>
+            </label>
+            <div className={`mt-3 space-y-3 transition-opacity duration-300 ${isAddLightActive ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Brightness</label>
+                <input type="range" min="1" max="100" value={lightingBrightness} onChange={(e) => setLightingBrightness(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Color Temperature (Cool - Warm)</label>
+                <input type="range" min="1" max="100" value={lightingTemperature} onChange={(e) => setLightingTemperature(Number(e.target.value))} className="w-full h-2 bg-gradient-to-r from-blue-400 to-orange-400 rounded-lg appearance-none cursor-pointer accent-red-600" />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </CollapsibleSection>
+  );
+
+  const BackgroundControls: React.FC = () => {
+    const backgroundOptions = sceneType === 'interior' ? interiorBackgrounds : backgrounds;
+    const title = sceneType === 'interior' ? "Window View" : "Background";
+
+    return (
+      <CollapsibleSection title={title} sectionKey="background" isOpen={openSections.background} onToggle={() => toggleSection('background')} icon={<LandscapeIcon className="w-5 h-5" />}>
+        <div className="flex flex-wrap gap-2">
+            {backgroundOptions.map(bg => (
+                <OptionButton
+                    key={bg}
+                    option={bg}
+                    isSelected={bg === 'No Change' ? selectedBackgrounds.length === 0 : selectedBackgrounds.includes(bg)}
+                    onClick={() => handleBackgroundToggle(bg)}
+                />
+            ))}
+        </div>
+        {sceneType === 'exterior' && selectedBackgrounds.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-gray-700 space-y-3">
+                {selectedBackgrounds.map(bg => {
+                    const config = adjustableOptions[bg];
+                    if (!config) return null;
+                    return (
+                        <div key={bg}>
+                            <label className="block text-sm font-medium text-gray-400 mb-1">{config.label} ({bg})</label>
+                            <input
+                                type="range"
+                                min="1"
+                                max="100"
+                                value={optionIntensities[bg] || config.default}
+                                onChange={(e) => handleIntensityChange(bg, Number(e.target.value))}
+                                className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600"
+                            />
+                        </div>
+                    )
+                })}
+            </div>
+        )}
+      </CollapsibleSection>
+    );
+  };
+
+  const ForegroundControls: React.FC = () => (
+      <CollapsibleSection title="Foreground Elements" sectionKey="foreground" isOpen={openSections.foreground} onToggle={() => toggleSection('foreground')} icon={<FlowerIcon className="w-5 h-5" />}>
+          <div className="flex flex-wrap gap-2">
+              {foregrounds.map(fg => (
+                  <OptionButton
+                      key={fg}
+                      option={fg}
+                      isSelected={selectedForegrounds.includes(fg)}
+                      onClick={() => handleForegroundToggle(fg)}
+                  />
+              ))}
+          </div>
+          {selectedForegrounds.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-gray-700 space-y-3">
+                  {selectedForegrounds.map(fg => {
+                      const config = adjustableOptions[fg];
+                      if (!config) return null;
+                      return (
+                          <div key={fg}>
+                              <label className="block text-sm font-medium text-gray-400 mb-1">{config.label} ({fg})</label>
+                              <input
+                                  type="range"
+                                  min="1"
+                                  max="100"
+                                  value={optionIntensities[fg] || config.default}
+                                  onChange={(e) => handleIntensityChange(fg, Number(e.target.value))}
+                                  className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600"
+                              />
+                          </div>
+                      )
+                  })}
+              </div>
+          )}
+      </CollapsibleSection>
+  );
+
+  const ArtStyleControls = () => (
+    <CollapsibleSection title="Artistic Style" sectionKey="artStyle" isOpen={openSections.artStyle} onToggle={() => toggleSection('artStyle')} icon={<BrushIcon className="w-5 h-5" />}>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-wrap gap-2">
+          {styleOptions.map(option => (
+            <OptionButton
+              key={option.name}
+              option={option.name}
+              isSelected={selectedStyle === option.name}
+              onClick={() => handleArtStyleChange(option.name)}
+            />
+          ))}
+        </div>
+        {selectedStyle && (
+          <div className="mt-2 pt-4 border-t border-gray-700/50">
+            <label htmlFor="style-intensity" className="block text-sm font-medium text-gray-400 mb-1">
+              Style Intensity ({styleIntensity}%)
+            </label>
+            <input
+              id="style-intensity"
+              type="range"
+              min="1"
+              max="100"
+              value={styleIntensity}
+              onChange={(e) => setStyleIntensity(Number(e.target.value))}
+              className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600"
+            />
+          </div>
+        )}
+      </div>
+    </CollapsibleSection>
+  );
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8">
-      {/* Left Panel - Controls */}
-      <div className="w-full lg:w-1/3 lg:max-w-md xl:max-w-lg lg:h-[calc(100vh-4rem)] lg:sticky lg:top-8">
-        <div className="h-full overflow-y-auto custom-scrollbar pr-2 space-y-3 pb-4">
-          <div className="bg-gray-800 p-3 rounded-xl shadow-lg border border-gray-700">
-            {activeImage && sceneType === null ? (
-                <div className="p-4">
-                    <h3 className="text-lg font-semibold text-center text-gray-200 mb-4">เลือกประเภทฉาก / Select Scene Type</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <button onClick={() => handleSceneTypeSelect('exterior')} className="p-4 bg-gray-700 rounded-lg text-center hover:bg-gray-600 transition-colors">
-                            <HomeIcon className="w-8 h-8 mx-auto mb-2 text-red-400" />
-                            <span className="font-semibold text-gray-200">ภาพภายนอก</span>
-                            <span className="block text-xs text-gray-400">Exterior</span>
+    <>
+    {isSaveModalOpen && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+            <div className="bg-gray-800 p-6 rounded-xl shadow-lg w-full max-w-sm border border-gray-700 flex flex-col">
+                <h2 className="text-xl font-bold text-gray-200 mb-4">Select JPEG Quality</h2>
+                <div className="flex flex-col gap-3 mb-6">
+                    {qualityOptions.map(option => (
+                        <button
+                            key={option.label}
+                            type="button"
+                            onClick={() => setSaveQuality(option.value)}
+                            className={`w-full px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
+                                saveQuality === option.value
+                                ? 'bg-red-600 text-white'
+                                : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
+                            }`}
+                        >
+                            {option.label}
                         </button>
-                        <button onClick={() => handleSceneTypeSelect('interior')} className="p-4 bg-gray-700 rounded-lg text-center hover:bg-gray-600 transition-colors">
-                            <HomeModernIcon className="w-8 h-8 mx-auto mb-2 text-red-400" />
-                            <span className="font-semibold text-gray-200">ภาพภายใน</span>
-                            <span className="block text-xs text-gray-400">Interior</span>
-                        </button>
-                        <button onClick={() => handleSceneTypeSelect('plan')} className="p-4 bg-gray-700 rounded-lg text-center hover:bg-gray-600 transition-colors">
-                            <PlanIcon className="w-8 h-8 mx-auto mb-2 text-red-400" />
-                             <span className="font-semibold text-gray-200">แปลนเป็น 3D</span>
-                            <span className="block text-xs text-gray-400">2D Plan to 3D</span>
-                        </button>
-                    </div>
+                    ))}
                 </div>
-            ) : activeImage ? (
-                 <div className="flex items-center justify-between p-2 bg-gray-900/50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                        {sceneType === 'exterior' && <HomeIcon className="w-6 h-6 text-red-400" />}
-                        {sceneType === 'interior' && <HomeModernIcon className="w-6 h-6 text-red-400" />}
-                        {sceneType === 'plan' && <PlanIcon className="w-6 h-6 text-red-400" />}
-                        <div>
-                            <span className="font-semibold text-gray-200">
-                                {sceneType === 'exterior' ? 'ภาพภายนอก' : sceneType === 'interior' ? 'ภาพภายใน' : 'แปลนเป็น 3D'}
-                            </span>
-                             <span className="block text-xs text-gray-400 capitalize">
-                                {sceneType === 'plan' ? '2D Plan to 3D' : `${sceneType} Mode`}
-                            </span>
-                        </div>
-                    </div>
+                <div className="flex justify-end gap-4">
                     <button 
-                        onClick={() => setSceneType(null)} 
-                        className="px-3 py-1.5 text-xs font-semibold text-white bg-gray-700 rounded-full hover:bg-gray-600 transition-colors flex items-center gap-2"
+                        onClick={() => setIsSaveModalOpen(false)} 
+                        className="px-6 py-2 rounded-full text-sm font-semibold bg-gray-600 text-gray-200 hover:bg-gray-500 transition-colors"
                     >
-                        <CogIcon className="w-4 h-4" />
-                        เปลี่ยนประเภท
+                        Cancel
+                    </button>
+                    <button 
+                        onClick={handleConfirmSave} 
+                        className="px-6 py-2 rounded-full text-sm font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors"
+                    >
+                        Download
                     </button>
                 </div>
-            ) : null}
-
-            {activeImage && sceneType !== null && (
-                 <div className="p-3">
-                    <div className="flex flex-col sm:flex-row gap-2">
-                        <ModeButton label="แก้ไขด้วย AI" icon={<PencilIcon className="w-5 h-5" />} mode="default" activeMode={editingMode} onClick={changeEditingMode} />
-                        <ModeButton label="แก้ไขเฉพาะจุด" icon={<BrushIcon className="w-5 h-5" />} mode="object" activeMode={editingMode} onClick={changeEditingMode} />
-                    </div>
+            </div>
+        </div>
+      )}
+    
+    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
+      {/* Left Column: Controls */}
+      <div className="md:col-span-1 lg:col-span-1">
+        <div className="sticky top-8 max-h-[calc(100vh-6rem)] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="bg-gray-800/50 p-4 rounded-xl shadow-lg border border-gray-700">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+                <div>
+                  <label htmlFor="file-upload" className="block text-sm font-medium text-gray-300 mb-2">1. Start New Project / Upload</label>
+                  <label htmlFor="file-upload" className="cursor-pointer flex justify-center items-center w-full px-4 py-6 bg-gray-700 text-gray-400 rounded-lg border-2 border-dashed border-gray-600 hover:border-red-400 hover:bg-gray-600 transition-colors">
+                    <span className={imageList.length > 0 ? 'text-green-400' : ''}>
+                      {imageList.length > 0 ? `${imageList.length} project(s) loaded. Add more?` : 'Click to select files'}
+                    </span>
+                  </label>
+                  <input id="file-upload" name="file-upload" type="file" className="sr-only" accept="image/*" onChange={handleImageChange} multiple />
                 </div>
-            )}
-          </div>
-          
-          {activeImage && sceneType !== null ? (
-            <>
-              <form onSubmit={handleSubmit} className="space-y-3">
-                {/* Main Prompt */}
-                <CollapsibleSection
-                    title="คำสั่งหลัก"
-                    sectionKey="prompt"
-                    isOpen={openSections.prompt}
-                    onToggle={() => toggleSection('prompt')}
-                    icon={<PencilIcon className="w-5 h-5" />}
-                >
-                  <div className="space-y-3">
-                      <textarea
-                          value={prompt}
-                          onChange={(e) => setPrompt(e.target.value)}
-                          placeholder={editingMode === 'object' ? "อธิบายสิ่งที่จะเปลี่ยนในพื้นที่ที่เลือก..." : "อธิบายการแก้ไขของคุณ (เช่น 'ทำให้ท้องฟ้าดูน่าทึ่ง')..."}
-                          className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-red-500 focus:border-red-500 h-24 resize-none"
-                          aria-label="คำสั่งแก้ไขหลัก"
-                      />
-                      <div className="relative">
-                          <button 
-                              type="button" 
-                              onClick={() => setShowPromptHistory(!showPromptHistory)}
-                              className="absolute -top-1 right-0 text-gray-400 hover:text-white"
-                              title="แสดงประวัติคำสั่ง"
+
+                {imageList.length > 0 && (
+                    <div>
+                        <div className="flex justify-between items-center mb-2">
+                            <h3 className="text-sm font-medium text-gray-300">Your Projects</h3>
+                            <button
+                                type="button"
+                                onClick={handleClearAllProjects}
+                                className="px-2 py-1 text-xs font-semibold text-red-300 bg-red-900/50 rounded-md hover:bg-red-800/50 transition-colors"
+                            >
+                                Clear All
+                            </button>
+                        </div>
+                        <div className="flex flex-wrap gap-4 p-4 bg-gray-900/50 rounded-lg">
+                            {imageList.map((image, index) => (
+                                <div key={image.id} className="relative group">
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveImageIndex(index)}
+                                        className={`block w-20 h-20 rounded-lg overflow-hidden border-4 transition-colors ${
+                                            index === activeImageIndex ? 'border-red-500' : 'border-transparent hover:border-gray-500'
+                                        }`}
+                                    >
+                                        <img src={image.dataUrl} alt={`Uploaded thumbnail ${index + 1}`} className="w-full h-full object-cover" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRemoveImage(index)}
+                                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold hover:bg-red-700 transition-colors z-10 opacity-0 group-hover:opacity-100"
+                                        title="Remove image"
+                                    >
+                                        &times;
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+                
+                {activeImage && (
+                    <CollapsibleSection
+                      title="Project History"
+                      sectionKey="projectHistory"
+                      isOpen={openSections.projectHistory}
+                      onToggle={() => toggleSection('projectHistory')}
+                      icon={<HistoryIcon className="w-5 h-5" />}
+                    >
+                        <div className="flex flex-col gap-2 max-h-60 overflow-y-auto custom-scrollbar pr-1">
+                            {/* Original State */}
+                            <button
+                              type="button"
+                              onClick={() => handleHistoryClick(-1)}
+                              className={`w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors ${
+                                activeImage.historyIndex === -1
+                                  ? 'bg-red-900/50 ring-2 ring-red-500'
+                                  : 'bg-gray-900/50 hover:bg-gray-700/50'
+                              }`}
+                            >
+                              <img src={activeImage.dataUrl} className="w-12 h-12 rounded-md object-cover flex-shrink-0" alt="Original image" />
+                              <div className="flex-grow overflow-hidden">
+                                <p className="text-sm font-semibold text-gray-200">Original Image</p>
+                                {activeImage.historyIndex === -1 && <span className="text-xs text-red-400 font-bold">Current</span>}
+                              </div>
+                            </button>
+
+                            {/* Edit History States */}
+                            {activeImage.history.map((results, index) => (
+                              <button
+                                key={`${activeImage.id}-history-${index}`}
+                                type="button"
+                                onClick={() => handleHistoryClick(index)}
+                                className={`w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors ${
+                                  activeImage.historyIndex === index
+                                    ? 'bg-red-900/50 ring-2 ring-red-500'
+                                    : 'bg-gray-900/50 hover:bg-gray-700/50'
+                                }`}
+                              >
+                                <img src={results[0]} className="w-12 h-12 rounded-md object-cover flex-shrink-0" alt={`History step ${index + 1}`} />
+                                <div className="flex-grow overflow-hidden">
+                                  <p className="text-sm font-semibold text-gray-200 truncate" title={activeImage.promptHistory[index]}>
+                                    {activeImage.promptHistory[index] || `Edit ${index + 1}`}
+                                  </p>
+                                  {activeImage.historyIndex === index && <span className="text-xs text-red-400 font-bold">Current</span>}
+                                </div>
+                              </button>
+                            ))}
+                        </div>
+                    </CollapsibleSection>
+                )}
+
+                {!activeImage && (
+                    <div className="text-center p-4 bg-gray-900/50 rounded-lg">
+                        <h2 className="text-lg font-semibold text-gray-200">Welcome!</h2>
+                        <p className="text-gray-400 mt-2">Get started by uploading an image to edit, or convert a 2D plan to 3D.</p>
+                    </div>
+                )}
+
+                {activeImage && (
+                  <div className="border-t border-gray-700 pt-4 mt-4">
+                    {!sceneType ? (
+                      <>
+                        <label className="block text-sm font-medium text-gray-300 mb-3 text-center">2. What would you like to do?</label>
+                        <div className="flex flex-col gap-3">
+                            <button
+                                type="button"
+                                onClick={() => handleSceneTypeSelect('exterior')}
+                                className="w-full flex items-center justify-center gap-3 p-3 text-base font-semibold rounded-lg transition-all duration-200 bg-gray-800 text-gray-200 hover:bg-red-600 hover:text-white border border-gray-600 hover:border-red-500"
+                            >
+                                <HomeModernIcon className="w-6 h-6"/>
+                                <span>Exterior Editing</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleSceneTypeSelect('interior')}
+                                className="w-full flex items-center justify-center gap-3 p-3 text-base font-semibold rounded-lg transition-all duration-200 bg-gray-800 text-gray-200 hover:bg-red-600 hover:text-white border border-gray-600 hover:border-red-500"
+                            >
+                                <HomeIcon className="w-6 h-6"/>
+                                <span>Interior Editing</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleSceneTypeSelect('plan')}
+                                className="w-full flex items-center justify-center gap-3 p-3 text-base font-semibold rounded-lg transition-all duration-200 bg-gray-800 text-gray-200 hover:bg-red-600 hover:text-white border border-gray-600 hover:border-red-500"
+                            >
+                                <PlanIcon className="w-6 h-6"/>
+                                <span>2D Plan to 3D</span>
+                            </button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex justify-between items-center px-2">
+                          <div>
+                              <label className="block text-sm font-medium text-gray-400">Editing Scene Type</label>
+                              <p className="text-base font-semibold text-gray-200 capitalize">{sceneType}</p>
+                          </div>
+                          <button
+                              type="button"
+                              onClick={() => setSceneType(null)}
+                              className="px-3 py-1.5 text-xs font-semibold text-gray-300 bg-gray-700 rounded-full hover:bg-gray-600 transition-colors"
                           >
-                              <HistoryIcon className="w-5 h-5" />
+                              Change Type
                           </button>
-                          {showPromptHistory && (
-                              <div ref={promptHistoryRef} className="absolute z-10 w-full mt-1 bg-gray-600 rounded-md shadow-lg max-h-48 overflow-y-auto">
-                                  {activeImage.promptHistory.length > 0 ? (
-                                      activeImage.promptHistory.slice().reverse().map((p, i) => (
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {activeImage && sceneType && sceneType !== 'plan' && (
+                  <div>
+                    <p className="block text-sm font-medium text-gray-300 mb-2">2. Select Editing Mode</p>
+                     <div className="flex items-center justify-center p-1 bg-gray-900/50 rounded-lg gap-1">
+                        <ModeButton 
+                          label="AI Editing" 
+                          icon={<SparklesIcon className="w-5 h-5" />}
+                          mode="default"
+                          activeMode={editingMode}
+                          onClick={changeEditingMode}
+                        />
+                         <ModeButton 
+                          label="Inpainting / Masking" 
+                          icon={<BrushIcon className="w-5 h-5" />}
+                          mode="object"
+                          activeMode={editingMode}
+                          onClick={changeEditingMode}
+                        />
+                     </div>
+                  </div>
+                )}
+
+                {/* --- CONTROLS START --- */}
+                <div className="flex flex-col gap-4">
+                  
+                  {activeImage && sceneType && sceneType !== 'plan' && (
+                    <CollapsibleSection 
+                      title={editingMode === 'object' ? '3. Describe edit for masked area' : '3. Describe your edit'}
+                      sectionKey="prompt" 
+                      isOpen={openSections.prompt} 
+                      onToggle={() => toggleSection('prompt')} 
+                      icon={<PencilIcon className="w-5 h-5" />}
+                    >
+                      <div className="flex flex-col gap-4">
+                        <div>
+                          <div className="flex justify-between items-center mb-2">
+                            <label htmlFor="prompt" className="block text-sm font-medium text-gray-300">
+                                Prompt
+                            </label>
+                            {activeImage && activeImage.promptHistory.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => setShowPromptHistory(prev => !prev)}
+                                className="flex items-center gap-1 px-2 py-1 text-xs font-semibold text-gray-300 bg-gray-600 rounded-md transition-colors hover:bg-gray-500"
+                                title="Show prompt history"
+                              >
+                                <HistoryIcon className="w-4 h-4" />
+                                <span>History</span>
+                              </button>
+                            )}
+                          </div>
+                          <div className="relative" ref={promptHistoryRef}>
+                            <textarea
+                              id="prompt"
+                              rows={3}
+                              className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 transition placeholder-gray-500 disabled:opacity-50"
+                              placeholder={
+                                editingMode === 'object'
+                                  ? 'e.g., make this red, remove this object...'
+                                  : activeImage
+                                  ? 'e.g., add a cat sitting on the roof...'
+                                  : 'Please upload an image first'
+                              }
+                              value={prompt}
+                              onChange={(e) => setPrompt(e.target.value)}
+                              disabled={!activeImage || !sceneType}
+                            />
+                            {showPromptHistory && activeImage && activeImage.promptHistory.length > 0 && (
+                              <div className="absolute top-full left-0 w-full max-h-48 overflow-y-auto bg-gray-800 border border-gray-600 rounded-b-lg shadow-lg z-20">
+                                <ul className="divide-y divide-gray-700">
+                                  {[...activeImage.promptHistory].reverse().map((p, i) => (
+                                      <li key={i}>
                                           <button
                                               type="button"
-                                              key={i}
-                                              onClick={() => { setPrompt(activeImage.apiPromptHistory[activeImage.promptHistory.length - 1 - i]); setShowPromptHistory(false); }}
-                                              className="block w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-500"
+                                              onClick={() => {
+                                                  setPrompt(p);
+                                                  setShowPromptHistory(false);
+                                              }}
+                                              className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors truncate"
+                                              title={p}
                                           >
                                               {p}
                                           </button>
-                                      ))
-                                  ) : (
-                                      <span className="block px-4 py-2 text-sm text-gray-400">ไม่มีประวัติ</span>
+                                      </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div>
+                          <label htmlFor="negative-prompt" className="block text-sm font-medium text-gray-300 mb-2">
+                            Negative Prompt (what to avoid) <span className="text-gray-400 font-normal">(optional)</span>
+                          </label>
+                          <textarea
+                            id="negative-prompt"
+                            rows={2}
+                            className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 transition placeholder-gray-500 disabled:opacity-50"
+                            placeholder="e.g., text, watermarks, low quality..."
+                            value={negativePrompt}
+                            onChange={(e) => setNegativePrompt(e.target.value)}
+                            disabled={!activeImage || !sceneType}
+                          />
+                        </div>
+                      </div>
+                    </CollapsibleSection>
+                  )}
+
+                   {/* --- Material Examples Section (for object mode) --- */}
+                  {activeImage && sceneType && editingMode === 'object' && (
+                      <CollapsibleSection title="Material Examples" sectionKey="materialExamples" isOpen={openSections.materialExamples} onToggle={() => toggleSection('materialExamples')} icon={<TextureIcon className="w-5 h-5" />}>
+                          <div className="flex flex-wrap gap-2">
+                              {materialQuickPrompts.map(mat => (
+                                  <button
+                                      key={mat.name}
+                                      type="button"
+                                      onClick={() => setPrompt(`change this to ${mat.prompt}`)}
+                                      className="px-3 py-1 text-sm rounded-full font-semibold transition-colors duration-200 bg-gray-700 text-gray-300 hover:bg-gray-600 border-2 border-transparent"
+                                  >
+                                      {mat.name}
+                                  </button>
+                              ))}
+                          </div>
+                          <p className="text-xs text-gray-400 mt-3">Tip: Selecting a material will replace your current prompt.</p>
+                      </CollapsibleSection>
+                  )}
+
+                  {/* --- 2D Plan to 3D Controls --- */}
+                  {activeImage && sceneType === 'plan' && (
+                    <>
+                      <CollapsibleSection title="1. Define Room & Style" sectionKey="planConfig" isOpen={openSections.planConfig} onToggle={() => toggleSection('planConfig')} icon={<HomeModernIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
+                          <div className="flex flex-col gap-4">
+                              <div>
+                                  <h4 className="text-sm font-semibold text-gray-300 mb-2">Room Type</h4>
+                                  <div className="flex flex-wrap gap-2">
+                                      {roomTypeOptions.map(option => (
+                                          <OptionButton
+                                              key={option}
+                                              option={option}
+                                              isSelected={selectedRoomType === option}
+                                              onClick={() => handleRoomTypeChange(option)}
+                                          />
+                                      ))}
+                                  </div>
+                              </div>
+                              <div>
+                                  <h4 className="text-sm font-semibold text-gray-300 mb-2">Interior Style</h4>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                      {interiorStyleOptions.map(option => (
+                                          <PreviewCard
+                                              key={option.name}
+                                              label={option.name}
+                                              description={option.description}
+                                              isSelected={selectedInteriorStyle === option.name}
+                                              onClick={() => handleInteriorStyleChange(option.name)}
+                                              isNested
+                                              icon={<HomeIcon className="w-5 h-5" />}
+                                          />
+                                      ))}
+                                  </div>
+                                  {selectedInteriorStyle && INTERIOR_STYLE_PROMPTS[selectedInteriorStyle as keyof typeof INTERIOR_STYLE_PROMPTS] && (
+                                    <div className="mt-4 pt-4 border-t border-gray-700">
+                                      <h4 className="font-semibold text-gray-200 mb-1">"{selectedInteriorStyle}" Style Description:</h4>
+                                      <p className="text-sm text-gray-400 bg-gray-900/50 p-3 rounded-md">
+                                        {INTERIOR_STYLE_PROMPTS[selectedInteriorStyle as keyof typeof INTERIOR_STYLE_PROMPTS]}
+                                      </p>
+                                    </div>
                                   )}
                               </div>
-                          )}
-                      </div>
-                       <textarea
-                          value={negativePrompt}
-                          onChange={(e) => setNegativePrompt(e.target.value)}
-                          placeholder="สิ่งที่ไม่ต้องการ (เช่น 'ไม่มีคน, ภาพเบลอ')"
-                          className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-red-500 focus:border-red-500 h-16 resize-none"
-                          aria-label="คำสั่งสิ่งที่ไม่ต้องการ"
-                      />
-                  </div>
-                </CollapsibleSection>
-                
-                {/* Inpainting Brush Tools */}
-                {editingMode === 'object' && (
-                  <CollapsibleSection
-                    title="เครื่องมือแปรง"
-                    sectionKey="brushTool"
-                    isOpen={openSections.brushTool}
-                    onToggle={() => toggleSection('brushTool')}
-                    icon={<BrushIcon className="w-5 h-5" />}
-                    actions={
-                      <button 
-                          type="button" 
-                          onClick={() => imageDisplayRef.current?.clearMask()}
-                          className="text-xs text-gray-400 hover:text-white"
-                      >
-                          ล้าง
-                      </button>
-                    }
-                  >
-                    <div className="space-y-4">
-                        <div>
-                            <label htmlFor="brush-size" className="block text-sm font-medium text-gray-300 mb-1">ขนาดแปรง: {brushSize}</label>
-                            <input
-                                id="brush-size"
-                                type="range"
-                                min="5"
-                                max="100"
-                                value={brushSize}
-                                onChange={(e) => setBrushSize(Number(e.target.value))}
-                                className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-500"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">สีแปรง</label>
-                             <div className="flex items-center gap-3">
-                                  {brushColors.map(color => (
-                                      <button
-                                          key={color.name}
-                                          type="button"
-                                          title={color.name}
-                                          onClick={() => setBrushColor(color.value)}
-                                          className={`w-8 h-8 rounded-full ${color.css} transition-transform transform hover:scale-110 ${brushColor === color.value ? 'ring-2 ring-offset-2 ring-offset-gray-800 ring-white' : ''}`}
-                                      />
-                                  ))}
-                             </div>
-                        </div>
-                    </div>
-                  </CollapsibleSection>
-                )}
-                
-                {/* Exterior Controls */}
-                {sceneType === 'exterior' && editingMode === 'default' && (
-                  <>
-                    <CollapsibleSection
-                      title="คำสั่งด่วน"
-                      sectionKey="quickActions"
-                      isOpen={openSections.quickActions}
-                      onToggle={() => toggleSection('quickActions')}
-                      icon={<SparklesIcon className="w-5 h-5" />}
-                    >
-                      <div className="grid grid-cols-2 gap-2">
-                          {Object.entries(QUICK_ACTION_PROMPTS).slice(0, 17).map(([key, promptText]) => (
-                               <OptionButton 
-                                  key={key}
-                                  option={key.replace(/([A-Z])/g, ' $1').trim()}
-                                  isSelected={selectedQuickAction === key}
-                                  onClick={() => handleQuickActionClick(key)}
-                              />
-                          ))}
-                      </div>
-                    </CollapsibleSection>
-                    
-                    <CollapsibleSection
-                        title="สไตล์สวน"
-                        sectionKey="gardenStyle"
-                        isOpen={openSections.gardenStyle}
-                        onToggle={() => toggleSection('gardenStyle')}
-                        icon={<FlowerIcon className="w-5 h-5" />}
-                    >
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {gardenStyleOptions.map(option => (
-                             <PreviewCard
-                                  key={option.name}
-                                  label={option.name}
-                                  description={option.description}
-                                  isSelected={selectedGardenStyle === option.name}
-                                  onClick={() => handleGardenStyleChange(option.name)}
-                             />
-                          ))}
-                      </div>
-                    </CollapsibleSection>
-                    
-                    <CollapsibleSection
-                        title="สไตล์สถาปัตยกรรม"
-                        sectionKey="archStyle"
-                        isOpen={openSections.archStyle}
-                        onToggle={() => toggleSection('archStyle')}
-                        icon={<HomeIcon className="w-5 h-5" />}
-                        actions={
-                          <button 
-                              type="button" 
-                              onClick={handleRandomArchStyle}
-                              className="text-xs text-gray-400 hover:text-white"
-                          >
-                              สุ่ม
-                          </button>
-                        }
-                    >
-                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {architecturalStyleOptions.map(option => (
-                             <PreviewCard
-                                  key={option.name}
-                                  label={option.name}
-                                  description={option.description}
-                                  isSelected={selectedArchStyle === option.name}
-                                  onClick={() => handleArchStyleChange(option.name)}
-                             />
-                          ))}
-                      </div>
-                    </CollapsibleSection>
-                    
-                    <CollapsibleSection
-                        title="แสงและบรรยากาศ"
-                        sectionKey="lighting"
-                        isOpen={openSections.lighting}
-                        onToggle={() => toggleSection('lighting')}
-                        icon={<SunriseIcon className="w-5 h-5" />}
-                    >
-                      <div className="space-y-4">
-                          <div>
-                              <h4 className="text-sm font-semibold text-gray-300 mb-2">ช่วงเวลาของวัน</h4>
-                              <div className="flex flex-wrap gap-2">
-                                  {timeOfDayOptions.map(opt => (
-                                      <OptionButton key={opt} option={opt} isSelected={selectedTimeOfDay === opt} onClick={(val) => handleLightingSelection(setSelectedTimeOfDay, val)} />
-                                  ))}
-                              </div>
-                          </div>
-                           <div>
-                              <h4 className="text-sm font-semibold text-gray-300 mb-2">สภาพอากาศ</h4>
-                              <div className="flex flex-wrap gap-2">
-                                  {weatherOptions.map(opt => (
-                                      <OptionButton key={opt} option={opt} isSelected={selectedWeather === opt} onClick={(val) => handleLightingSelection(setSelectedWeather, val)} />
-                                  ))}
-                              </div>
-                          </div>
-                      </div>
-                    </CollapsibleSection>
-
-                    <CollapsibleSection
-                      title="พื้นหลัง"
-                      sectionKey="background"
-                      isOpen={openSections.background}
-                      onToggle={() => toggleSection('background')}
-                      icon={<LandscapeIcon className="w-5 h-5" />}
-                    >
-                      <div className="flex flex-wrap gap-2">
-                        {backgrounds.map(bg => (
-                          <OptionButton
-                            key={bg}
-                            option={bg}
-                            isSelected={selectedBackgrounds.includes(bg)}
-                            onClick={() => handleBackgroundToggle(bg)}
-                          />
-                        ))}
-                      </div>
-                    </CollapsibleSection>
-
-                     <CollapsibleSection
-                        title="ฉากหน้า"
-                        sectionKey="foreground"
-                        isOpen={openSections.foreground}
-                        onToggle={() => toggleSection('foreground')}
-                        icon={<SquareDashedIcon className="w-5 h-5" />}
-                      >
-                        <div className="flex flex-wrap gap-2">
-                          {foregrounds.map(fg => (
-                            <OptionButton
-                              key={fg}
-                              option={fg}
-                              isSelected={selectedForegrounds.includes(fg)}
-                              onClick={() => handleForegroundToggle(fg)}
-                            />
-                          ))}
-                        </div>
-                      </CollapsibleSection>
-                  </>
-                )}
-                
-                {/* Interior Controls */}
-                {sceneType === 'interior' && editingMode === 'default' && (
-                  <>
-                      <CollapsibleSection
-                          title="ประเภทห้อง"
-                          sectionKey="roomType"
-                          isOpen={openSections.roomType}
-                          onToggle={() => toggleSection('roomType')}
-                          icon={<HomeModernIcon className="w-5 h-5" />}
-                      >
-                          <div className="flex flex-wrap gap-2">
-                              {roomTypeOptions.map(opt => (
-                                  <OptionButton 
-                                      key={opt}
-                                      option={opt}
-                                      isSelected={selectedRoomType === opt}
-                                      onClick={() => handleRoomTypeChange(opt)}
-                                  />
-                              ))}
-                          </div>
-                      </CollapsibleSection>
-                      
-                       <CollapsibleSection
-                          title="คำสั่งด่วน (ห้องนอน)"
-                          sectionKey="interiorQuickActions"
-                          isOpen={openSections.interiorQuickActions}
-                          onToggle={() => toggleSection('interiorQuickActions')}
-                          icon={<SparklesIcon className="w-5 h-5" />}
-                      >
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              {Object.entries(QUICK_ACTION_PROMPTS).slice(17, 22).map(([key, promptText]) => (
-                                  <OptionButton 
-                                      key={key}
-                                      option={key.replace(/([A-Z])/g, ' $1').trim()}
-                                      isSelected={selectedQuickAction === key}
-                                      onClick={() => handleQuickActionClick(key)}
-                                  />
-                              ))}
-                          </div>
-                      </CollapsibleSection>
-                      
-                      <CollapsibleSection
-                          title="คำสั่งด่วน (ห้องนั่งเล่น)"
-                          sectionKey="livingRoomQuickActions"
-                          isOpen={openSections.livingRoomQuickActions}
-                          onToggle={() => toggleSection('livingRoomQuickActions')}
-                          icon={<SparklesIcon className="w-5 h-5" />}
-                      >
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              {Object.entries(QUICK_ACTION_PROMPTS).slice(22, 28).map(([key, promptText]) => (
-                                  <OptionButton 
-                                      key={key}
-                                      option={key.replace(/([A-Z])/g, ' $1').trim()}
-                                      isSelected={selectedQuickAction === key}
-                                      onClick={() => handleQuickActionClick(key)}
-                                  />
-                              ))}
-                          </div>
-                      </CollapsibleSection>
-                      
-                      <CollapsibleSection
-                          title="คำสั่งด่วน (ห้องทานอาหาร)"
-                          sectionKey="diningRoomQuickActions"
-                          isOpen={openSections.diningRoomQuickActions}
-                          onToggle={() => toggleSection('diningRoomQuickActions')}
-                          icon={<SparklesIcon className="w-5 h-5" />}
-                      >
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              {Object.entries(QUICK_ACTION_PROMPTS).slice(28, 33).map(([key, promptText]) => (
-                                  <OptionButton 
-                                      key={key}
-                                      option={key.replace(/([A-Z])/g, ' $1').trim()}
-                                      isSelected={selectedQuickAction === key}
-                                      onClick={() => handleQuickActionClick(key)}
-                                  />
-                              ))}
                           </div>
                       </CollapsibleSection>
 
-                      <CollapsibleSection
-                        title="สไตล์การตกแต่งภายใน"
-                        sectionKey="interiorStyle"
-                        isOpen={openSections.interiorStyle}
-                        onToggle={() => toggleSection('interiorStyle')}
-                        icon={<HomeModernIcon className="w-5 h-5" />}
-                      >
-                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {interiorStyleOptions.map(option => (
-                               <PreviewCard
-                                    key={option.name}
-                                    label={option.name}
-                                    description={option.description}
-                                    isSelected={selectedInteriorStyle === option.name}
-                                    onClick={() => handleInteriorStyleChange(option.name)}
-                               />
-                            ))}
-                        </div>
-                      </CollapsibleSection>
-                      
-                      <CollapsibleSection
-                        title="แสงและบรรยากาศ"
-                        sectionKey="lighting"
-                        isOpen={openSections.lighting}
-                        onToggle={() => toggleSection('lighting')}
-                        icon={<SunriseIcon className="w-5 h-5" />}
-                      >
-                         <div className="space-y-4">
+                      <CollapsibleSection title="2. Details (Optional)" sectionKey="planDetails" isOpen={openSections.planDetails} onToggle={() => toggleSection('planDetails')} icon={<PencilIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
+                          <div className="flex flex-col gap-4">
                               <div>
-                                  <h4 className="text-sm font-semibold text-gray-300 mb-2">แสงภายใน</h4>
-                                  <div className="flex flex-wrap gap-2">
-                                      {interiorLightingOptions.map(opt => (
-                                          <OptionButton key={opt} option={opt} isSelected={selectedInteriorLighting === opt} onClick={(val) => handleLightingSelection(setSelectedInteriorLighting, val)} />
-                                      ))}
-                                  </div>
-                              </div>
-                          </div>
-                      </CollapsibleSection>
-                      
-                       <CollapsibleSection
-                          title="แสงพิเศษและอุปกรณ์"
-                          sectionKey="specialLighting"
-                          isOpen={openSections.specialLighting}
-                          onToggle={() => toggleSection('specialLighting')}
-                          icon={<LightbulbIcon className="w-5 h-5" />}
-                      >
-                          <div className="space-y-4">
-                              <label className="flex items-center space-x-3 cursor-pointer">
-                                  <input type="checkbox" checked={isCoveLightActive} onChange={e => setIsCoveLightActive(e.target.checked)} className="form-checkbox h-5 w-5 text-red-600 bg-gray-700 border-gray-600 rounded focus:ring-red-500" />
-                                  <span className="text-gray-300">เพิ่มไฟหลืบฝ้า</span>
-                              </label>
-                               <label className="flex items-center space-x-3 cursor-pointer">
-                                  <input type="checkbox" checked={isSpotlightActive} onChange={e => setIsSpotlightActive(e.target.checked)} className="form-checkbox h-5 w-5 text-red-600 bg-gray-700 border-gray-600 rounded focus:ring-red-500" />
-                                  <span className="text-gray-300">เพิ่มสปอตไลท์</span>
-                              </label>
-                              <label className="flex items-center space-x-3 cursor-pointer">
-                                  <input type="checkbox" checked={addFourWayAC} onChange={e => setAddFourWayAC(e.target.checked)} className="form-checkbox h-5 w-5 text-red-600 bg-gray-700 border-gray-600 rounded focus:ring-red-500" />
-                                  <span className="text-gray-300">เพิ่มแอร์ 4 ทิศทาง</span>
-                              </label>
-                              <label className="flex items-center space-x-3 cursor-pointer">
-                                  <input type="checkbox" checked={addWallTypeAC} onChange={e => setAddWallTypeAC(e.target.checked)} className="form-checkbox h-5 w-5 text-red-600 bg-gray-700 border-gray-600 rounded focus:ring-red-500" />
-                                  <span className="text-gray-300">เพิ่มแอร์ติดผนัง</span>
-                              </label>
-                          </div>
-                      </CollapsibleSection>
-
-                      <CollapsibleSection
-                          title="วิวด้านนอก"
-                          sectionKey="background"
-                          isOpen={openSections.background}
-                          onToggle={() => toggleSection('background')}
-                          icon={<LandscapeIcon className="w-5 h-5" />}
-                      >
-                          <div className="flex flex-wrap gap-2">
-                              {interiorBackgrounds.map(bg => (
-                                  <OptionButton
-                                      key={bg}
-                                      option={bg}
-                                      isSelected={selectedBackgrounds.includes(bg)}
-                                      onClick={() => handleBackgroundToggle(bg)}
-                                  />
-                              ))}
-                          </div>
-                      </CollapsibleSection>
-                  </>
-                )}
-                
-                {/* Plan to 3D Controls */}
-                {sceneType === 'plan' && editingMode === 'default' && (
-                  <>
-                      <CollapsibleSection
-                          title="ตั้งค่าห้อง"
-                          sectionKey="planConfig"
-                          isOpen={openSections.planConfig}
-                          onToggle={() => toggleSection('planConfig')}
-                          icon={<CogIcon className="w-5 h-5" />}
-                      >
-                          <div className="space-y-4">
-                              <div>
-                                  <h4 className="text-sm font-semibold text-gray-300 mb-2">1. เลือกประเภทห้อง</h4>
-                                  <div className="flex flex-wrap gap-2">
-                                      {roomTypeOptions.map(opt => (
-                                          <OptionButton key={opt} option={opt} isSelected={selectedRoomType === opt} onClick={() => handleRoomTypeChange(opt)} />
-                                      ))}
-                                  </div>
-                              </div>
-                               <div>
-                                  <h4 className="text-sm font-semibold text-gray-300 mb-2">2. เลือกสไตล์การตกแต่ง</h4>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    {interiorStyleOptions.map(option => (
-                                       <PreviewCard
-                                            key={option.name}
-                                            label={option.name}
-                                            description={option.description}
-                                            isSelected={selectedInteriorStyle === option.name}
-                                            onClick={() => handleInteriorStyleChange(option.name)}
-                                            isNested
-                                       />
-                                    ))}
-                                </div>
-                              </div>
-                          </div>
-                      </CollapsibleSection>
-                      
-                      <CollapsibleSection
-                          title="มุมมองและรายละเอียด"
-                          sectionKey="planView"
-                          isOpen={openSections.planView}
-                          onToggle={() => toggleSection('planView')}
-                          icon={<CameraIcon className="w-5 h-5" />}
-                          disabled={!isPlanModeReady}
-                      >
-                        <div className="space-y-4">
-                            <div>
-                                <h4 className="text-sm font-semibold text-gray-300 mb-2">3. เลือกมุมมองหลัก</h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {planViewOptions.map(opt => (
-                                        <OptionButton key={opt.name} option={opt.name} isSelected={selectedPlanView === opt.name} onClick={setSelectedPlanView} />
-                                    ))}
-                                </div>
-                            </div>
-                             <div>
-                                <h4 className="text-sm font-semibold text-gray-300 mb-2">4. (ตัวเลือก) สไตล์แสง</h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {planLightingOptions.map(opt => (
-                                        <OptionButton key={opt} option={opt} isSelected={selectedPlanLighting === opt} onClick={setSelectedPlanLighting} />
-                                    ))}
-                                </div>
-                            </div>
-                            <div>
-                                <h4 className="text-sm font-semibold text-gray-300 mb-2">5. (ตัวเลือก) ชุดวัสดุ</h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {planMaterialsOptions.map(opt => (
-                                        <OptionButton key={opt} option={opt} isSelected={selectedPlanMaterials === opt} onClick={setSelectedPlanMaterials} />
-                                    ))}
-                                </div>
-                            </div>
-                             <div>
-                                <h4 className="text-sm font-semibold text-gray-300 mb-2">6. (ตัวเลือก) การจัดวางเฟอร์นิเจอร์</h4>
-                                 <textarea
+                                  <h4 className="text-sm font-semibold text-gray-300 mb-2">Furniture Layout</h4>
+                                  <textarea
+                                    rows={3}
+                                    className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 transition placeholder-gray-500"
+                                    placeholder="Describe furniture placement, e.g., place bed against the left wall, wardrobe on the right wall..."
                                     value={furniturePrompt}
                                     onChange={(e) => setFurniturePrompt(e.target.value)}
-                                    placeholder="เช่น วางโซฟาตัว L ขนาดใหญ่ชิดผนังซ้าย มีโต๊ะกาแฟอยู่ตรงกลาง"
-                                    className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-red-500 focus:border-red-500 h-20 resize-none"
-                                    aria-label="คำสั่งการจัดวางเฟอร์นิเจอร์"
-                                />
-                            </div>
-                             <button
-                                type="button"
-                                onClick={handleGenerate4PlanViews}
-                                disabled={isLoading}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-red-600 to-red-700 rounded-md transition-colors hover:from-red-700 hover:to-red-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                  <ShuffleIcon className="w-5 h-5" />
-                                  <span>สร้าง 4 มุมมอง</span>
-                              </button>
-                        </div>
+                                  />
+                              </div>
+                              <div>
+                                <h4 className="text-sm font-semibold text-gray-300 mb-2">Lighting & Atmosphere</h4>
+                                  <div className="flex flex-wrap gap-2">
+                                      {planLightingOptions.map(option => (
+                                          <OptionButton
+                                              key={option}
+                                              option={option}
+                                              isSelected={selectedPlanLighting === option}
+                                              onClick={(val) => setSelectedPlanLighting(prev => prev === val ? '' : val)}
+                                          />
+                                      ))}
+                                  </div>
+                              </div>
+                              <div>
+                                <h4 className="text-sm font-semibold text-gray-300 mb-2">Materials</h4>
+                                  <div className="flex flex-wrap gap-2">
+                                      {planMaterialsOptions.map(option => (
+                                          <OptionButton
+                                              key={option}
+                                              option={option}
+                                              isSelected={selectedPlanMaterials === option}
+                                              onClick={(val) => setSelectedPlanMaterials(prev => prev === val ? '' : val)}
+                                          />
+                                      ))}
+                                  </div>
+                              </div>
+                          </div>
                       </CollapsibleSection>
-                  </>
-                )}
-                
-                {/* Universal Controls */}
-                {editingMode === 'default' && (
-                    <>
-                        <CollapsibleSection
-                            title="สไตล์ศิลปะ"
-                            sectionKey="artStyle"
-                            isOpen={openSections.artStyle}
-                            onToggle={() => toggleSection('artStyle')}
-                            icon={<BrushIcon className="w-5 h-5" />}
-                        >
+                      
+                      <div className="flex flex-col gap-1 p-1 bg-gray-900/50 rounded-lg">
+                        <CollapsibleSection title="3. Select View" sectionKey="planView" isOpen={openSections.planView} onToggle={() => toggleSection('planView')} icon={<CameraIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
                             <div className="flex flex-wrap gap-2">
-                                {styleOptions.map(style => (
-                                    <OptionButton 
-                                        key={style.name} 
-                                        option={style.name} 
-                                        isSelected={selectedStyle === style.name}
-                                        onClick={() => handleArtStyleChange(style.name)}
+                                {planViewOptions.map(option => (
+                                    <OptionButton
+                                        key={option.name}
+                                        option={option.name}
+                                        isSelected={selectedPlanView === option.name}
+                                        onClick={(val) => setSelectedPlanView(val)}
                                     />
                                 ))}
                             </div>
                         </CollapsibleSection>
-                        
-                        <CollapsibleSection
-                            title="มุมกล้อง"
-                            sectionKey="cameraAngle"
-                            isOpen={openSections.cameraAngle}
-                            onToggle={() => toggleSection('cameraAngle')}
-                            icon={<CameraIcon className="w-5 h-5" />}
+                        <button
+                          type="button"
+                          onClick={() => {
+                              const newMode = editingMode === 'object' ? 'default' : 'object';
+                              changeEditingMode(newMode);
+                              if (newMode === 'object') {
+                                  imageDisplayRef.current?.clearMask();
+                              }
+                          }}
+                          className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg text-base font-semibold transition-colors duration-200 border-2 ${
+                              editingMode === 'object' 
+                              ? 'bg-red-600 text-white border-red-400'
+                              : 'bg-gray-700 text-gray-300 hover:bg-gray-600 border-transparent'
+                          }`}
                         >
-                            <div className="flex flex-wrap gap-2">
-                              {cameraAngleOptions.map(angle => (
-                                <OptionButton
-                                  key={angle.name}
-                                  option={angle.name}
-                                  isSelected={selectedCameraAngle === angle.name}
-                                  onClick={() => handleCameraAngleChange(angle.name)}
+                          <SquareDashedIcon className="w-6 h-6"/>
+                          <span>{editingMode === 'object' ? 'Finish Area Selection' : 'Select Area to Render'}</span>
+                      </button>
+                      </div>
+                    </>
+                  )}
+
+
+                  {/* --- Exterior Scene Controls --- */}
+                  {activeImage && sceneType === 'exterior' && editingMode === 'default' && (
+                    <>
+                      <CollapsibleSection title="Presets" sectionKey="quickActions" isOpen={openSections.quickActions} onToggle={() => toggleSection('quickActions')} icon={<StarIcon className="w-5 h-5" />}>
+                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {quickActions.map(({ id, label, description }) => (
+                               <PreviewCard
+                                  key={id}
+                                  label={label}
+                                  description={description}
+                                  isSelected={selectedQuickAction === id}
+                                  onClick={() => handleQuickActionClick(id)}
+                                  icon={<StarIcon className="w-5 h-5" />}
+                               />
+                            ))}
+                          </div>
+                      </CollapsibleSection>
+
+                      <LightingAndAtmosphereControls sceneType={sceneType} />
+                      
+                      <CollapsibleSection title="Manual Adjustments" sectionKey="manualAdjustments" isOpen={openSections.manualAdjustments} onToggle={() => toggleSection('manualAdjustments')} icon={<AdjustmentsIcon className="w-5 h-5" />}>
+                          <div className="flex flex-col gap-4 p-2 bg-gray-900/30 rounded-lg">
+                               <CollapsibleSection title="Architectural Style" sectionKey="archStyle" isOpen={openSections.archStyle} onToggle={() => toggleSection('archStyle')} icon={<TextureIcon className="w-5 h-5" />}>
+                                  <div className="flex flex-col gap-3">
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                          {architecturalStyleOptions.map(option => (
+                                              <PreviewCard
+                                                  key={option.name}
+                                                  label={option.name}
+                                                  description={option.description}
+                                                  isSelected={selectedArchStyle === option.name}
+                                                  onClick={() => handleArchStyleChange(option.name)}
+                                                  isNested
+                                                  icon={<TextureIcon className="w-5 h-5" />}
+                                              />
+                                          ))}
+                                      </div>
+                                      {selectedArchStyle && ARCHITECTURAL_STYLE_PROMPTS[selectedArchStyle as keyof typeof ARCHITECTURAL_STYLE_PROMPTS] && (
+                                        <div className="mt-4 pt-4 border-t border-gray-700">
+                                          <h4 className="font-semibold text-gray-200 mb-1">"{selectedArchStyle}" Style Description:</h4>
+                                          <p className="text-sm text-gray-400 bg-gray-900/50 p-3 rounded-md">
+                                            {ARCHITECTURAL_STYLE_PROMPTS[selectedArchStyle as keyof typeof ARCHITECTURAL_STYLE_PROMPTS]}
+                                          </p>
+                                        </div>
+                                      )}
+                                  </div>
+                              </CollapsibleSection>
+                              <CollapsibleSection title="Garden Style" sectionKey="gardenStyle" isOpen={openSections.gardenStyle} onToggle={() => toggleSection('gardenStyle')} icon={<FlowerIcon className="w-5 h-5" />}>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                      {gardenStyleOptions.map(option => (
+                                         <PreviewCard
+                                            key={option.name}
+                                            label={option.name}
+                                            description={option.description}
+                                            isSelected={selectedGardenStyle === option.name}
+                                            onClick={() => handleGardenStyleChange(option.name)}
+                                            isNested
+                                            icon={<FlowerIcon className="w-5 h-5" />}
+                                         />
+                                      ))}
+                                  </div>
+                                   {selectedGardenStyle && (
+                                    <div className="mt-4 pt-4 border-t border-gray-700 space-y-4">
+                                      {GARDEN_STYLE_PROMPTS[selectedGardenStyle as keyof typeof GARDEN_STYLE_PROMPTS] && (
+                                        <div>
+                                            <h4 className="font-semibold text-gray-200 mb-1">"{selectedGardenStyle}" Style Description:</h4>
+                                            <p className="text-sm text-gray-400 bg-gray-900/50 p-3 rounded-md">
+                                                {GARDEN_STYLE_PROMPTS[selectedGardenStyle as keyof typeof GARDEN_STYLE_PROMPTS]}
+                                            </p>
+                                        </div>
+                                      )}
+                                      {adjustableOptions[selectedGardenStyle] && (
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-400 mb-1">{adjustableOptions[selectedGardenStyle].label}</label>
+                                            <input
+                                                type="range"
+                                                min="1"
+                                                max="100"
+                                                value={optionIntensities[selectedGardenStyle] || adjustableOptions[selectedGardenStyle].default}
+                                                onChange={(e) => handleIntensityChange(selectedGardenStyle, Number(e.target.value))}
+                                                className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600"
+                                            />
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                              </CollapsibleSection>
+                               <CollapsibleSection title="Vegetation & Season" sectionKey="vegetation" isOpen={openSections.vegetation} onToggle={() => toggleSection('vegetation')} icon={<FlowerIcon className="w-5 h-5" />}>
+                                  <div className="flex flex-col gap-4">
+                                      <div>
+                                          <label htmlFor="treeAge" className="block text-sm font-medium text-gray-400">Tree Age</label>
+                                          <input id="treeAge" type="range" min="0" max="100" value={treeAge} onChange={e => setTreeAge(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600" />
+                                          <div className="flex justify-between text-xs text-gray-500 px-1">
+                                            <span>Young</span>
+                                            <span>Mature</span>
+                                            <span>Old</span>
+                                          </div>
+                                      </div>
+                                      <div>
+                                          <label htmlFor="season" className="block text-sm font-medium text-gray-400">Season</label>
+                                          <input id="season" type="range" min="0" max="100" value={season} onChange={e => setSeason(Number(e.target.value))} className="w-full h-2 bg-gradient-to-r from-green-400 via-yellow-400 to-orange-500 rounded-lg appearance-none cursor-pointer accent-red-600" />
+                                           <div className="flex justify-between text-xs text-gray-500 px-1">
+                                            <span>Spring</span>
+                                            <span>Summer</span>
+                                            <span>Autumn</span>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </CollapsibleSection>
+                               <CollapsibleSection title="Color & Tone" sectionKey="colorAdjust" isOpen={openSections.colorAdjust} onToggle={() => toggleSection('colorAdjust')} icon={<AdjustmentsIcon className="w-5 h-5" />}>
+                                  <div className="flex flex-col gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-400 mb-1">Brightness ({brightness}%)</label>
+                                        <input type="range" min="50" max="150" value={brightness} onChange={(e) => setBrightness(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-400 mb-1">Contrast ({contrast}%)</label>
+                                        <input type="range" min="50" max="150" value={contrast} onChange={(e) => setContrast(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-400 mb-1">Saturation ({saturation}%)</label>
+                                        <input type="range" min="0" max="200" value={saturation} onChange={(e) => setSaturation(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600" />
+                                    </div>
+                                  </div>
+                              </CollapsibleSection>
+                          </div>
+                      </CollapsibleSection>
+                      
+                      <ArtStyleControls />
+                      <BackgroundControls />
+                      <ForegroundControls />
+
+                      <CollapsibleSection
+                        title="Camera Angle"
+                        sectionKey="cameraAngle"
+                        isOpen={openSections.cameraAngle}
+                        onToggle={() => toggleSection('cameraAngle')}
+                        icon={<CameraIcon className="w-5 h-5" />}
+                        actions={
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSuggestAngles();
+                            }}
+                            disabled={isSuggestingAngles || isLoading || !selectedImageUrl}
+                            className="flex items-center gap-1.5 px-2 py-1 text-xs font-semibold rounded-md transition-colors bg-gray-600 hover:bg-gray-500 text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Get AI camera angle suggestions"
+                          >
+                            <LightbulbIcon className="w-4 h-4" />
+                            <span>{isSuggestingAngles ? 'Suggesting...' : 'Suggest'}</span>
+                          </button>
+                        }
+                      >
+                          <div className="flex flex-wrap gap-2">
+                              {cameraAngleOptions.map(option => (
+                                  <OptionButton
+                                      key={option.name}
+                                      option={option.name}
+                                      isSelected={selectedCameraAngle === option.name}
+                                      onClick={handleCameraAngleChange}
+                                  />
+                              ))}
+                          </div>
+                          {suggestedAngles.length > 0 && (
+                            <div className="mt-4 pt-4 border-t border-gray-700/50">
+                              <h4 className="text-sm font-semibold text-gray-300 mb-2">Suggested Angles:</h4>
+                              <div className="flex flex-wrap gap-2">
+                                {suggestedAngles.map((angle, index) => (
+                                  <OptionButton
+                                      key={index}
+                                      option={angle}
+                                      isSelected={selectedCameraAngle === angle}
+                                      onClick={handleCameraAngleChange}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                      </CollapsibleSection>
+                    </>
+                  )}
+                  
+                  {/* --- Interior Scene Controls --- */}
+                  {activeImage && sceneType === 'interior' && editingMode === 'default' && (
+                      <>
+                        <CollapsibleSection title="Bedroom Presets" sectionKey="interiorQuickActions" isOpen={openSections.interiorQuickActions} onToggle={() => toggleSection('interiorQuickActions')} icon={<StarIcon className="w-5 h-5" />}>
+                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {interiorQuickActions.map(({ id, label, description }) => (
+                                <PreviewCard
+                                   key={id}
+                                   label={label}
+                                   description={description}
+                                   isSelected={selectedQuickAction === id}
+                                   onClick={() => handleQuickActionClick(id)}
+                                   icon={<StarIcon className="w-5 h-5" />}
+                                />
+                              ))}
+                            </div>
+                        </CollapsibleSection>
+                        
+                        <CollapsibleSection title="Living Room Presets" sectionKey="livingRoomQuickActions" isOpen={openSections.livingRoomQuickActions} onToggle={() => toggleSection('livingRoomQuickActions')} icon={<StarIcon className="w-5 h-5" />}>
+                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {livingRoomQuickActions.map(({ id, label, description }) => (
+                                <PreviewCard
+                                   key={id}
+                                   label={label}
+                                   description={description}
+                                   isSelected={selectedQuickAction === id}
+                                   onClick={() => handleQuickActionClick(id)}
+                                   icon={<StarIcon className="w-5 h-5" />}
                                 />
                               ))}
                             </div>
                         </CollapsibleSection>
 
-                        <CollapsibleSection
-                            title="ปรับค่าด้วยตนเอง"
-                            sectionKey="manualAdjustments"
-                            isOpen={openSections.manualAdjustments}
-                            onToggle={() => toggleSection('manualAdjustments')}
-                            icon={<AdjustmentsIcon className="w-5 h-5" />}
-                        >
-                            <div className="space-y-4">
-                                <div>
-                                    <label htmlFor="brightness" className="block text-sm font-medium text-gray-300 mb-1">ความสว่าง: {brightness}%</label>
-                                    <input id="brightness" type="range" min="50" max="150" value={brightness} onChange={e => setBrightness(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-500" />
+                        <LightingAndAtmosphereControls sceneType={sceneType} />
+                        
+                         <CollapsibleSection title="Manual Adjustments" sectionKey="manualAdjustments" isOpen={openSections.manualAdjustments} onToggle={() => toggleSection('manualAdjustments')} icon={<AdjustmentsIcon className="w-5 h-5" />}>
+                          <div className="flex flex-col gap-4 p-2 bg-gray-900/30 rounded-lg">
+                            <CollapsibleSection title="Room Type & Style" sectionKey="interiorStyle" isOpen={openSections.interiorStyle} onToggle={() => toggleSection('interiorStyle')} icon={<HomeIcon className="w-5 h-5" />}>
+                                <div className="flex flex-col gap-4">
+                                   <div>
+                                      <h4 className="text-sm font-semibold text-gray-300 mb-2">Room Type</h4>
+                                      <div className="flex flex-wrap gap-2">
+                                          {roomTypeOptions.map(option => (
+                                              <OptionButton
+                                                  key={option}
+                                                  option={option}
+                                                  isSelected={selectedRoomType === option}
+                                                  onClick={() => handleRoomTypeChange(option)}
+                                              />
+                                          ))}
+                                      </div>
+                                   </div>
+                                   <div className="pt-4 border-t border-gray-700">
+                                      <h4 className="text-sm font-semibold text-gray-300 mb-2">Interior Style</h4>
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                          {interiorStyleOptions.map(option => (
+                                              <PreviewCard
+                                                  key={option.name}
+                                                  label={option.name}
+                                                  description={option.description}
+                                                  isSelected={selectedInteriorStyle === option.name}
+                                                  onClick={() => handleInteriorStyleChange(option.name)}
+                                                  isNested
+                                                  icon={<HomeIcon className="w-5 h-5" />}
+                                              />
+                                          ))}
+                                      </div>
+                                      {selectedInteriorStyle && INTERIOR_STYLE_PROMPTS[selectedInteriorStyle as keyof typeof INTERIOR_STYLE_PROMPTS] && (
+                                        <div className="mt-4 pt-4 border-t border-gray-700">
+                                          <h4 className="font-semibold text-gray-200 mb-1">"{selectedInteriorStyle}" Style Description:</h4>
+                                          <p className="text-sm text-gray-400 bg-gray-900/50 p-3 rounded-md">
+                                            {INTERIOR_STYLE_PROMPTS[selectedInteriorStyle as keyof typeof INTERIOR_STYLE_PROMPTS]}
+                                          </p>
+                                        </div>
+                                      )}
+                                   </div>
                                 </div>
-                                <div>
-                                    <label htmlFor="contrast" className="block text-sm font-medium text-gray-300 mb-1">ความคมชัด: {contrast}%</label>
-                                    <input id="contrast" type="range" min="50" max="150" value={contrast} onChange={e => setContrast(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-500" />
+                            </CollapsibleSection>
+
+                            <CollapsibleSection title="Advanced Lighting & Fixtures" sectionKey="specialLighting" isOpen={openSections.specialLighting} onToggle={() => toggleSection('specialLighting')} icon={<DownlightIcon className="w-5 h-5" />}>
+                                <div className="flex flex-col gap-6">
+                                    {/* Cove Lighting */}
+                                    <div className="p-3 bg-gray-900/50 rounded-lg">
+                                        <label className="flex items-center cursor-pointer justify-between">
+                                            <span className="text-sm font-medium text-gray-300">LED Cove Light</span>
+                                            <div className="relative">
+                                                <input type="checkbox" checked={isCoveLightActive} onChange={(e) => setIsCoveLightActive(e.target.checked)} className="sr-only peer" />
+                                                <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                                            </div>
+                                        </label>
+                                        <div className={`mt-4 space-y-4 transition-all duration-300 ease-in-out overflow-hidden ${isCoveLightActive ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'}`}>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-400 mb-1">Brightness</label>
+                                                <input type="range" min="1" max="100" value={coveLightBrightness} onChange={(e) => setCoveLightBrightness(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-400 mb-1">Light Color</label>
+                                                <input type="color" value={coveLightColor} onChange={(e) => setCoveLightColor(e.target.value)} className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md cursor-pointer" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Spotlight */}
+                                    <div className="p-3 bg-gray-900/50 rounded-lg">
+                                        <label className="flex items-center cursor-pointer justify-between">
+                                            <span className="text-sm font-medium text-gray-300">Spotlight / Track Light</span>
+                                            <div className="relative">
+                                                <input type="checkbox" checked={isSpotlightActive} onChange={(e) => setIsSpotlightActive(e.target.checked)} className="sr-only peer" />
+                                                <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                                            </div>
+                                        </label>
+                                        <div className={`mt-4 space-y-4 transition-all duration-300 ease-in-out overflow-hidden ${isSpotlightActive ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'}`}>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-400 mb-1">Brightness</label>
+                                                <input type="range" min="1" max="100" value={spotlightBrightness} onChange={(e) => setSpotlightBrightness(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-400 mb-1">Light Color</label>
+                                                <input type="color" value={spotlightColor} onChange={(e) => setSpotlightColor(e.target.value)} className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md cursor-pointer" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                     {/* Downlight */}
+                                    <div className="p-3 bg-gray-900/50 rounded-lg">
+                                        <label className="flex items-center cursor-pointer justify-between">
+                                            <span className="text-sm font-medium text-gray-300">Down Light</span>
+                                            <div className="relative">
+                                                <input type="checkbox" checked={isDownlightActive} onChange={(e) => setIsDownlightActive(e.target.checked)} className="sr-only peer" />
+                                                <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                                            </div>
+                                        </label>
+                                        <div className={`mt-4 space-y-4 transition-all duration-300 ease-in-out overflow-hidden ${isDownlightActive ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'}`}>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-400 mb-1">Brightness</label>
+                                                <input type="range" min="1" max="100" value={downlightBrightness} onChange={(e) => setDownlightBrightness(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-400 mb-1">Light Color</label>
+                                                <input type="color" value={downlightColor} onChange={(e) => setDownlightColor(e.target.value)} className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md cursor-pointer" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                     {/* 4-way AC */}
+                                    <div className="p-3 bg-gray-900/50 rounded-lg">
+                                        <label className="flex items-center cursor-pointer justify-between">
+                                            <span className="text-sm font-medium text-gray-300">4-Way Air Conditioner</span>
+                                            <div className="relative">
+                                                <input type="checkbox" checked={addFourWayAC} onChange={(e) => setAddFourWayAC(e.target.checked)} className="sr-only peer" />
+                                                <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                    {/* Wall Type AC */}
+                                    <div className="p-3 bg-gray-900/50 rounded-lg">
+                                        <label className="flex items-center cursor-pointer justify-between">
+                                            <span className="text-sm font-medium text-gray-300">Wall Type Air Conditioner (18000 BTU)</span>
+                                            <div className="relative">
+                                                <input type="checkbox" checked={addWallTypeAC} onChange={(e) => setAddWallTypeAC(e.target.checked)} className="sr-only peer" />
+                                                <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                                            </div>
+                                        </label>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label htmlFor="saturation" className="block text-sm font-medium text-gray-300 mb-1">ความอิ่มตัวของสี: {saturation}%</label>
-                                    <input id="saturation" type="range" min="0" max="200" value={saturation} onChange={e => setSaturation(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-500" />
-                                </div>
-                                 <div>
-                                    <label htmlFor="sharpness" className="block text-sm font-medium text-gray-300 mb-1">ความคม: {sharpness}%</label>
-                                    <input id="sharpness" type="range" min="0" max="200" value={sharpness} onChange={e => setSharpness(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-500" />
-                                </div>
+                            </CollapsibleSection>
+                          </div>
+                        </CollapsibleSection>
+
+                        <ArtStyleControls />
+
+                        <CollapsibleSection title="Decorative Items" sectionKey="decorativeItems" isOpen={openSections.decorativeItems} onToggle={() => toggleSection('decorativeItems')} icon={<FlowerIcon className="w-5 h-5" />}>
+                            <div className="flex flex-wrap gap-2">
+                                {decorativeItemOptions.map(item => (
+                                    <OptionButton
+                                        key={item}
+                                        option={item}
+                                        isSelected={selectedDecorativeItems.includes(item)}
+                                        onClick={() => handleDecorativeItemToggle(item)}
+                                    />
+                                ))}
                             </div>
                         </CollapsibleSection>
-                        
-                        <CollapsibleSection
-                          title="ตั้งค่าผลลัพธ์ / ปรับขนาด"
+                        <BackgroundControls />
+                      </>
+                  )}
+
+
+                  {/* --- Shared Controls for all non-plan modes --- */}
+                  { activeImage && sceneType && (
+                     <CollapsibleSection
+                          title={`Output Size${outputSize !== 'Original' ? `: ${outputSize}` : ''}`}
                           sectionKey="output"
                           isOpen={openSections.output}
                           onToggle={() => toggleSection('output')}
                           icon={<CropIcon className="w-5 h-5" />}
-                          disabled={editingMode === 'object'}
                       >
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                              {outputSizeOptions.map(option => {
-                                  const Icon = option.icon;
-                                  return (
-                                      <button
-                                          key={option.value}
-                                          type="button"
-                                          onClick={() => handleOutputSizeChange(option.value)}
-                                          className={`p-3 text-center rounded-lg border-2 transition-all duration-200 group flex flex-col items-center justify-center h-28
-                                              ${outputSize === option.value
-                                                  ? 'bg-red-900/50 border-red-500 scale-105 shadow-lg'
-                                                  : 'bg-gray-900/50 border-transparent hover:border-gray-500'
-                                              }`}
-                                      >
-                                          <Icon className={`w-8 h-8 mb-2 transition-colors ${outputSize === option.value ? 'text-red-300' : 'text-gray-400'}`} />
-                                          <span className={`font-semibold transition-colors text-sm ${outputSize === option.value ? 'text-red-300' : 'text-white'}`}>
-                                              {option.label}
-                                          </span>
-                                          <span className={`mt-1 text-xs transition-colors ${outputSize === option.value ? 'text-gray-300' : 'text-gray-400'}`}>
-                                              {option.description}
-                                          </span>
-                                      </button>
-                                  )
-                              })}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {outputSizeOptions.map(option => (
+                                  <PreviewCard
+                                      key={option.value}
+                                      label={option.label}
+                                      description={option.description}
+                                      isSelected={outputSize === option.value}
+                                      onClick={() => handleOutputSizeChange(option.value)}
+                                      isNested
+                                      icon={option.value === 'Original' ? <PhotoIcon className="w-5 h-5" /> : <CropIcon className="w-5 h-5" />}
+                                  />
+                              ))}
                           </div>
-                           <p className="text-xs text-gray-400 mt-3 text-center">
-                              หมายเหตุ: การเปลี่ยนอัตราส่วนอาจทำให้ภาพถูกตัดบางส่วน และจะถูกปรับใช้เป็นขั้นตอนสุดท้าย
-                          </p>
+                          {editingMode === 'object' && <p className="text-xs text-gray-400 mt-3 text-center">Output size changes are disabled in Inpainting mode.</p>}
                       </CollapsibleSection>
-                    </>
-                )}
+                  )}
 
-                {/* Submit Button */}
-                <div className="pt-2">
-                  <button
-                    type="submit"
-                    disabled={isLoading || !hasEditInstruction}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 text-base font-semibold text-white bg-gradient-to-r from-red-600 to-red-700 rounded-md transition-all duration-300 hover:from-red-700 hover:to-red-800 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg hover:scale-105"
-                  >
-                    {isLoading ? <Spinner /> : <SparklesIcon className="w-5 h-5" />}
-                    <span>{isLoading ? 'กำลังสร้างภาพ...' : 'สร้างภาพ'}</span>
-                  </button>
+
+                  {activeImage && sceneType && editingMode === 'object' && (
+                    <CollapsibleSection title="Brush Tool" sectionKey="brushTool" isOpen={openSections.brushTool} onToggle={() => toggleSection('brushTool')} icon={<BrushIcon className="w-5 h-5" />}>
+                      <div className="flex flex-col gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-400 mb-2">Brush Size</label>
+                            <input
+                              type="range"
+                              min="10"
+                              max="100"
+                              value={brushSize}
+                              onChange={(e) => setBrushSize(Number(e.target.value))}
+                              className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-400 mb-2">Brush Color</label>
+                              <div className="flex justify-around items-center">
+                                {brushColors.map(({ name, value, css }) => (
+                                  <button
+                                    key={name}
+                                    type="button"
+                                    title={name}
+                                    onClick={() => setBrushColor(value)}
+                                    className={`w-8 h-8 rounded-full ${css} transition-transform hover:scale-110 ${brushColor === value ? 'ring-2 ring-offset-2 ring-offset-gray-800 ring-white' : ''}`}
+                                  />
+                                ))}
+                              </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => imageDisplayRef.current?.clearMask()}
+                            disabled={isMaskEmpty}
+                            className="w-full px-4 py-2 mt-2 text-sm font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 disabled:bg-gray-600 disabled:opacity-50 transition-colors"
+                          >
+                            Clear Mask
+                          </button>
+                      </div>
+                    </CollapsibleSection>
+                  )}
                 </div>
-                {error && <p className="text-sm text-red-400 text-center mt-2 animate-fade-in">{error}</p>}
-              </form>
-              <div className="pt-3">
-                 <ImageToolbar
+                {/* --- CONTROLS END --- */}
+
+
+                {activeImage && sceneType && (
+                  <div className="border-t border-gray-700 pt-6 flex flex-col gap-4">
+                      <div className="flex gap-3">
+                        <button
+                          type="submit"
+                          disabled={isLoading || !activeImage || !hasEditInstruction}
+                          className="flex-grow w-full flex items-center justify-center gap-3 px-6 py-4 rounded-full text-lg font-bold text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105"
+                        >
+                          <SparklesIcon className="w-6 h-6" />
+                          <span>{sceneType === 'plan' ? 'Generate 3D' : 'Generate'}</span>
+                        </button>
+                        {sceneType !== 'plan' && (
+                            <button
+                                type="button"
+                                onClick={handleRandomQuickAction}
+                                disabled={isLoading || !activeImage}
+                                className="flex-shrink-0 p-4 rounded-full bg-gray-700 hover:bg-gray-600 text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Random Preset"
+                            >
+                                <ShuffleIcon className="w-6 h-6" />
+                            </button>
+                        )}
+                      </div>
+                      
+                      {sceneType === 'plan' && (
+                          <button
+                              type="button"
+                              onClick={handleGenerate4PlanViews}
+                              disabled={isLoading || !isPlanModeReady}
+                              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-full text-base font-semibold text-gray-200 bg-gray-700/80 hover:bg-gray-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                              <CameraIcon className="w-5 h-5" />
+                              <span>Generate 4 3D Views</span>
+                          </button>
+                      )}
+
+                      {sceneType !== 'plan' && (
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <button
+                                type="button"
+                                onClick={() => handleVariationSubmit('style')}
+                                disabled={isLoading || !selectedImageUrl}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-full text-base font-semibold text-gray-200 bg-gray-700/80 hover:bg-gray-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <SparklesIcon className="w-5 h-5" />
+                                <span>Generate 4 Styles</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleVariationSubmit('angle')}
+                                disabled={isLoading || !selectedImageUrl}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-full text-base font-semibold text-gray-200 bg-gray-700/80 hover:bg-gray-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <CameraIcon className="w-5 h-5" />
+                                <span>Generate 4 Angles</span>
+                            </button>
+                        </div>
+                      )}
+                      {error && <p className="text-red-400 text-sm mt-4 text-center">{error}</p>}
+                  </div>
+                )}
+            </form>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Column: Image Display and Results */}
+      <div className="md:col-span-2 lg:col-span-3">
+        <div className="sticky top-8 flex flex-col gap-4">
+            <ImageDisplay
+              ref={imageDisplayRef}
+              label={
+                selectedImageUrl 
+                  ? (isPlanResultsView ? '3D Result' : 'Workspace (Result)') 
+                  : (activeImage ? (sceneType === 'plan' ? 'Original 2D Plan' : 'Original Image') : 'Workspace')
+              }
+              imageUrl={editingMode === 'object' ? imageForMasking : imageForDisplay}
+              originalImageUrl={
+                (editingMode !== 'object' && selectedImageUrl && activeImage) ? activeImage.dataUrl : null
+              }
+              isLoading={isLoading}
+              selectedFilter={editingMode === 'object' ? 'None' : selectedFilter}
+              brightness={editingMode === 'object' ? 100 : brightness}
+              contrast={editingMode === 'object' ? 100 : contrast}
+              saturation={editingMode === 'object' ? 100 : saturation}
+              sharpness={editingMode === 'object' ? 100 : sharpness}
+              isMaskingMode={editingMode === 'object'}
+              brushSize={brushSize}
+              brushColor={brushColor}
+              onMaskChange={setIsMaskEmpty}
+            />
+
+            {selectedImageUrl && (
+                <ImageToolbar
                     onUndo={handleUndo}
                     onRedo={handleRedo}
-                    onReset={handleReset}
+                    onReset={handleResetEdits}
                     onUpscale={handleUpscale}
                     onOpenSaveModal={handleOpenSaveModal}
-                    onTransform={handleImageTransform}
+                    onTransform={applyTransformation}
                     canUndo={canUndo}
                     canRedo={canRedo}
-                    canReset={canReset}
-                    canUpscaleAndSave={canUpscaleAndSave}
+                    canReset={activeImage?.history.length > 0}
+                    canUpscaleAndSave={!!selectedImageUrl}
                     isLoading={isLoading}
-                 />
-              </div>
-            </>
-            ) : (
-                <div className="text-center py-16 text-gray-500">
-                    <PhotoIcon className="w-16 h-16 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-300">ยังไม่ได้เลือกรูปภาพ</h3>
-                    <p>อัปโหลดรูปภาพเพื่อเริ่มต้นใช้งาน</p>
+                />
+            )}
+
+            {currentResults && (
+                <div className="bg-gray-800/50 p-4 rounded-xl border border-gray-700">
+                    <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
+                        <h3 className="text-lg font-semibold text-gray-300">{getResultsTitle()}</h3>
+                         <div className="flex gap-2 flex-wrap">
+                            <ActionButton onClick={handleRegenerate} disabled={!canRegenerate || isLoading} title="Generate a new result with the same prompt">
+                              <ShuffleIcon className="w-4 h-4" />
+                              <span>Regenerate</span>
+                            </ActionButton>
+                            <ActionButton onClick={handleUndo} disabled={!canUndo || isLoading} title="Undo">
+                              <UndoIcon className="w-4 h-4" />
+                              <span>Undo</span>
+                            </ActionButton>
+                            <ActionButton onClick={handleRedo} disabled={!canRedo || isLoading} title="Redo">
+                              <RedoIcon className="w-4 h-4" />
+                               <span>Redo</span>
+                            </ActionButton>
+                            <ActionButton onClick={handleResetEdits} disabled={!activeImage || activeImage.history.length === 0 || isLoading} title="Reset all edits" color="red">
+                                <ResetEditsIcon className="w-4 h-4" />
+                                <span>Reset</span>
+                            </ActionButton>
+                         </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {currentResults.map((result, index) => (
+                            <div key={index} className="relative group">
+                                <button
+                                    type="button"
+                                    onClick={() => updateActiveImage(img => ({ ...img, selectedResultIndex: index }))}
+                                    className={`block w-full aspect-square rounded-lg overflow-hidden border-4 transition-colors ${
+                                        index === activeImage?.selectedResultIndex ? 'border-red-500' : 'border-transparent hover:border-gray-500'
+                                    }`}
+                                >
+                                    <img src={result} alt={`Result ${index + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                                </button>
+                                {currentLabels[index] && (
+                                    <span className="absolute bottom-1 left-1/2 -translate-x-1/2 bg-black/60 text-white text-xs px-2 py-1 rounded-full">{currentLabels[index]}</span>
+                                )}
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
         </div>
       </div>
-
-      {/* Right Panel - Image Display */}
-      <div className="w-full lg:w-2/3 flex-shrink-0">
-        <div className="space-y-4">
-          <CollapsibleSection
-              title="ประวัติโปรเจกต์"
-              sectionKey="projectHistory"
-              isOpen={openSections.projectHistory}
-              onToggle={() => toggleSection('projectHistory')}
-              icon={<HistoryIcon className="w-5 h-5" />}
-              actions={
-                imageList.length > 0 && (
-                     <button 
-                        type="button" 
-                        onClick={handleClearAllProjects}
-                        className="text-xs text-red-400 hover:text-red-300"
-                    >
-                        ล้างทั้งหมด
-                    </button>
-                )
-              }
-          >
-              <div className="flex flex-col gap-4">
-                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                    {imageList.map((img, index) => (
-                        <div 
-                            key={img.id}
-                            className={`relative rounded-lg overflow-hidden cursor-pointer transition-all group ${activeImageIndex === index ? 'ring-2 ring-red-500' : 'ring-1 ring-transparent hover:ring-gray-500'}`}
-                            onClick={() => setActiveImageIndex(index)}
-                        >
-                            <img src={img.dataUrl || ''} alt={`Project ${index + 1}`} className="w-full h-24 object-cover" />
-                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <span className="text-white text-xs font-bold">โปรเจกต์ที่ {index + 1}</span>
-                            </div>
-                             <button
-                                onClick={(e) => { e.stopPropagation(); handleRemoveImage(index); }}
-                                className="absolute top-1 right-1 p-0.5 bg-black/60 rounded-full text-white hover:bg-red-500 opacity-0 group-hover:opacity-100 transition-all"
-                                title="ลบโปรเจกต์"
-                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                </svg>
-                             </button>
-                        </div>
-                    ))}
-                    <label className="w-full h-24 border-2 border-dashed border-gray-600 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-red-500 hover:bg-gray-700/50 transition-colors">
-                        <input type="file" multiple onChange={handleImageChange} className="hidden" accept="image/png, image/jpeg, image/webp, image/heic" />
-                        <PhotoIcon className="w-8 h-8 text-gray-500" />
-                        <span className="text-xs text-gray-500 mt-1">อัปโหลดเพิ่ม</span>
-                    </label>
-                 </div>
-              </div>
-          </CollapsibleSection>
-            
-          <ImageDisplay
-            ref={imageDisplayRef}
-            label={activeImage ? `รูปที่ ${activeImageIndex !== null ? activeImageIndex + 1 : ''}` : "รูปภาพหลัก"}
-            imageUrl={selectedImageUrl}
-            originalImageUrl={originalImageUrl}
-            isLoading={isLoading}
-            hideLabel
-            selectedFilter={selectedFilter}
-            brightness={brightness}
-            contrast={contrast}
-            saturation={saturation}
-            sharpness={sharpness}
-            isMaskingMode={editingMode === 'object'}
-            brushSize={brushSize}
-            brushColor={brushColor}
-            onMaskChange={setIsMaskEmpty}
-          />
-
-          {currentHistoryStep && currentHistoryStep.length > 1 && (
-            <div className="bg-gray-800/50 p-3 rounded-xl border border-gray-700">
-                <h3 className="text-sm font-semibold text-gray-300 mb-3 text-center">เลือกผลลัพธ์จากขั้นตอนนี้:</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {currentHistoryStep.map((resultUrl, index) => (
-                        <div
-                            key={index}
-                            onClick={() => updateActiveImage(img => ({ ...img, selectedResultIndex: index }))}
-                            className={`relative rounded-lg overflow-hidden cursor-pointer bg-gray-900/50 group transition-all aspect-w-1 aspect-h-1
-                                ${activeImage?.selectedResultIndex === index ? 'ring-2 ring-red-500' : 'ring-1 ring-transparent hover:ring-gray-500'}`}
-                        >
-                            <img src={resultUrl} alt={`ผลลัพธ์ ${index + 1}`} className="w-full h-full object-contain" />
-                             {activeImage?.lastGeneratedLabels[index] && (
-                                <div className="absolute bottom-0 left-0 right-0 p-1 bg-black/70 text-center">
-                                    <span className="text-white text-xs font-semibold truncate">{activeImage.lastGeneratedLabels[index]}</span>
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </div>
-          )}
-
-          {activeImage && !selectedImageUrl && !isLoading && imageList.length > 0 && (
-             <div className="text-center py-16 text-gray-500">
-                <HistoryIcon className="w-16 h-16 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-300">จำเป็นต้องดำเนินการกับประวัติ</h3>
-                <p>กรุณาย้อนกลับหรือเลือกผลลัพธ์จากขั้นตอนก่อนหน้าเพื่อแก้ไขต่อ</p>
-            </div>
-          )}
-        </div>
-      </div>
-      
-      {/* Save Modal */}
-      {isSaveModalOpen && (
-          <div 
-            className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 animate-fade-in"
-            onClick={() => setIsSaveModalOpen(false)}
-          >
-              <div 
-                  className="bg-gray-800 p-6 rounded-xl shadow-lg w-full max-w-sm border border-gray-700 flex flex-col"
-                  onClick={e => e.stopPropagation()}
-              >
-                  <div className="flex items-center gap-3 mb-6">
-                      <DownloadIcon className="w-6 h-6 text-red-400" />
-                      <h3 className="text-lg font-bold text-gray-200">
-                          ตัวเลือกการดาวน์โหลด / Download Options
-                      </h3>
-                  </div>
-                  <div className="space-y-6">
-                      <div>
-                          <label htmlFor="quality" className="block text-sm font-medium text-gray-300 mb-2">
-                              คุณภาพของภาพ (JPEG) / Image Quality
-                          </label>
-                          <select
-                              id="quality"
-                              value={saveQuality}
-                              onChange={(e) => setSaveQuality(Number(e.target.value))}
-                              className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-red-500 focus:border-red-500"
-                          >
-                              {qualityOptions.map(opt => (
-                                  <option key={opt.label} value={opt.value}>{opt.label}</option>
-                              ))}
-                          </select>
-                      </div>
-                      <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
-                          <button onClick={() => setIsSaveModalOpen(false)} className="px-4 py-2 text-sm font-semibold text-gray-300 bg-gray-600 rounded-full hover:bg-gray-500 transition-colors">
-                              ยกเลิก / Cancel
-                          </button>
-                          <button onClick={handleSaveWithQuality} className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-full hover:bg-blue-700 transition-colors">
-                              ดาวน์โหลด / Download
-                          </button>
-                      </div>
-                  </div>
-              </div>
-          </div>
-      )}
     </div>
+    </>
   );
 };
 

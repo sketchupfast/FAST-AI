@@ -18,21 +18,21 @@ const AuthPage: React.FC = () => {
     try {
       if (isLoginView) {
         if (!email || !password) {
-          setError('กรุณากรอกข้อมูลให้ครบถ้วน');
+          setError('Please fill in all fields.');
           return;
         }
         login(email);
       } else {
         if (!email || !password || !confirmPassword) {
-          setError('กรุณากรอกข้อมูลให้ครบถ้วน');
+          setError('Please fill in all fields.');
           return;
         }
         if (password.length < 6) {
-          setError('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
+          setError('Password must be at least 6 characters long.');
           return;
         }
         if (password !== confirmPassword) {
-          setError('รหัสผ่านไม่ตรงกัน');
+          setError('Passwords do not match.');
           return;
         }
         signup(email);
@@ -41,7 +41,7 @@ const AuthPage: React.FC = () => {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('เกิดข้อผิดพลาดที่ไม่รู้จัก');
+        setError('An unknown error occurred.');
       }
     }
   };
@@ -51,16 +51,16 @@ const AuthPage: React.FC = () => {
       <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4 text-center animate-fade-in">
         <div className="w-full max-w-md bg-gray-800/50 p-8 rounded-2xl shadow-lg border border-gray-700">
           <h2 className="text-2xl font-bold text-gray-200 mb-4">
-            ขอบคุณสำหรับการลงทะเบียน!
+            Thank you for signing up!
           </h2>
           <p className="text-gray-400">
-            บัญชีของคุณถูกสร้างเรียบร้อยแล้วและกำลังรอการอนุมัติจากผู้สร้าง คุณจะสามารถเข้าสู่ระบบได้เมื่อบัญชีของคุณได้รับการอนุมัติ
+            Your account has been created successfully and is now awaiting approval from the creator. You will be able to log in once your account is approved.
           </p>
           <button
             onClick={() => setSignupPending(false)}
             className="mt-8 w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-sm font-bold text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-red-500 transition-transform transform hover:scale-105"
           >
-            กลับไปหน้าเข้าสู่ระบบ
+            Return to Login
           </button>
         </div>
       </div>
@@ -74,17 +74,17 @@ const AuthPage: React.FC = () => {
                 FAST AI Image Editor
             </h1>
             <p className="mt-2 text-lg text-gray-400">
-              เข้าสู่ระบบหรือสร้างบัญชีเพื่อเริ่มต้นใช้งาน
+              Log in or create an account to start editing.
             </p>
         </header>
         <div className="w-full max-w-md bg-gray-800/50 p-8 rounded-2xl shadow-lg border border-gray-700">
             <h2 className="text-2xl font-bold text-center text-gray-200 mb-6">
-              {isLoginView ? 'ยินดีต้อนรับกลับ' : 'สร้างบัญชีใหม่'}
+              {isLoginView ? 'Welcome Back' : 'Create Account'}
             </h2>
             
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-300">อีเมล</label>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-300">Email</label>
                 <input
                   id="email"
                   name="email"
@@ -98,7 +98,7 @@ const AuthPage: React.FC = () => {
               </div>
               
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-300">รหัสผ่าน</label>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-300">Password</label>
                 <input
                   id="password"
                   name="password"
@@ -113,7 +113,7 @@ const AuthPage: React.FC = () => {
 
               {!isLoginView && (
                 <div>
-                  <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-300">ยืนยันรหัสผ่าน</label>
+                  <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-300">Confirm Password</label>
                   <input
                     id="confirm-password"
                     name="confirm-password"
@@ -134,20 +134,20 @@ const AuthPage: React.FC = () => {
                   type="submit"
                   className="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-sm font-bold text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-red-500 transition-transform transform hover:scale-105"
                 >
-                  {isLoginView ? 'เข้าสู่ระบบ' : 'ลงทะเบียน'}
+                  {isLoginView ? 'Log In' : 'Sign Up'}
                 </button>
               </div>
             </form>
             
             <p className="mt-6 text-center text-sm text-gray-400">
-              {isLoginView ? "ยังไม่มีบัญชี?" : 'มีบัญชีอยู่แล้ว?'}
+              {isLoginView ? "Don't have an account?" : 'Already have an account?'}
               <button onClick={() => { setIsLoginView(!isLoginView); setError(''); setSignupPending(false); }} className="ml-1 font-semibold text-red-400 hover:text-red-300">
-                {isLoginView ? 'ลงทะเบียน' : 'เข้าสู่ระบบ'}
+                {isLoginView ? 'Sign Up' : 'Log In'}
               </button>
             </p>
         </div>
         <footer className="text-center py-4 mt-8">
-          <p className="text-gray-500">ขับเคลื่อนโดย Gemini 2.5 Flash Image</p>
+          <p className="text-gray-500">Powered by Gemini 2.5 Flash Image</p>
         </footer>
     </div>
   );
