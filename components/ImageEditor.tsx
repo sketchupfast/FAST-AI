@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { editImage, analyzeImage, suggestCameraAngles, type AnalysisResult, cropAndResizeImage } from '../services/geminiService';
 import { saveProjects, loadProjects, clearProjects } from '../services/dbService';
@@ -347,1263 +348,3083 @@ const INTERIOR_BACKGROUND_PROMPTS: Record<string, string> = {
 const FOREGROUND_PROMPTS: Record<string, string> = {
     "Foreground Large Tree": "with a large tree in the foreground",
     "Foreground River": "with a river in the foreground",
-    "Foreground Road": "Add a clean, modern asphalt road and sidewalk in the immediate foreground. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
+    "Foreground Road": "Add a clean, modern asphalt road and sidewalk in the immediate foreground",
     "Top Corner Leaves": "with out-of-focus leaves framing the top corner of the view, creating a natural foreground bokeh effect",
     "Bottom Corner Bush": "with a flowering bush in the bottom corner of the view, adding a touch of nature to the foreground",
-    "Foreground Flowers": "with a bed of colorful flowers in the foreground. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
-    "Foreground Fence": "with a modern fence in the foreground. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
-    "Foreground Lawn": "Add a meticulously manicured, lush green lawn in the foreground. The grass should appear healthy, dense, and recently cut, with visible blade detail. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
-    "Foreground Pathway": "Add a modern, clean pathway in the foreground made of large-format concrete or stone pavers. The path should lead towards the main subject. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
-    "Foreground Water Feature": "Add a sleek, modern water feature in the foreground, such as a small reflecting pool or a minimalist fountain. The water should be calm and clear. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
-    "Foreground Low Wall": "Add a low, modern retaining wall or decorative wall in the foreground, constructed from materials like stacked stone or smooth concrete. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
+    "Foreground Flowers": "with a bed of colorful flowers in the foreground, adding a vibrant touch of nature",
+    "Foreground Fence": "with a stylish modern fence partially visible in the foreground, adding a sense of privacy and structure",
+    "Foreground Lawn": "Add a lush, green, manicured lawn in the immediate foreground.",
+    "Foreground Pathway": "Add a winding stone or brick pathway in the foreground leading towards the subject.",
+    "Foreground Water Feature": "Add a small, modern water feature like a small pond or fountain in the foreground.",
+    "Foreground Low Wall": "Add a low, decorative stone or brick wall in the foreground.",
 };
 
-const interiorDecorativeItems = [
-    'Add TV on wall', 'Add Floor Lamp', 'Add Chandelier', 'Add Sofa', 'Add Armchair', 'Add Coffee Table',
-    'Add Dining Table', 'Add Rug', 'Add Curtains', 'Add Potted Plant', 'Add Wall Art', 'Add Bookshelf',
-    'Add Bed', 'Add Wardrobe', 'Add Kitchen Counter', 'Add Dining Chairs', 'Add decorative items on a shelf', 'Add a laptop on a table'
+const TIME_OF_DAY_PROMPTS: Record<string, string> = {
+    'Dawn': 'Change the time of day to early morning, with soft, warm, golden sunrise light and long gentle shadows.',
+    'Daytime': 'Change the time of day to midday, with bright, clear, natural daylight.',
+    'Afternoon': 'Change the time of day to afternoon, with warm, slightly angled sunlight.',
+    'Sunset': 'Change the time of day to sunset, with a dramatic sky filled with orange, pink, and purple hues. The lighting should be warm and golden, casting long shadows. If there are buildings, their lights should be starting to turn on.',
+    'Night': 'Change the scene to nighttime, illuminated by moonlight and artificial light sources.'
+};
+
+const WEATHER_PROMPTS: Record<string, string> = {
+    'Sunny': 'Change the weather to a clear, sunny day with sharp shadows.',
+    'Overcast': 'Change the weather to a bright but overcast day with soft, diffused lighting and minimal shadows.',
+    'Rainy (Wet Ground)': 'Change the scene to be during or just after a light rain, with wet, reflective surfaces on the ground and building.',
+    'Misty': 'Change the weather to a misty or foggy day, creating a soft, atmospheric, and mysterious mood.',
+};
+
+
+const CAMERA_ANGLE_PROMPTS: Record<string, string> = cameraAngleOptions.reduce((acc, option) => {
+    if (option.prompt) {
+      acc[option.name] = `Re-render the image ${option.prompt}.`;
+    } else {
+      acc[option.name] = '';
+    }
+    return acc;
+}, {} as Record<string, string>);
+
+const getIntensityDescriptor = (intensity: number, descriptors: [string, string, string, string, string]) => {
+    if (intensity <= 20) return descriptors[0];
+    if (intensity <= 40) return descriptors[1];
+    if (intensity <= 60) return descriptors[2];
+    if (intensity <= 80) return descriptors[3];
+    return descriptors[4];
+};
+
+const adjustableOptions: Record<string, { label: string; default: number }> = {
+    // Garden
+    'Thai Garden': { label: 'Tree Amount', default: 50 },
+    'Flower Garden': { label: 'Flower Amount', default: 50 },
+    'English Garden': { label: 'Flower Density', default: 50 },
+    'Tropical Garden': { label: 'Jungle Density', default: 60 },
+    // Backgrounds
+    'Bangkok High-rise View': { label: 'Building Density', default: 50 },
+    'Mountain View': { label: 'Grandeur', default: 50 },
+    'Bangkok Traffic View': { label: 'Traffic Density', default: 50 },
+    'Farmland View': { label: 'Lushness', default: 60 },
+    'Housing Estate View': { label: 'House Density', default: 40 },
+    'Chao Phraya River View': { label: 'River Width', default: 50 },
+    'Forest': { label: 'Forest Density', default: 70 },
+    'Beach': { label: 'Beach Width', default: 50 },
+    'Cityscape': { label: 'Building Density', default: 50 },
+    'Outer Space': { label: 'Star Density', default: 50 },
+    // Foregrounds
+    'Foreground Large Tree': { label: 'Tree Amount', default: 30 },
+    "Foreground River": { label: 'River Width', default: 50 },
+    "Foreground Road": { label: 'Road Visibility', default: 50 },
+    "Top Corner Leaves": { label: 'Leaf Amount', default: 40 },
+    "Bottom Corner Bush": { label: 'Bush Size', default: 50 },
+    'Foreground Flowers': { label: 'Flower Density', default: 50 },
+    'Foreground Fence': { label: 'Fence Visibility', default: 40 },
+    'Foreground Lawn': { label: 'Lawn Condition', default: 70 },
+    'Foreground Pathway': { label: 'Pathway Visibility', default: 50 },
+    'Foreground Water Feature': { label: 'Feature Size', default: 40 },
+    'Foreground Low Wall': { label: 'Wall Visibility', default: 50 },
+};
+
+
+const ADJUSTABLE_PROMPT_GENERATORS: Record<string, (intensity: number) => string> = {
+    'Thai Garden': (intensity) => {
+        const amount = getIntensityDescriptor(intensity, ['a very small amount of', 'a few', 'a moderate amount of', 'many', 'a very large amount of']);
+        return `Transform the landscape into a traditional Thai garden, featuring elements like salas (pavilions), water features such as ponds with lotus flowers, intricate stone carvings, and lush tropical plants like banana trees and orchids, with ${amount} trees. The atmosphere should be serene and elegant. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
+    },
+    'Bangkok High-rise View': (intensity) => {
+        const density = getIntensityDescriptor(intensity, ['very sparse', 'sparse', 'a standard density of', 'dense', 'very dense']);
+        return `with a ${density}, modern Bangkok skyscraper cityscape in the background. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
+    },
+    'Flower Garden': (intensity) => {
+        const density = getIntensityDescriptor(intensity, ['with a few scattered flowers', 'with patches of flowers', 'filled with a moderate amount of flowers', 'densely packed with many flowers', 'completely overflowing with a vast amount of flowers']);
+        return `Transform the landscape into a magnificent and colorful flower garden. The scene should be ${density}, creating a stunning visual tapestry. It should look like a professional botanical garden in full bloom. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
+    },
+    'Foreground Large Tree': (intensity) => {
+        const amount = getIntensityDescriptor(intensity, ['a single, small tree', 'a single large tree', 'a couple of trees', 'a small grove of trees', 'a dense cluster of trees']);
+        return `with ${amount} in the foreground. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
+    },
+    'English Garden': (intensity) => {
+        const density = getIntensityDescriptor(intensity, ['with sparse flowerbeds', 'with neatly arranged flowers', 'with overflowing flowerbeds', 'with densely packed flowers', 'with a charmingly chaotic and overgrown abundance of flowers']);
+        return `Transform the landscape into a classic English cottage garden, characterized by an informal, romantic design ${density}, climbing roses, and winding paths. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
+    },
+    'Tropical Garden': (intensity) => {
+        const density = getIntensityDescriptor(intensity, ['a sparse', 'a moderately lush', 'a dense', 'a very dense and overgrown', 'an impenetrable jungle-like']);
+        return `Transform the landscape into ${density} and vibrant tropical garden. Fill it with large-leafed plants, colorful exotic flowers, and towering palm trees. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
+    },
+    'Mountain View': (intensity) => {
+        const grandeur = getIntensityDescriptor(intensity, ['rolling hills', 'medium-sized mountains', 'a high mountain range', 'a majestic, towering mountain range', 'an epic, cinematic mountain landscape']);
+        return `with ${grandeur} in the background. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
+    },
+    'Bangkok Traffic View': (intensity) => {
+        const traffic = getIntensityDescriptor(intensity, ['light traffic', 'moderate traffic', 'heavy traffic', 'a traffic jam', 'a complete gridlock with bumper-to-bumper traffic']);
+        return `with a bustling Bangkok street with ${traffic} in the background. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
+    },
+    'Farmland View': (intensity) => {
+        const lushness = getIntensityDescriptor(intensity, ['dry and sparse fields', 'newly planted fields', 'lush green fields', 'fields ripe for harvest', 'extremely abundant and verdant fields']);
+        return `with ${lushness} and agricultural fields in the background. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
+    },
+    'Housing Estate View': (intensity) => {
+        const density = getIntensityDescriptor(intensity, ['a few scattered houses', 'a low-density', 'a medium-density', 'a high-density', 'a very crowded']);
+        return `with ${density}, modern, landscaped housing estate project in the background. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
+    },
+    'Chao Phraya River View': (intensity) => {
+        const width = getIntensityDescriptor(intensity, ['a narrow, scenic view of', 'a medium-width view of', 'a wide view of', 'a very wide, expansive view of', 'a panoramic, almost sea-like view of']);
+        return `with ${width} the Chao Phraya River in Bangkok as the background. The scene should be dynamic, featuring various boats such as long-tail boats, ferries, and yachts on the water in the foreground, with the bustling Bangkok cityscape and temples visible along the riverbanks. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
+    },
+    'Forest': (intensity) => {
+        const density = getIntensityDescriptor(intensity, ['a sparse', 'a moderately dense', 'a dense', 'a very dense', 'an ancient, overgrown']);
+        return `with ${density} forest background. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
+    },
+    'Beach': (intensity) => {
+        const width = getIntensityDescriptor(intensity, ['a narrow strip of sand', 'a medium-sized', 'a wide', 'a very wide, expansive', 'an endless']);
+        return `with ${width} beach background. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
+    },
+    'Cityscape': (intensity) => {
+        const density = getIntensityDescriptor(intensity, ['a small town', 'a sparse city skyline', 'a standard city skyline', 'a dense, sprawling metropolis', 'a futuristic, hyper-dense megacity']);
+        return `with ${density} cityscape background. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
+    },
+    'Outer Space': (intensity) => {
+        const density = getIntensityDescriptor(intensity, ['a few distant stars', 'a clear night sky with constellations', 'a sky full of stars and a faint milky way', 'a vibrant, star-filled nebula', 'an intensely colorful and complex galactic core']);
+        return `with ${density} background. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
+    },
+    "Foreground River": (intensity) => {
+        const width = getIntensityDescriptor(intensity, ['a small stream', 'a medium-sized river', 'a wide river', 'a very wide, expansive river', 'a massive, flowing river']);
+        return `with ${width} in the foreground. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
+    },
+     "Foreground Road": (intensity) => {
+        const visibility = getIntensityDescriptor(intensity, ['just the edge of a road visible', 'a small section of road visible', 'a clear road across the foreground', 'a wide two-lane road', 'a prominent multi-lane road']);
+        return `Add a clean, modern asphalt road and sidewalk in the immediate foreground. The road should be ${visibility}. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
+    },
+    "Top Corner Leaves": (intensity) => {
+        const amount = getIntensityDescriptor(intensity, ['a few scattered leaves', 'a small branch with leaves', 'several branches', 'a thick canopy of leaves', 'a view almost completely obscured by leaves']);
+        return `with ${amount} framing the top corner of the view, creating a natural foreground bokeh effect. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
+    },
+    "Bottom Corner Bush": (intensity) => {
+        const size = getIntensityDescriptor(intensity, ['a small flowering bush', 'a medium-sized flowering bush', 'a large, dense flowering bush', 'multiple large bushes', 'an entire foreground filled with flowering bushes']);
+        return `with ${size} in the bottom corner of the view, adding a touch of nature to the foreground. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
+    },
+    'Foreground Flowers': (intensity) => {
+        const density = getIntensityDescriptor(intensity, ['a few scattered flowers', 'small patches of flowers', 'a colorful flowerbed', 'a dense and vibrant flowerbed', 'an entire foreground filled with a lush variety of flowers']);
+        return `with ${density} in the foreground, adding a vibrant touch of nature. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
+    },
+    'Foreground Fence': (intensity) => {
+        const visibility = getIntensityDescriptor(intensity, ['just a corner of a fence visible', 'a small section of a fence visible', 'a significant part of a fence visible', 'a fence clearly framing the foreground', 'a prominent fence across the foreground']);
+        return `with ${visibility}, adding a sense of privacy and structure. The fence should be a stylish, modern design. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
+    },
+    'Foreground Lawn': (intensity) => {
+        const condition = getIntensityDescriptor(intensity, ['patchy and dry', 'short and neat', 'lush and green', 'perfectly manicured', 'a thick, deep green carpet of']);
+        return `Add ${condition} lawn in the immediate foreground. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
+    },
+    'Foreground Pathway': (intensity) => {
+        const visibility = getIntensityDescriptor(intensity, ['just the edge of a path', 'a small section of a path', 'a clear path', 'a wide path', 'a prominent, winding path']);
+        return `Add a winding stone or brick pathway in the foreground. The path should be ${visibility}. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
+    },
+    'Foreground Water Feature': (intensity) => {
+        const size = getIntensityDescriptor(intensity, ['a very small, subtle', 'a small', 'a medium-sized', 'a large', 'a very large and prominent']);
+        return `Add ${size} modern water feature like a small pond or fountain in the foreground. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
+    },
+    'Foreground Low Wall': (intensity) => {
+        const visibility = getIntensityDescriptor(intensity, ['just a corner of a low wall', 'a small section of a low wall', 'a low wall across part of the foreground', 'a clear low wall across the foreground', 'a prominent, decorative low wall']);
+        return `Add ${visibility} made of stone or brick in the foreground. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.`;
+    },
+};
+
+
+const brushColors = [
+  { name: 'Red', value: 'rgba(255, 59, 48, 0.7)', css: 'bg-red-500' },
+  { name: 'Blue', value: 'rgba(0, 122, 255, 0.7)', css: 'bg-blue-500' },
+  { name: 'Green', value: 'rgba(52, 199, 89, 0.7)', css: 'bg-green-500' },
+  { name: 'Yellow', value: 'rgba(255, 204, 0, 0.7)', css: 'bg-yellow-400' },
 ];
 
-
-const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; icon: React.ReactNode; defaultOpen?: boolean; }> = ({ title, children, icon, defaultOpen = false }) => {
-    const [isOpen, setIsOpen] = useState(defaultOpen);
-
-    return (
-        <div className="border border-gray-700 rounded-lg bg-gray-800/50">
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="w-full flex justify-between items-center p-3 text-left font-semibold text-gray-200 hover:bg-gray-700/50"
-                aria-expanded={isOpen}
-            >
-                <div className="flex items-center gap-3">
-                    {icon}
-                    <span>{title}</span>
-                </div>
-                <ChevronDownIcon className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-            </button>
-            {isOpen && (
-                <div className="p-4 border-t border-gray-700">
-                    {children}
-                </div>
-            )}
-        </div>
-    );
+// --- Helper Components ---
+const OptionButton: React.FC<{
+  option: string,
+  isSelected: boolean,
+  onClick: (option: string) => void,
+  size?: 'sm' | 'md'
+}> = ({ option, isSelected, onClick, size = 'sm' }) => {
+  const sizeClasses = size === 'md' ? 'px-4 py-2 text-base' : 'px-3 py-1 text-sm';
+  return (
+    <button
+      key={option}
+      type="button"
+      onClick={() => onClick(option)}
+      className={`${sizeClasses} rounded-full font-semibold transition-colors duration-200 border-2 
+        ${isSelected
+          ? 'bg-red-600 text-white border-red-400'
+          : 'bg-gray-700 text-gray-300 hover:bg-gray-600 border-transparent'
+        }`}
+    >
+      {option}
+    </button>
+  );
 };
+
+const ActionButton: React.FC<{onClick: () => void, disabled?: boolean, children: React.ReactNode, title?: string, color?: 'default' | 'purple' | 'blue' | 'red'}> = ({ onClick, disabled, children, title, color = 'default' }) => {
+  const colorClasses = {
+    default: 'bg-gray-700 hover:bg-gray-600 text-gray-300',
+    purple: 'bg-red-600 hover:bg-red-700 text-white', // Changed purple to red
+    blue: 'bg-blue-600 hover:bg-blue-700 text-white',
+    red: 'bg-red-600 hover:bg-red-700 text-white',
+  };
+  
+  return (
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={disabled}
+    title={title}
+    className={`flex items-center gap-2 px-3 py-1.5 text-sm font-semibold rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${colorClasses[color]}`}
+  >
+      {children}
+  </button>
+)};
+
+const CollapsibleSection: React.FC<{
+    title: string;
+    sectionKey: string;
+    isOpen: boolean;
+    onToggle: () => void;
+    children: React.ReactNode;
+    disabled?: boolean;
+    icon?: React.ReactNode;
+    actions?: React.ReactNode;
+  }> = ({ title, isOpen, onToggle, children, disabled = false, icon, actions }) => (
+    <div className={`bg-gray-800/50 rounded-lg border border-gray-700 overflow-hidden transition-all duration-300 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
+      <button
+        type="button"
+        onClick={onToggle}
+        disabled={disabled}
+        className="w-full flex justify-between items-center p-3 text-left bg-gray-700/30 hover:bg-gray-700/60 transition-colors disabled:cursor-not-allowed"
+        aria-expanded={isOpen}
+        aria-controls={`section-content-${title.replace(/\s+/g, '-')}`}
+      >
+        <h3 className="flex items-center gap-3 text-sm font-semibold text-gray-300 uppercase tracking-wider">
+          {icon}
+          <span>{title}</span>
+        </h3>
+        <div className="flex items-center gap-2">
+            {actions}
+            <ChevronDownIcon className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+        </div>
+      </button>
+      <div 
+          id={`section-content-${title.replace(/\s+/g, '-')}`}
+          className={`overflow-hidden transition-[max-height] duration-500 ease-in-out ${isOpen ? 'max-h-[1500px]' : 'max-h-0'}`}
+      >
+        <div className={`p-4 ${isOpen ? 'border-t border-gray-700/50' : ''}`}>
+            {children}
+        </div>
+      </div>
+    </div>
+);
+
+const ModeButton: React.FC<{
+  label: string;
+  icon: React.ReactNode;
+  mode: EditingMode;
+  activeMode: EditingMode;
+  onClick: (mode: EditingMode) => void;
+}> = ({ label, icon, mode, activeMode, onClick }) => (
+  <button
+    type="button"
+    onClick={() => onClick(mode)}
+    className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-2 p-3 text-sm font-semibold rounded-md transition-all duration-200
+      ${activeMode === mode 
+          ? 'bg-red-600 text-white shadow-lg'
+          : 'bg-gray-800 text-gray-300 hover:bg-gray-600'
+      }`}
+  >
+      {icon}
+      <span>{label}</span>
+  </button>
+);
+
+const PreviewCard: React.FC<{
+  label: string;
+  description: string;
+  isSelected: boolean;
+  onClick: () => void;
+  isNested?: boolean;
+  icon?: React.ReactNode;
+}> = ({ label, description, isSelected, onClick, isNested = false, icon }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`p-3 text-left rounded-lg border-2 transition-all duration-200 group flex flex-col justify-between ${
+      isSelected ? 'bg-red-900/50 border-red-500 scale-105 shadow-lg' : 'bg-gray-900/50 border-transparent hover:border-gray-500'
+    } ${isNested ? 'h-24' : 'h-28'}`}
+  >
+    <div>
+        <div className="flex items-center gap-2">
+            {icon}
+            <span className={`font-semibold transition-colors text-sm ${isSelected ? 'text-red-300' : 'text-white'}`}>
+              {label}
+            </span>
+        </div>
+        <p className={`mt-1 text-xs transition-colors line-clamp-2 ${isSelected ? 'text-gray-300' : 'text-gray-400'}`}>
+            {description}
+        </p>
+    </div>
+  </button>
+);
+
+const ImageToolbar: React.FC<{
+  onUndo: () => void;
+  onRedo: () => void;
+  onReset: () => void;
+  onUpscale: () => void;
+  onOpenSaveModal: () => void;
+  onTransform: (type: 'rotateLeft' | 'rotateRight' | 'flipHorizontal' | 'flipVertical') => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  canReset: boolean;
+  canUpscaleAndSave: boolean;
+  isLoading: boolean;
+}> = ({ onUndo, onRedo, onReset, onUpscale, onOpenSaveModal, onTransform, canUndo, canRedo, canReset, canUpscaleAndSave, isLoading }) => (
+  <div className="bg-gray-800/50 p-3 rounded-xl border border-gray-700 flex flex-col sm:flex-row sm:flex-wrap items-center justify-center gap-3">
+    {/* History */}
+    <div className="flex items-center gap-2 p-1 bg-gray-900/50 rounded-full">
+      <ActionButton onClick={onUndo} disabled={!canUndo || isLoading} title="Undo"><UndoIcon className="w-5 h-5" /></ActionButton>
+      <ActionButton onClick={onRedo} disabled={!canRedo || isLoading} title="Redo"><RedoIcon className="w-5 h-5" /></ActionButton>
+    </div>
+    
+    {/* Transformations */}
+    <div className="flex items-center gap-2 p-1 bg-gray-900/50 rounded-full">
+      <ActionButton onClick={() => onTransform('rotateLeft')} disabled={!canUpscaleAndSave || isLoading} title="Rotate Left 90°"><RotateLeftIcon className="w-5 h-5" /></ActionButton>
+      <ActionButton onClick={() => onTransform('rotateRight')} disabled={!canUpscaleAndSave || isLoading} title="Rotate Right 90°"><RotateRightIcon className="w-5 h-5" /></ActionButton>
+      <ActionButton onClick={() => onTransform('flipHorizontal')} disabled={!canUpscaleAndSave || isLoading} title="Flip Horizontal"><FlipHorizontalIcon className="w-5 h-5" /></ActionButton>
+      <ActionButton onClick={() => onTransform('flipVertical')} disabled={!canUpscaleAndSave || isLoading} title="Flip Vertical"><FlipVerticalIcon className="w-5 h-5" /></ActionButton>
+    </div>
+
+    {/* Main Actions */}
+    <div className="flex flex-col xs:flex-row items-center gap-3">
+      <ActionButton onClick={onUpscale} disabled={!canUpscaleAndSave || isLoading} title="Upscale selected image" color="purple"><UpscaleIcon className="w-5 h-5" /><span>Upscale</span></ActionButton>
+      <ActionButton onClick={onOpenSaveModal} disabled={!canUpscaleAndSave || isLoading} title="Download selected image" color="blue"><DownloadIcon className="w-5 h-5" /><span>Download</span></ActionButton>
+      <ActionButton onClick={onReset} disabled={!canReset || isLoading} title="Reset all edits" color="red"><ResetEditsIcon className="w-5 h-5" /><span>Reset</span></ActionButton>
+    </div>
+  </div>
+);
 
 
 const ImageEditor: React.FC = () => {
-    const [projects, setProjects] = useState<ImageState[]>([]);
-    const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+  const [imageList, setImageList] = useState<ImageState[]>([]);
+  const [activeImageIndex, setActiveImageIndex] = useState<number | null>(null);
+  const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
 
-    const [editingMode, setEditingMode] = useState<EditingMode>('default');
-    const [sceneType, setSceneType] = useState<SceneType>('exterior');
-    const [isMaskEmpty, setIsMaskEmpty] = useState(true);
+  const [prompt, setPrompt] = useState<string>('');
+  const [negativePrompt, setNegativePrompt] = useState<string>('');
+  const [selectedStyle, setSelectedStyle] = useState<string>('');
+  const [styleIntensity, setStyleIntensity] = useState<number>(100);
+  const [selectedGardenStyle, setSelectedGardenStyle] = useState<string>('');
+  const [selectedArchStyle, setSelectedArchStyle] = useState<string>('');
+  const [selectedInteriorStyle, setSelectedInteriorStyle] = useState<string>('');
+  const [selectedInteriorLighting, setSelectedInteriorLighting] = useState<string>('');
+  const [selectedBackgrounds, setSelectedBackgrounds] = useState<string[]>([]);
+  const [selectedForegrounds, setSelectedForegrounds] = useState<string[]>([]);
+  const [selectedDecorativeItems, setSelectedDecorativeItems] = useState<string[]>([]);
+  const [selectedTimeOfDay, setSelectedTimeOfDay] = useState<string>('');
+  const [selectedWeather, setSelectedWeather] = useState<string>('');
+  const [selectedCameraAngle, setSelectedCameraAngle] = useState<string>('');
+  const [selectedFilter, setSelectedFilter] = useState<string>('None');
+  const [selectedQuickAction, setSelectedQuickAction] = useState<string>('');
+  const [photorealisticIntensity, setPhotorealisticIntensity] = useState<number>(100);
+  const [isAddLightActive, setIsAddLightActive] = useState<boolean>(false);
+  const [lightingBrightness, setLightingBrightness] = useState<number>(50);
+  const [lightingTemperature, setLightingTemperature] = useState<number>(50);
+  const [harmonizeIntensity, setHarmonizeIntensity] = useState<number>(100);
+  const [sketchIntensity, setSketchIntensity] = useState<number>(100);
+  const [outputSize, setOutputSize] = useState<string>('Original');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showPromptHistory, setShowPromptHistory] = useState<boolean>(false);
+  const [sceneType, setSceneType] = useState<SceneType | null>(null);
+  
+  const initialIntensities = Object.entries(adjustableOptions).reduce((acc, [key, { default: defaultValue }]) => {
+      acc[key] = defaultValue;
+      return acc;
+  }, {} as Record<string, number>);
 
-    // Manual Adjustments State
-    const [prompt, setPrompt] = useState('');
-    const [selectedStyle, setSelectedStyle] = useState('');
-    const [selectedCameraAngle, setSelectedCameraAngle] = useState(cameraAngleOptions[0].name);
-    const [selectedBackground, setSelectedBackground] = useState('No Change');
-    const [selectedForeground, setSelectedForeground] = useState('');
-    const [selectedFilter, setSelectedFilter] = useState('None');
-    const [sharpness, setSharpness] = useState(100);
-    const [selectedArchitecturalStyle, setSelectedArchitecturalStyle] = useState('');
-    const [selectedGardenStyle, setSelectedGardenStyle] = useState('');
-    const [selectedInteriorStyle, setSelectedInteriorStyle] = useState('');
-    const [timeOfDay, setTimeOfDay] = useState('Daytime');
-    const [weather, setWeather] = useState('Sunny');
-    const [interiorLighting, setInteriorLighting] = useState('Natural Daylight');
-    const [addDownlights, setAddDownlights] = useState(false);
-    const [addWallSconces, setAddWallSconces] = useState(false);
-    const [addCeilingLight, setAddCeilingLight] = useState(false);
-    const [addWallAC, setAddWallAC] = useState(false);
-    const [addStripLighting, setAddStripLighting] = useState(false);
-    const [brightness, setBrightness] = useState(100);
-    const [contrast, setContrast] = useState(100);
-    const [saturation, setSaturation] = useState(100);
-    const [outputQuality, setOutputQuality] = useState(qualityOptions[1].value); // Default to 'Good'
-    const [outputSize, setOutputSize] = useState(outputSizeOptions[0].value);
+  const [optionIntensities, setOptionIntensities] = useState<Record<string, number>>(initialIntensities);
 
-    // Plan to 3D State
-    const [selectedRoomType, setSelectedRoomType] = useState(roomTypeOptions[0]);
-    const [selectedPlanView, setSelectedPlanView] = useState(planViewOptions[0].name);
-    const [selectedPlanLighting, setSelectedPlanLighting] = useState(planLightingOptions[0]);
-    const [selectedPlanMaterials, setSelectedPlanMaterials] = useState(planMaterialsOptions[0]);
-    const [selectedDecorativeItems, setSelectedDecorativeItems] = useState<string[]>([]);
-    
-    
-    // Quick Actions / AI Suggestions
-    const [aiAnalysis, setAiAnalysis] = useState<AnalysisResult | null>(null);
-    const [aiCameraAngles, setAiCameraAngles] = useState<string[]>([]);
+  // Plan to 3D state
+  const [selectedRoomType, setSelectedRoomType] = useState<string>('');
+  const [selectedPlanView, setSelectedPlanView] = useState<string>(planViewOptions[0].name);
+  const [selectedPlanLighting, setSelectedPlanLighting] = useState<string>('');
+  const [selectedPlanMaterials, setSelectedPlanMaterials] = useState<string>('');
+  const [furniturePrompt, setFurniturePrompt] = useState<string>('');
+  
+  // Color adjustment states
+  const [brightness, setBrightness] = useState<number>(100);
+  const [contrast, setContrast] = useState<number>(100);
+  const [saturation, setSaturation] = useState<number>(100);
+  const [sharpness, setSharpness] = useState<number>(100);
+  
+  // Vegetation state
+  const [treeAge, setTreeAge] = useState<number>(50);
+  const [season, setSeason] = useState<number>(50);
 
-    // Masking
-    const [isMaskingMode, setIsMaskingMode] = useState(false);
-    const [brushSize, setBrushSize] = useState(30);
+  // Analysis state
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [suggestedAngles, setSuggestedAngles] = useState<string[]>([]);
+  const [isSuggestingAngles, setIsSuggestingAngles] = useState<boolean>(false);
 
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const imageDisplayRef = useRef<ImageDisplayHandle>(null);
+  // Special interior lighting state
+  const [isCoveLightActive, setIsCoveLightActive] = useState<boolean>(false);
+  const [coveLightBrightness, setCoveLightBrightness] = useState<number>(70);
+  const [coveLightColor, setCoveLightColor] = useState<string>('#FFDAB9'); // Peach Puff - a warm white
 
-    const activeProject = projects.find(p => p.id === activeProjectId);
+  const [isSpotlightActive, setIsSpotlightActive] = useState<boolean>(false);
+  const [spotlightBrightness, setSpotlightBrightness] = useState<number>(60);
+  const [spotlightColor, setSpotlightColor] = useState<string>('#FFFFE0'); // Light Yellow - halogen-like
+  const [addFourWayAC, setAddFourWayAC] = useState<boolean>(false);
 
-    useEffect(() => {
-        const loadData = async () => {
-            try {
-                const loaded = await loadProjects();
-                if (loaded.length > 0) {
-                    setProjects(loaded);
-                    setActiveProjectId(loaded[0].id);
-                } else {
-                    // Create a default project if none exist
-                    handleNewProject();
-                }
-            } catch (err) {
-                console.error("Failed to load projects:", err);
-                setError("Could not load saved projects. Starting fresh.");
-                handleNewProject();
+
+  // UI state
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    prompt: true,
+    quickActions: false,
+    addLight: false,
+    colorAdjust: false,
+    filter: false,
+    gardenStyle: false,
+    archStyle: false,
+    cameraAngle: false,
+    interiorStyle: false,
+    interiorQuickActions: false,
+    livingRoomQuickActions: false,
+    artStyle: false,
+    background: false,
+    foreground: false,
+    output: false,
+    lighting: false,
+    vegetation: false,
+    materialExamples: false,
+    specialLighting: false,
+    planConfig: false,
+    planDetails: false,
+    planView: false,
+    brushTool: false,
+    roomType: false,
+    manualAdjustments: false,
+    projectHistory: true,
+  });
+  
+  const [editingMode, setEditingMode] = useState<EditingMode>('default');
+
+  const toggleSection = (sectionName: string) => {
+    setOpenSections(prev => ({ ...prev, [sectionName]: !prev[sectionName] }));
+  };
+  
+  const changeEditingMode = (mode: EditingMode) => {
+    setEditingMode(mode);
+    if (mode === 'object') {
+      // Make sure the brush tool is visible when switching to inpainting
+      setOpenSections(prev => ({ ...prev, brushTool: true }));
+    }
+  };
+
+  const promptHistoryRef = useRef<HTMLDivElement>(null);
+  const imageDisplayRef = useRef<ImageDisplayHandle>(null);
+
+  // State for saving
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState<boolean>(false);
+  const [saveQuality, setSaveQuality] = useState<number>(0.92); // Default JPEG quality
+  
+  // State for masking mode
+  const [brushSize, setBrushSize] = useState<number>(30);
+  const [brushColor, setBrushColor] = useState<string>(brushColors[0].value);
+  const [isMaskEmpty, setIsMaskEmpty] = useState<boolean>(true);
+
+
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  // Load state from IndexedDB on component mount
+  useEffect(() => {
+    let isMounted = true;
+    const loadData = async () => {
+      try {
+        const savedProjects = await loadProjects();
+        if (isMounted && Array.isArray(savedProjects)) {
+          const restoredProjects = savedProjects.map(p => ({ ...p, file: null }));
+          const validatedProjects = restoredProjects.filter(p => p.id && p.dataUrl);
+          setImageList(validatedProjects);
+
+          const savedIndexJSON = localStorage.getItem('fast-ai-active-project-index');
+          if (savedIndexJSON) {
+            const savedIndex = parseInt(savedIndexJSON, 10);
+            if (savedIndex >= 0 && savedIndex < validatedProjects.length) {
+              setActiveImageIndex(savedIndex);
+            } else if (validatedProjects.length > 0) {
+              setActiveImageIndex(0);
             }
-        };
-        loadData();
-    }, []);
-
-    useEffect(() => {
-        // Debounced save
-        const handler = setTimeout(() => {
-            if (projects.length > 0) {
-                saveProjects(projects.map(({ file, ...rest }) => rest)); // Don't save File object
-            }
-        }, 1000);
-        return () => clearTimeout(handler);
-    }, [projects]);
-
-
-    const updateProjectState = useCallback((id: string, updates: Partial<ImageState>) => {
-        setProjects(prev =>
-            prev.map(p => (p.id === id ? { ...p, ...updates } : p))
-        );
-    }, []);
-
-    const resetManualAdjustments = useCallback(() => {
-        setPrompt('');
-        setSelectedStyle('');
-        setSelectedCameraAngle(cameraAngleOptions[0].name);
-        setSelectedBackground('No Change');
-        setSelectedForeground('');
-        setSelectedFilter('None');
-        setSharpness(100);
-        setSelectedArchitecturalStyle('');
-        setSelectedGardenStyle('');
-        setSelectedInteriorStyle('');
-        setTimeOfDay('Daytime');
-        setWeather('Sunny');
-        setInteriorLighting('Natural Daylight');
-        setAddDownlights(false);
-        setAddWallSconces(false);
-        setAddCeilingLight(false);
-        setAddStripLighting(false);
-        setAddWallAC(false);
-        setBrightness(100);
-        setContrast(100);
-        setSaturation(100);
-        setOutputQuality(qualityOptions[1].value);
-        setOutputSize(outputSizeOptions[0].value);
-        
-        // Reset Plan states
-        setSelectedRoomType(roomTypeOptions[0]);
-        setSelectedPlanView(planViewOptions[0].name);
-        setSelectedPlanLighting(planLightingOptions[0]);
-        setSelectedPlanMaterials(planMaterialsOptions[0]);
-        setSelectedDecorativeItems([]);
-
-    }, []);
-
-    const handleNewProject = useCallback(() => {
-        const newProject: ImageState = {
-            id: `proj_${Date.now()}`,
-            file: null,
-            base64: null,
-            mimeType: null,
-            dataUrl: null,
-            history: [],
-            historyIndex: -1,
-            selectedResultIndex: null,
-            promptHistory: [],
-            apiPromptHistory: [],
-            lastGeneratedLabels: [],
-            generationTypeHistory: [],
-        };
-        setProjects(prev => [newProject, ...prev]);
-        setActiveProjectId(newProject.id);
-        resetManualAdjustments();
-        setAiAnalysis(null);
-        setAiCameraAngles([]);
-        setEditingMode('default');
-        setIsMaskingMode(false);
-    }, [resetManualAdjustments]);
-
-
-    const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file && activeProjectId) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const dataUrl = e.target?.result as string;
-                const [header, base64Data] = dataUrl.split(',');
-                const mimeType = header.match(/:(.*?);/)?.[1] || 'image/jpeg';
-                
-                const initialHistory = [[base64Data, base64Data, base64Data, base64Data]];
-                
-                updateProjectState(activeProjectId, {
-                    file,
-                    base64: base64Data,
-                    mimeType,
-                    dataUrl,
-                    history: initialHistory,
-                    historyIndex: 0,
-                    selectedResultIndex: null,
-                    promptHistory: ['Original Image'],
-                    apiPromptHistory: [''],
-                    lastGeneratedLabels: [],
-                    generationTypeHistory: [],
-                });
-                resetManualAdjustments();
-                setAiAnalysis(null);
-                setAiCameraAngles([]);
-            };
-            reader.readAsDataURL(file);
+          } else if (validatedProjects.length > 0) {
+            setActiveImageIndex(0);
+          }
         }
-    }, [activeProjectId, updateProjectState, resetManualAdjustments]);
-
-    const handleUndo = useCallback(() => {
-        if (activeProject && activeProject.historyIndex > 0) {
-            updateProjectState(activeProject.id, {
-                historyIndex: activeProject.historyIndex - 1,
-                selectedResultIndex: null,
-            });
+      } catch (e) {
+        console.error("Error loading projects from IndexedDB:", e);
+        setError("Could not load your saved projects. Please try refreshing the page.");
+      } finally {
+        if (isMounted) {
+          setIsDataLoaded(true);
         }
-    }, [activeProject, updateProjectState]);
-
-    const handleRedo = useCallback(() => {
-        if (activeProject && activeProject.historyIndex < activeProject.history.length - 1) {
-            updateProjectState(activeProject.id, {
-                historyIndex: activeProject.historyIndex + 1,
-                selectedResultIndex: null,
-            });
-        }
-    }, [activeProject, updateProjectState]);
-
-    const handleResetAllEdits = useCallback(() => {
-        if (activeProject && activeProject.history.length > 0) {
-            updateProjectState(activeProject.id, {
-                historyIndex: 0,
-                selectedResultIndex: null,
-            });
-        }
-    }, [activeProject, updateProjectState]);
-    
-    const selectResult = useCallback((index: number) => {
-      if (activeProject) {
-          updateProjectState(activeProject.id, { selectedResultIndex: index });
       }
-    }, [activeProject, updateProjectState]);
+    };
 
-    const confirmSelection = useCallback(() => {
-        if (activeProject && activeProject.selectedResultIndex !== null) {
-            const currentHistoryStep = activeProject.history[activeProject.historyIndex];
-            const selectedImageBase64 = currentHistoryStep[activeProject.selectedResultIndex];
+    loadData();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
-            const newHistoryStep = [selectedImageBase64, selectedImageBase64, selectedImageBase64, selectedImageBase64];
-            
-            // Trim history and add the new confirmed step
-            const newHistory = activeProject.history.slice(0, activeProject.historyIndex + 1);
-            newHistory.push(newHistoryStep);
+  // Save state to IndexedDB whenever it changes
+  useEffect(() => {
+    if (!isDataLoaded) {
+      return; // Don't save until initial data has been loaded
+    }
+    
+    const saveData = async () => {
+      try {
+        const serializableImageList = imageList.map(({ file, ...rest }) => rest);
+        await saveProjects(serializableImageList);
 
-            // Also trim prompt history
-            const newPromptHistory = activeProject.promptHistory.slice(0, activeProject.historyIndex + 1);
-            newPromptHistory.push("Confirmed Selection");
-            
-            const newApiPromptHistory = activeProject.apiPromptHistory.slice(0, activeProject.historyIndex + 1);
-            newApiPromptHistory.push("");
-
-            updateProjectState(activeProject.id, {
-                history: newHistory,
-                historyIndex: newHistory.length - 1,
-                selectedResultIndex: null,
-                base64: selectedImageBase64,
-                dataUrl: `data:${activeProject.mimeType};base64,${selectedImageBase64}`,
-                promptHistory: newPromptHistory,
-                apiPromptHistory: newApiPromptHistory,
-            });
+        if (activeImageIndex !== null) {
+          localStorage.setItem('fast-ai-active-project-index', activeImageIndex.toString());
+        } else {
+          localStorage.removeItem('fast-ai-active-project-index');
         }
-    }, [activeProject, updateProjectState]);
-
-    const getBaseImage = () => {
-        if (!activeProject) return null;
-        if (activeProject.selectedResultIndex !== null) {
-            return activeProject.history[activeProject.historyIndex][activeProject.selectedResultIndex];
+        
+        // If the current error is a storage error, clear it after a successful save.
+        if (error && error.startsWith("Could not save")) {
+            setError(null);
         }
-        return activeProject.history[activeProject.historyIndex]?.[0] || activeProject.base64;
+      } catch (e) {
+        console.error("Error saving projects to IndexedDB:", e);
+        setError("Could not save your project progress. Changes might not be saved.");
+      }
     };
     
-    const getOriginalImageForComparison = () => {
-      if (!activeProject || activeProject.historyIndex < 0) return null;
-      // The original is always the first image of the current history step before variations
-      return activeProject.history[activeProject.historyIndex]?.[0];
+    saveData();
+  }, [imageList, activeImageIndex, isDataLoaded]);
+  
+  // Effect to close prompt history dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (promptHistoryRef.current && !promptHistoryRef.current.contains(event.target as Node)) {
+        setShowPromptHistory(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
     };
+  }, [promptHistoryRef]);
+
+  const activeImage = activeImageIndex !== null ? imageList[activeImageIndex] : null;
+  
+  useEffect(() => {
+    // When active image changes, reset common controls to avoid confusion
+    setPrompt('');
+    setNegativePrompt('');
+    setSelectedStyle('');
+    setStyleIntensity(100);
+    setSelectedGardenStyle('');
+    setSelectedArchStyle('');
+    setSelectedInteriorStyle('');
+    setSelectedInteriorLighting('');
+    setSelectedBackgrounds([]);
+    setSelectedForegrounds([]);
+    setSelectedDecorativeItems([]);
+    setSelectedTimeOfDay('');
+    setSelectedWeather('');
+    setSelectedCameraAngle('');
+    setSelectedFilter('None');
+    setSelectedQuickAction('');
+    setIsAddLightActive(false);
+    setOutputSize('Original');
+    setEditingMode('default');
+    setSceneType('exterior'); // Default to exterior mode
+    setBrightness(100);
+    setContrast(100);
+    setSaturation(100);
+    setSharpness(100);
+    setTreeAge(50);
+    setSeason(50);
+    setAnalysisResult(null);
+    setSuggestedAngles([]);
+    // Reset Plan to 3D state
+    setSelectedRoomType('');
+    setSelectedPlanView(planViewOptions[0].name);
+    setSelectedPlanLighting('');
+    setSelectedPlanMaterials('');
+    setFurniturePrompt('');
+    // Reset interior lighting
+    setIsCoveLightActive(false);
+    setCoveLightBrightness(70);
+    setCoveLightColor('#FFDAB9');
+    setIsSpotlightActive(false);
+    setSpotlightBrightness(60);
+    setSpotlightColor('#FFFFE0');
+    setAddFourWayAC(false);
+  }, [activeImage?.id]);
 
 
-    const generateFullPrompt = useCallback(() => {
-        const parts: string[] = [];
-        const manualAdjustments: string[] = [];
+  const handleImageChange = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      setError(null);
 
-        // Scene Type Specific Prompts
-        if (sceneType === 'exterior') {
-            const timePrompt = `Set the time of day to ${timeOfDay.toLowerCase()}`;
-            const weatherPrompt = `with ${weather.toLowerCase()} weather conditions`;
-            manualAdjustments.push(`${timePrompt} ${weatherPrompt}.`);
+      const newImagesPromises = Array.from(files).map((file: File) => {
+          return new Promise<ImageState>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => {
+                  if (mountedRef.current) {
+                      if (typeof reader.result === 'string') {
+                          const result = reader.result;
+                          const mimeType = result.substring(5, result.indexOf(';'));
+                          const base64 = result.split(',')[1];
+                          resolve({
+                              id: crypto.randomUUID(),
+                              file,
+                              base64,
+                              mimeType,
+                              dataUrl: result,
+                              history: [],
+                              historyIndex: -1,
+                              selectedResultIndex: null,
+                              promptHistory: [],
+                              apiPromptHistory: [],
+                              lastGeneratedLabels: [],
+                              generationTypeHistory: [],
+                          });
+                      } else {
+                        reject(new Error('File could not be read as a data URL.'));
+                      }
+                  }
+              };
+              reader.onerror = reject;
+              reader.readAsDataURL(file);
+          });
+      });
 
-            if (selectedArchitecturalStyle && ARCHITECTURAL_STYLE_PROMPTS[selectedArchitecturalStyle]) {
-                manualAdjustments.push(ARCHITECTURAL_STYLE_PROMPTS[selectedArchitecturalStyle]);
-            }
-            if (selectedGardenStyle && GARDEN_STYLE_PROMPTS[selectedGardenStyle]) {
-                manualAdjustments.push(GARDEN_STYLE_PROMPTS[selectedGardenStyle]);
-            }
-            if (selectedBackground !== 'No Change' && BACKGROUND_PROMPTS[selectedBackground]) {
-                manualAdjustments.push(`Change the background to be ${BACKGROUND_PROMPTS[selectedBackground]}.`);
-            }
-            if (selectedForeground && FOREGROUND_PROMPTS[selectedForeground]) {
-                manualAdjustments.push(FOREGROUND_PROMPTS[selectedForeground]);
-            }
+      try {
+          const newImages = await Promise.all(newImagesPromises);
+          if (mountedRef.current) {
+              const currentListSize = imageList.length;
+              setImageList(prevList => [...prevList, ...newImages]);
+              // If no image was active, make the first new one active
+              if (activeImageIndex === null) {
+                  setActiveImageIndex(currentListSize);
+              }
+          }
+      } catch (err) {
+          if (mountedRef.current) {
+              setError("Could not load some or all of the images.");
+          }
+      }
+    }
+  }, [activeImageIndex, imageList.length]);
 
-        } else if (sceneType === 'interior') {
-            if (selectedInteriorStyle && INTERIOR_STYLE_PROMPTS[selectedInteriorStyle]) {
-                manualAdjustments.push(INTERIOR_STYLE_PROMPTS[selectedInteriorStyle]);
-            }
-            if (interiorLighting && INTERIOR_LIGHTING_PROMPTS[interiorLighting]) {
-                manualAdjustments.push(INTERIOR_LIGHTING_PROMPTS[interiorLighting]);
-            }
-            if (selectedBackground !== 'No Change' && INTERIOR_BACKGROUND_PROMPTS[selectedBackground]) {
-                manualAdjustments.push(INTERIOR_BACKGROUND_PROMPTS[selectedBackground]);
-            }
-            if (addDownlights) {
-                manualAdjustments.push("Add modern, recessed downlights to the ceiling, casting a soft, warm glow.");
-            }
-            if (addWallSconces) {
-                manualAdjustments.push("Add elegant, modern wall sconces to appropriate walls, providing ambient accent lighting.");
-            }
-            if (addCeilingLight) {
-                manualAdjustments.push("Add a stylish, modern central ceiling light fixture or chandelier as a focal point.");
-            }
-            if (addStripLighting) {
-                manualAdjustments.push("Incorporate subtle, indirect LED strip lighting in coves, under cabinets, or behind features to add depth and a modern feel.");
-            }
-            if (addWallAC) {
-                manualAdjustments.push("Add a modern, sleek, white wall-mounted air conditioner (wall type, 18000 BTU) to a suitable and logical location on a wall.");
-            }
-
-        } else if (sceneType === 'plan') {
-            parts.push('Convert this architectural floor plan into a high-quality, photorealistic image.');
-            parts.push(`The space should be designed as ${ROOM_TYPE_PROMPTS[selectedRoomType]}.`);
-            parts.push(`The final image must be ${PLAN_VIEW_PROMPTS[selectedPlanView]}.`);
-            parts.push(`The lighting should be ${PLAN_LIGHTING_PROMPTS[selectedPlanLighting]}`);
-            parts.push(`The material palette should be ${PLAN_MATERIALS_PROMPTS[selectedPlanMaterials]}`);
-            if (selectedDecorativeItems.length > 0) {
-                parts.push('Incorporate the following decorative items:');
-                selectedDecorativeItems.forEach(item => {
-                    parts.push(`- ${DECORATIVE_ITEM_PROMPTS[item]}`);
-                });
-            }
-            parts.push('The overall style should be modern, clean, and luxurious.');
-        }
-
-        // Shared Adjustments
-        if (prompt) {
-            parts.push(prompt);
-        }
-
-        // Color & Tone Adjustments
-        if (brightness !== 100) manualAdjustments.push(`adjust brightness to ${brightness}%`);
-        if (contrast !== 100) manualAdjustments.push(`adjust contrast to ${contrast}%`);
-        if (saturation !== 100) manualAdjustments.push(`adjust saturation to ${saturation}%`);
-
-        if (sharpness !== 100) {
-            manualAdjustments.push(`increase sharpness and detail to ${sharpness}%`);
-        }
-
-        if (selectedFilter !== 'None' && FILTER_PROMPTS[selectedFilter]) {
-            manualAdjustments.push(FILTER_PROMPTS[selectedFilter]);
-        }
-        if (selectedStyle && STYLE_PROMPTS[selectedStyle]) {
-            manualAdjustments.push(STYLE_PROMPTS[selectedStyle]);
-        }
+  const handleRemoveImage = (indexToRemove: number) => {
+    setImageList(prevImageList => {
+        const newList = prevImageList.filter((_, i) => i !== indexToRemove);
         
-        if (manualAdjustments.length > 0) {
-            parts.push(`Perform the following adjustments: ${manualAdjustments.join(', ')}.`);
-        }
+        setActiveImageIndex(prevActiveIndex => {
+            if (prevActiveIndex === null) return null;
+            if (newList.length === 0) return null;
+            
+            // Get the ID of the image that was active before removal
+            const activeId = prevImageList[prevActiveIndex].id;
+            
+            // Find if the previously active image is still in the new list
+            const newIndexOfOldActive = newList.findIndex(img => img.id === activeId);
+
+            if (newIndexOfOldActive !== -1) {
+                // If it is, that's our new active index
+                return newIndexOfOldActive;
+            } else {
+                // If the active image was the one that was removed,
+                // calculate a new reasonable index.
+                return Math.min(indexToRemove, newList.length - 1);
+            }
+        });
         
-        if (selectedCameraAngle && cameraAngleOptions.find(o => o.name === selectedCameraAngle)?.prompt) {
-            parts.push(`Render the image ${cameraAngleOptions.find(o => o.name === selectedCameraAngle)?.prompt}.`);
+        return newList;
+    });
+  };
+  
+  const handleClearAllProjects = async () => {
+    if (window.confirm("Are you sure you want to delete all projects and their history? This action cannot be undone.")) {
+        try {
+            await clearProjects();
+            localStorage.removeItem('fast-ai-active-project-index');
+            setImageList([]);
+            setActiveImageIndex(null);
+        } catch (err) {
+            console.error("Failed to clear all projects from DB:", err);
+            setError("There was an error while trying to clear all projects.");
         }
+    }
+  };
 
-        // Quality and Final Touches (always add this for consistency)
-        if (sceneType !== 'plan') {
-            parts.push('The final result should be a high-quality, photorealistic image, preserving the original architecture. Maintain realism and avoid any cartoonish or sketch-like artifacts.');
+  const handleSceneTypeSelect = (type: SceneType) => {
+    setSceneType(type);
+    // Reset all sections to closed, then open the primary ones for the selected mode.
+    const allClosed = Object.keys(openSections).reduce((acc, key) => {
+        acc[key] = false;
+        return acc;
+    }, {} as Record<string, boolean>);
+
+    if (type === 'interior') {
+        setEditingMode('default');
+        setOpenSections({ 
+            ...allClosed, 
+            prompt: true,
+            interiorQuickActions: true,
+            livingRoomQuickActions: true,
+            projectHistory: true,
+        });
+    } else if (type === 'plan') {
+        setEditingMode('default');
+        setPrompt('');
+        setOpenSections({
+            ...allClosed,
+            planConfig: true,
+            planView: true,
+            projectHistory: true,
+        });
+    } else { // exterior
+        setEditingMode('default');
+        setOpenSections({
+            ...allClosed,
+            prompt: true,
+            quickActions: true,
+            foreground: true,
+            projectHistory: true,
+        });
+    }
+  };
+
+
+  const updateActiveImage = (updater: (image: ImageState) => ImageState) => {
+    if (activeImageIndex === null) return;
+    setImageList(currentList => {
+        const newList = [...currentList];
+        const updatedImage = updater(newList[activeImageIndex]);
+        newList[activeImageIndex] = updatedImage;
+        return newList;
+    });
+  };
+
+  const hasTextPrompt = prompt.trim() !== '';
+  const hasOtherOptions = selectedStyle !== '' || selectedBackgrounds.length > 0 || selectedForegrounds.length > 0 || selectedDecorativeItems.length > 0 || selectedTimeOfDay !== '' || selectedWeather !== '' || (treeAge !== 50) || (season !== 50) || selectedQuickAction !== '' || selectedFilter !== 'None' || selectedGardenStyle !== '' || selectedArchStyle !== '' || isAddLightActive || selectedInteriorStyle !== '' || selectedInteriorLighting !== '' || selectedCameraAngle !== '' || (sceneType === 'interior' && selectedRoomType !== '') || isCoveLightActive || isSpotlightActive || addFourWayAC;
+  const isEditingWithMask = editingMode === 'object' && !isMaskEmpty;
+  const hasColorAdjustments = brightness !== 100 || contrast !== 100 || saturation !== 100 || sharpness !== 100;
+  const isPlanModeReady = sceneType === 'plan' && !!selectedRoomType && !!selectedInteriorStyle;
+  const hasOutputSizeChange = outputSize !== 'Original' && editingMode !== 'object';
+  const hasEditInstruction = isEditingWithMask ? hasTextPrompt : (hasTextPrompt || hasOtherOptions || hasColorAdjustments || isPlanModeReady || hasOutputSizeChange);
+
+  const cleanPrompt = (p: string) => {
+      return p.replace(/\s+/g, ' ').replace(/\.\s*\./g, '.').replace(/^[.\s]+/, '').replace(/[.\s]+$/, '').trim();
+  };
+  
+  const handleIntensityChange = (option: string, value: number) => {
+      setOptionIntensities(prev => ({ ...prev, [option]: value }));
+  };
+
+  const handleQuickActionClick = (action: string) => {
+    const isDeselecting = selectedQuickAction === action;
+    setSelectedQuickAction(isDeselecting ? '' : action);
+    if (!isDeselecting) {
+      setSelectedCameraAngle(''); // Clear camera angle when selecting a quick action
+    }
+    setOpenSections(prev => ({...prev, quickActions: false, interiorQuickActions: false, livingRoomQuickActions: false }));
+  };
+
+  const handleGardenStyleChange = (style: string) => {
+      setSelectedGardenStyle(prev => prev === style ? '' : style);
+      setOpenSections(prev => ({ ...prev, gardenStyle: false }));
+  }
+  
+  const handleArchStyleChange = (style: string) => {
+      setSelectedArchStyle(prev => prev === style ? '' : style);
+      setOpenSections(prev => ({ ...prev, archStyle: false }));
+  }
+
+  const handleRandomArchStyle = () => {
+    const stylesToChooseFrom = ['Modern', 'Classic', 'Minimalist', 'Contemporary'];
+    const randomStyle = stylesToChooseFrom[Math.floor(Math.random() * stylesToChooseFrom.length)];
+    setSelectedArchStyle(randomStyle);
+  };
+
+  const handleInteriorStyleChange = (style: string) => {
+      setSelectedInteriorStyle(prev => prev === style ? '' : style);
+      const sectionToClose = sceneType === 'plan' ? 'planConfig' : 'interiorStyle';
+      setOpenSections(prev => ({ ...prev, [sectionToClose]: false }));
+  }
+
+  const handleRoomTypeChange = (room: string) => {
+    setSelectedRoomType(prev => (prev === room ? '' : room));
+    const sectionToClose = sceneType === 'plan' ? 'planConfig' : 'interiorStyle';
+    setOpenSections(prev => ({ ...prev, [sectionToClose]: false }));
+  };
+
+  const handleLightingSelection = (
+    setter: React.Dispatch<React.SetStateAction<string>>,
+    value: string
+  ) => {
+      setter(prev => (prev === value ? '' : value));
+      setOpenSections(prev => ({ ...prev, lighting: false }));
+  };
+
+  const handleOutputSizeChange = (value: string) => {
+    setOutputSize(value);
+    setOpenSections(prev => ({ ...prev, output: false }));
+  };
+  
+  const handleFilterChange = (filter: string) => {
+      setSelectedFilter(prev => prev === filter ? 'None' : filter);
+  };
+  
+  const handleArtStyleChange = (style: string) => {
+      setSelectedStyle(prev => prev === style ? '' : style);
+  };
+
+  const handleBackgroundToggle = (bg: string) => {
+    if (bg === 'No Change') {
+        setSelectedBackgrounds([]);
+        return;
+    }
+
+    if (sceneType === 'interior') {
+        // Single select for interior
+        setSelectedBackgrounds(prev => (prev.includes(bg) ? [] : [bg]));
+        return;
+    }
+    
+    // Multi-select for exterior
+    setSelectedBackgrounds(prev => {
+        if (prev.includes(bg)) {
+            return prev.filter(item => item !== bg);
+        } else {
+            return [...prev, bg];
         }
+    });
+  };
 
-        return parts.join(' ');
-    }, [
-        prompt, selectedStyle, selectedCameraAngle, selectedBackground, selectedForeground,
-        selectedFilter, sharpness, selectedArchitecturalStyle, selectedGardenStyle, sceneType,
-        selectedInteriorStyle, timeOfDay, weather, interiorLighting, addDownlights, addWallSconces,
-        addCeilingLight, addStripLighting, addWallAC, brightness, contrast, saturation,
-        selectedRoomType, selectedPlanView, selectedPlanLighting, selectedPlanMaterials, selectedDecorativeItems
-    ]);
+  const handleForegroundToggle = (fg: string) => {
+      setSelectedForegrounds(prev =>
+          prev.includes(fg) ? prev.filter(item => item !== fg) : [...prev, fg]
+      );
+  };
 
-    const handleSubmit = async (
-      generationType: ImageState['generationTypeHistory'][0],
-      overridePrompt?: string,
-      label?: string,
-      numVariations: number = 1
-    ) => {
-        const baseImage = getBaseImage();
-        if (!activeProject || !baseImage || !activeProject.mimeType) {
-            setError("Please upload an image first.");
-            return;
-        }
+  const handleDecorativeItemToggle = (item: string) => {
+    setSelectedDecorativeItems(prev =>
+        prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]
+    );
+  };
+  
+  const handleCameraAngleChange = (angle: string) => {
+    const isDeselecting = selectedCameraAngle === angle;
+    setSelectedCameraAngle(isDeselecting ? '' : angle);
+    if (!isDeselecting) {
+      setSelectedQuickAction(''); // Clear quick action when selecting an angle
+    }
+    setOpenSections(prev => ({ ...prev, cameraAngle: false }));
+  };
 
-        if (isMaskingMode && isMaskEmpty && editingMode === 'object') {
-            setError("Please draw a mask on the image to specify which area to edit, or exit Object Editing mode.");
-            return;
-        }
+  const getTreeAgePrompt = (value: number): string | null => {
+    if (value === 50) return null; // Default, no change
+    if (value < 25) return 'Make the vegetation consist of young, newly planted trees and shrubs.';
+    if (value > 75) return 'Make the vegetation feature mature, large, and well-established trees.';
+    return null; // For mid-range, don't add specific prompt.
+  };
 
-        setIsLoading(true);
-        setError(null);
+  const getSeasonPrompt = (value: number): string | null => {
+      if (value === 50) return null; // Default is summer-like
+      if (value < 25) return 'Change the season to spring, with fresh green leaves and some flowering plants.';
+      if (value > 75) return 'Change the season to autumn, with leaves showing shades of red, orange, and yellow.';
+      return null;
+  };
 
-        const apiPrompt = overridePrompt || generateFullPrompt();
-        if (!apiPrompt) {
-            setError("Please provide a command or select a style.");
+  const handleVariationSubmit = async (variationType: 'style' | 'angle') => {
+    if (!activeImage) return;
+
+    const sourceDataUrl = (activeImage.history.length > 0 && activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null)
+      ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex]
+      : activeImage.dataUrl;
+
+    if (!sourceDataUrl) {
+      setError('Please select an image to generate variations.');
+      return;
+    }
+    
+    setIsLoading(true);
+    setError(null);
+    
+    const sourceMimeType = sourceDataUrl.substring(5, sourceDataUrl.indexOf(';'));
+    const sourceBase64 = sourceDataUrl.split(',')[1];
+
+    let promptsToGenerate: string[];
+    let labelsForResults: string[];
+    let promptForHistory: string;
+
+    if (variationType === 'style') {
+        const stylesToGenerate = [...styleOptions].sort(() => 0.5 - Math.random()).slice(0, 4);
+        labelsForResults = stylesToGenerate.map(s => s.name);
+        promptForHistory = 'Generated 4 style variations';
+        promptsToGenerate = stylesToGenerate.map(style => `Transform the entire image to be ${STYLE_PROMPTS[style.name as keyof typeof STYLE_PROMPTS]}.`);
+
+    } else { // angle
+        const anglesToGenerate = [...cameraAngleOptions.filter(opt => opt.prompt)].sort(() => 0.5 - Math.random()).slice(0, 4);
+        labelsForResults = anglesToGenerate.map(a => a.name);
+        promptForHistory = 'Generated 4 camera angle variations';
+        promptsToGenerate = anglesToGenerate.map(angle => `Re-render the image ${angle.prompt}.`);
+    }
+
+    try {
+      const generatedImagesBase64: string[] = [];
+      for (const finalPrompt of promptsToGenerate) {
+        if (!mountedRef.current) return;
+        const result = await editImage(sourceBase64, sourceMimeType, finalPrompt, null);
+        generatedImagesBase64.push(result);
+      }
+      
+      if (!mountedRef.current) return;
+
+      const newResults = generatedImagesBase64.map(base64 => {
+          if (!base64) { return "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"; }
+          return `data:image/jpeg;base64,${base64}`;
+      });
+      
+      updateActiveImage(img => {
+          const newHistory = img.history.slice(0, img.historyIndex + 1);
+          newHistory.push(newResults);
+          const newIndex = newHistory.length - 1;
+
+          const newPromptHistory = [...img.promptHistory.slice(0, img.historyIndex + 1), promptForHistory];
+          const newApiPromptHistory = [...img.apiPromptHistory.slice(0, img.historyIndex + 1), `VARIATION:${variationType}`];
+          const newGenerationTypeHistory: ImageState['generationTypeHistory'] = [...img.generationTypeHistory.slice(0, img.historyIndex + 1), variationType];
+
+          return {
+              ...img,
+              history: newHistory,
+              historyIndex: newIndex,
+              selectedResultIndex: 0,
+              promptHistory: newPromptHistory,
+              apiPromptHistory: newApiPromptHistory,
+              lastGeneratedLabels: labelsForResults,
+              generationTypeHistory: newGenerationTypeHistory,
+          };
+      });
+      
+    } catch (err) {
+      if (!mountedRef.current) return;
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+      setError(errorMessage);
+    } finally {
+      if (mountedRef.current) {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const handleGenerate4PlanViews = async () => {
+    if (!activeImage || !isPlanModeReady) return;
+
+    const sourceDataUrl = (activeImage.history.length > 0 && activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null)
+      ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex]
+      : activeImage.dataUrl;
+
+    if (!sourceDataUrl) {
+      setError('Please select an image.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    let maskBase64: string | null = null;
+    if (editingMode === 'object') {
+        maskBase64 = await imageDisplayRef.current?.exportMask() ?? null;
+        if (!maskBase64) {
+            setError("Could not export mask from your drawing. Please try again.");
             setIsLoading(false);
             return;
         }
+    }
 
-        const displayLabel = label || prompt || selectedStyle || selectedCameraAngle || "Edit";
-        
-        try {
-            const maskBase64 = isMaskingMode ? imageDisplayRef.current?.exportMask() : null;
-            
-            // For variations, generate multiple images
-            const generationPromises: Promise<string>[] = [];
-            for (let i = 0; i < numVariations; i++) {
-                generationPromises.push(editImage(baseImage, activeProject.mimeType, apiPrompt, maskBase64));
-            }
+    const roomPrompt = ROOM_TYPE_PROMPTS[selectedRoomType];
+    const stylePrompt = interiorStyleOptions.find(o => o.name === selectedInteriorStyle)?.name + ' style' || 'modern style';
+    const lightingPrompt = selectedPlanLighting ? PLAN_LIGHTING_PROMPTS[selectedPlanLighting as keyof typeof PLAN_LIGHTING_PROMPTS] : '';
+    const materialsPrompt = selectedPlanMaterials ? PLAN_MATERIALS_PROMPTS[selectedPlanMaterials as keyof typeof PLAN_MATERIALS_PROMPTS] : '';
+    const furnitureLayoutPrompt = furniturePrompt.trim() ? `Crucially, follow this specific furniture layout: "${furniturePrompt.trim()}".` : '';
 
-            const newImagesBase64 = await Promise.all(generationPromises);
-            
-            // Prepend the original base image to the results for comparison
-            const newHistoryStep = [baseImage, ...newImagesBase64];
+    const sourceMimeType = sourceDataUrl.substring(5, sourceDataUrl.indexOf(';'));
+    const sourceBase64 = sourceDataUrl.split(',')[1];
+    
+    const viewsToGenerate = planViewOptions;
 
-            // Trim history from the current index onwards
-            const newHistory = activeProject.history.slice(0, activeProject.historyIndex + 1);
-            newHistory.push(newHistoryStep);
-            
-            const newPromptHistory = activeProject.promptHistory.slice(0, activeProject.historyIndex + 1);
-            newPromptHistory.push(displayLabel);
-            
-            const newApiPromptHistory = activeProject.apiPromptHistory.slice(0, activeProject.historyIndex + 1);
-            newApiPromptHistory.push(apiPrompt);
-            
-            const newGenerationTypeHistory = activeProject.generationTypeHistory.slice(0, activeProject.historyIndex + 1);
-            newGenerationTypeHistory.push(generationType);
+    const labelsForResults = viewsToGenerate.map(v => v.name);
+    const promptForHistory = `Generated 4 3D views for ${selectedRoomType}, ${selectedInteriorStyle} style`;
+
+    try {
+      const generatedImagesBase64: string[] = [];
+      for (const view of viewsToGenerate) {
+        if (!mountedRef.current) return;
+        const finalPrompt = `Critically interpret this 2D floor plan${maskBase64 ? ' (specifically the masked area)' : ''} and transform it into a high-quality, photorealistic 3D architectural visualization. The view should be ${view.prompt}. The space is ${roomPrompt}, designed in a ${stylePrompt}. Furnish the room with appropriate and modern furniture. ${furnitureLayoutPrompt} ${lightingPrompt ? `Set the lighting to be as follows: ${lightingPrompt}` : ''} ${materialsPrompt ? `Use a material palette of ${materialsPrompt}` : ''} Pay close attention to materials, textures, and realistic lighting to create a cohesive and inviting atmosphere. Ensure the final image is 8k resolution and hyper-detailed.`;
+        const result = await editImage(sourceBase64, sourceMimeType, finalPrompt, maskBase64);
+        generatedImagesBase64.push(result);
+      }
+      
+      if (!mountedRef.current) return;
+
+      const newResults = generatedImagesBase64.map(base64 => {
+          if (!base64) { return "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"; }
+          return `data:image/jpeg;base64,${base64}`;
+      });
+
+      updateActiveImage(img => {
+          const newHistory = img.history.slice(0, img.historyIndex + 1);
+          newHistory.push(newResults);
+          const newIndex = newHistory.length - 1;
+
+          const newPromptHistory = [...img.promptHistory.slice(0, img.historyIndex + 1), promptForHistory];
+          const newApiPromptHistory = [...img.apiPromptHistory.slice(0, img.historyIndex + 1), `VARIATION:plan`];
+          const newGenerationTypeHistory: ImageState['generationTypeHistory'] = [...img.generationTypeHistory.slice(0, img.historyIndex + 1), 'variation'];
+
+          return {
+              ...img,
+              history: newHistory,
+              historyIndex: newIndex,
+              selectedResultIndex: 0,
+              promptHistory: newPromptHistory,
+              apiPromptHistory: newApiPromptHistory,
+              lastGeneratedLabels: labelsForResults,
+              generationTypeHistory: newGenerationTypeHistory,
+          };
+      });
+
+    } catch (err) {
+      if (!mountedRef.current) return;
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+      setError(errorMessage);
+    } finally {
+      if (mountedRef.current) {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const handleAnalyzeImage = async () => {
+    if (!activeImage) return;
+
+    const sourceDataUrl = selectedImageUrl || activeImage.dataUrl;
+
+    if (!sourceDataUrl) {
+      setError('Please select an image to analyze.');
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setError(null);
+    setAnalysisResult(null); // Clear previous results
+
+    try {
+      const sourceMimeType = sourceDataUrl.substring(5, sourceDataUrl.indexOf(';'));
+      const sourceBase64 = sourceDataUrl.split(',')[1];
+      
+      const result = await analyzeImage(sourceBase64, sourceMimeType); 
+      
+      if (!mountedRef.current) return;
+      setAnalysisResult(result);
+
+    } catch (err) {
+      if (!mountedRef.current) return;
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred during analysis.';
+      setError(errorMessage);
+    } finally {
+      if (!mountedRef.current) return;
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleSuggestAngles = async () => {
+    if (!activeImage) return;
+
+    const sourceDataUrl = selectedImageUrl || activeImage.dataUrl;
+
+    if (!sourceDataUrl) {
+      setError('Please select an image to get suggestions.');
+      return;
+    }
+
+    setIsSuggestingAngles(true);
+    setError(null);
+    setSuggestedAngles([]);
+
+    try {
+      const sourceMimeType = sourceDataUrl.substring(5, sourceDataUrl.indexOf(';'));
+      const sourceBase64 = sourceDataUrl.split(',')[1];
+      
+      const result = await suggestCameraAngles(sourceBase64, sourceMimeType); 
+      
+      if (!mountedRef.current) return;
+      setSuggestedAngles(result);
+
+    } catch (err) {
+      if (!mountedRef.current) return;
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred while getting suggestions.';
+      setError(errorMessage);
+    } finally {
+      if (!mountedRef.current) return;
+      setIsSuggestingAngles(false);
+    }
+  };
 
 
-            updateProjectState(activeProject.id, {
+  const executeGeneration = async (promptForGeneration: string, promptForHistory: string) => {
+    if (!activeImage) return;
+
+    let maskBase64: string | null = null;
+    if (editingMode === 'object') {
+      maskBase64 = await imageDisplayRef.current?.exportMask() ?? null;
+      if (!maskBase64) {
+        setError("Could not export mask from your drawing. Please try again.");
+        return;
+      }
+    }
+
+    const sourceDataUrl = (activeImage.history.length > 0 && activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null)
+      ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex]
+      : activeImage.dataUrl;
+
+    if (!sourceDataUrl) {
+      setError('Please select an image and provide an edit instruction.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    const finalPrompt = `As an expert photo editor, meticulously analyze the provided image and edit it based on the following instruction: "${promptForGeneration}". Strictly adhere to the user's request and generate the resulting image.`;
+
+    const sourceMimeType = sourceDataUrl.substring(5, sourceDataUrl.indexOf(';'));
+    const sourceBase64 = sourceDataUrl.split(',')[1];
+
+    try {
+      const generatedImageBase64 = await editImage(sourceBase64, sourceMimeType, finalPrompt, maskBase64);
+      if (!mountedRef.current) return;
+
+      const newResult = `data:image/jpeg;base64,${generatedImageBase64}`;
+      
+      let finalResult = newResult;
+      let finalPromptForHistory = promptForHistory;
+      
+      if (outputSize !== 'Original' && editingMode !== 'object') {
+          try {
+              finalResult = await cropAndResizeImage(newResult, outputSize);
+              finalPromptForHistory += ` (Resized to ${outputSize})`;
+          } catch (err) {
+              console.error("Client-side resize failed:", err);
+              setError("AI generation succeeded, but client-side resizing failed. Displaying original result.");
+              // Fallback to the original result, the user gets an error message
+          }
+      }
+
+      updateActiveImage(img => {
+          const newHistory = img.history.slice(0, img.historyIndex + 1);
+          newHistory.push([finalResult]);
+          const newIndex = newHistory.length - 1;
+
+          const newPromptHistory = [...img.promptHistory.slice(0, img.historyIndex + 1), finalPromptForHistory];
+          const newApiPromptHistory = [...img.apiPromptHistory.slice(0, img.historyIndex + 1), promptForGeneration];
+          const newGenerationTypeHistory: ImageState['generationTypeHistory'] = [...img.generationTypeHistory.slice(0, img.historyIndex + 1), 'edit'];
+
+          return {
+              ...img,
+              history: newHistory,
+              historyIndex: newIndex,
+              selectedResultIndex: 0,
+              promptHistory: newPromptHistory,
+              apiPromptHistory: newApiPromptHistory,
+              lastGeneratedLabels: ['Edited'],
+              generationTypeHistory: newGenerationTypeHistory,
+          };
+      });
+
+      // Reset form state after successful generation
+      setPrompt('');
+      setNegativePrompt('');
+      setSelectedStyle('');
+      setStyleIntensity(100);
+      setSelectedGardenStyle('');
+      setSelectedArchStyle('');
+      setSelectedInteriorStyle('');
+      setSelectedInteriorLighting('');
+      setSelectedBackgrounds([]);
+      setSelectedForegrounds([]);
+      setSelectedDecorativeItems([]);
+      setSelectedTimeOfDay('');
+      setSelectedWeather('');
+      setSelectedCameraAngle('');
+      setSelectedQuickAction('');
+      setIsAddLightActive(false);
+      setSelectedFilter('None');
+      setPhotorealisticIntensity(100);
+      setLightingBrightness(50);
+      setLightingTemperature(50);
+      setHarmonizeIntensity(100);
+      setSketchIntensity(100);
+      setTreeAge(50);
+      setSeason(50);
+      setOutputSize('Original');
+      setEditingMode(sceneType === 'interior' ? 'default' : (sceneType === 'plan' ? 'default' : 'default'));
+      setBrightness(100);
+      setContrast(100);
+      setSaturation(100);
+      setSharpness(100);
+      setIsCoveLightActive(false);
+      setCoveLightBrightness(70);
+      setCoveLightColor('#FFDAB9');
+      setIsSpotlightActive(false);
+      setSpotlightBrightness(60);
+      setSpotlightColor('#FFFFE0');
+      setAddFourWayAC(false);
+
+    } catch (err) {
+      if (!mountedRef.current) return;
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+      setError(errorMessage);
+    } finally {
+      if (!mountedRef.current) return;
+      setIsLoading(false);
+    }
+  };
+  
+  const handleResizeCurrentImage = async () => {
+    if (!activeImage || !selectedImageUrl || outputSize === 'Original' || editingMode === 'object') return;
+
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+        const resizedDataUrl = await cropAndResizeImage(selectedImageUrl, outputSize);
+        if (!mountedRef.current) return;
+
+        updateActiveImage(img => {
+            const newHistory = img.history.slice(0, img.historyIndex + 1);
+            newHistory.push([resizedDataUrl]);
+            const newIndex = newHistory.length - 1;
+
+            const newPromptHistory = [...img.promptHistory.slice(0, img.historyIndex + 1), `Resized to ${outputSize}`];
+            const newApiPromptHistory = [...img.apiPromptHistory.slice(0, img.historyIndex + 1), 'TRANSFORM:RESIZE'];
+            const newGenerationTypeHistory: ImageState['generationTypeHistory'] = [...img.generationTypeHistory.slice(0, img.historyIndex + 1), 'transform'];
+            
+            return {
+                ...img,
                 history: newHistory,
-                historyIndex: newHistory.length - 1,
-                selectedResultIndex: 1, // Auto-select the first new result
+                historyIndex: newIndex,
+                selectedResultIndex: 0,
                 promptHistory: newPromptHistory,
                 apiPromptHistory: newApiPromptHistory,
                 generationTypeHistory: newGenerationTypeHistory,
-                lastGeneratedLabels: newImagesBase64.map((_, i) => `${displayLabel} #${i+1}`)
-            });
+                lastGeneratedLabels: ['Resized'],
+            };
+        });
+        
+        // Reset the control so it doesn't get reapplied
+        setOutputSize('Original');
 
-            // If we were in masking mode, clear the mask after successful generation
-            if (isMaskingMode) {
-                imageDisplayRef.current?.clearMask();
-            }
+    } catch (err) {
+        if (!mountedRef.current) return;
+        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred during resize.';
+        setError(errorMessage);
+    } finally {
+        if (!mountedRef.current) return;
+        setIsLoading(false);
+    }
+};
 
-        } catch (err) {
-            console.error(err);
-            setError(err instanceof Error ? err.message : "An unknown error occurred.");
-        } finally {
-            setIsLoading(false);
-        }
-    };
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!activeImage || !hasEditInstruction) {
+      if (activeImage && !hasEditInstruction) {
+        setError('Please provide an edit instruction or select an option.');
+      }
+      return;
+    }
     
-    const handleDownload = () => {
-        const imageToDownload = getBaseImage();
-        if (imageToDownload && activeProject && activeProject.mimeType) {
-            const link = document.createElement('a');
-            link.href = `data:${activeProject.mimeType};base64,${imageToDownload}`;
-            link.download = `edited-image-${Date.now()}.png`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-    };
+    const hasOnlyResize = hasOutputSizeChange && !hasTextPrompt && !hasOtherOptions && !hasColorAdjustments && !isPlanModeReady && !isEditingWithMask;
+    
+    if (hasOnlyResize) {
+        handleResizeCurrentImage();
+        return;
+    }
 
-    const handleQuickAction = (actionKey: string) => {
-        const actionPrompt = QUICK_ACTION_PROMPTS[actionKey];
-        if (actionPrompt) {
-            const label = actionKey.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-            handleSubmit('style', actionPrompt, label, 4); // Generate 4 variations for quick actions
-        }
-    };
-
-    const handleAnalyze = async () => {
-        if (!activeProject || !activeProject.base64 || !activeProject.mimeType) {
-            setError("Please upload an image to analyze.");
+    // --- Plan to 3D Generation Logic ---
+    if (sceneType === 'plan') {
+        if (!selectedRoomType || !selectedInteriorStyle) {
+            setError('Please select a room type and interior style.');
             return;
         }
-        setIsLoading(true);
-        setError(null);
-        try {
-            const [analysis, angles] = await Promise.all([
-                analyzeImage(activeProject.base64, activeProject.mimeType),
-                suggestCameraAngles(activeProject.base64, activeProject.mimeType)
-            ]);
-            setAiAnalysis(analysis);
-            setAiCameraAngles(angles);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Analysis failed.");
-        } finally {
-            setIsLoading(false);
+        
+        const roomPrompt = ROOM_TYPE_PROMPTS[selectedRoomType];
+        const stylePrompt = interiorStyleOptions.find(o => o.name === selectedInteriorStyle)?.name + ' style' || 'modern style';
+        const viewPrompt = PLAN_VIEW_PROMPTS[selectedPlanView];
+        const lightingPrompt = selectedPlanLighting ? PLAN_LIGHTING_PROMPTS[selectedPlanLighting as keyof typeof PLAN_LIGHTING_PROMPTS] : '';
+        const materialsPrompt = selectedPlanMaterials ? PLAN_MATERIALS_PROMPTS[selectedPlanMaterials as keyof typeof PLAN_MATERIALS_PROMPTS] : '';
+        const furnitureLayoutPrompt = furniturePrompt.trim() ? `Crucially, follow this specific furniture layout: "${furniturePrompt.trim()}".` : '';
+
+        const finalPrompt = `Critically interpret this 2D floor plan and transform it into a high-quality, photorealistic 3D architectural visualization. The view should be ${viewPrompt}. The space is ${roomPrompt}, designed in a ${stylePrompt}. Furnish the room with appropriate and modern furniture. ${furnitureLayoutPrompt} ${lightingPrompt ? `Set the lighting to be as follows: ${lightingPrompt}` : ''} ${materialsPrompt ? `Use a material palette of ${materialsPrompt}` : ''} Pay close attention to materials, textures, and realistic lighting to create a cohesive and inviting atmosphere. Ensure the final image is 8k resolution and hyper-detailed.`;
+        const promptForHistory = `3D View: ${selectedPlanView}, ${selectedRoomType}, ${selectedInteriorStyle} Style`;
+        
+        executeGeneration(finalPrompt, promptForHistory);
+        return; 
+    }
+
+    const promptParts = [];
+    
+    if (sceneType === 'interior' && editingMode !== 'object') {
+      if (selectedRoomType && ROOM_TYPE_PROMPTS[selectedRoomType]) {
+          promptParts.push(`For this photo of ${ROOM_TYPE_PROMPTS[selectedRoomType]},`);
+      }
+    }
+
+    if (prompt.trim()) promptParts.push(prompt.trim());
+
+    if (editingMode !== 'object') {
+      // Quick Actions
+      if (selectedQuickAction && QUICK_ACTION_PROMPTS[selectedQuickAction]) {
+          promptParts.push(QUICK_ACTION_PROMPTS[selectedQuickAction]);
+      }
+      
+      // Garden Style
+      if (selectedGardenStyle) {
+          const generator = ADJUSTABLE_PROMPT_GENERATORS[selectedGardenStyle];
+          if (generator) {
+              promptParts.push(generator(optionIntensities[selectedGardenStyle]));
+          } else if (GARDEN_STYLE_PROMPTS[selectedGardenStyle as keyof typeof GARDEN_STYLE_PROMPTS]) {
+              promptParts.push(GARDEN_STYLE_PROMPTS[selectedGardenStyle as keyof typeof GARDEN_STYLE_PROMPTS]);
+          }
+      }
+
+      // Architectural Style
+      if (selectedArchStyle && ARCHITECTURAL_STYLE_PROMPTS[selectedArchStyle as keyof typeof ARCHITECTURAL_STYLE_PROMPTS]) {
+          promptParts.push(ARCHITECTURAL_STYLE_PROMPTS[selectedArchStyle as keyof typeof ARCHITECTURAL_STYLE_PROMPTS]);
+      }
+      
+      // Interior Style
+      if (selectedInteriorStyle && INTERIOR_STYLE_PROMPTS[selectedInteriorStyle as keyof typeof INTERIOR_STYLE_PROMPTS]) {
+          promptParts.push(INTERIOR_STYLE_PROMPTS[selectedInteriorStyle as keyof typeof INTERIOR_STYLE_PROMPTS]);
+      }
+
+      if (selectedInteriorLighting && INTERIOR_LIGHTING_PROMPTS[selectedInteriorLighting as keyof typeof INTERIOR_LIGHTING_PROMPTS]) {
+        promptParts.push(INTERIOR_LIGHTING_PROMPTS[selectedInteriorLighting as keyof typeof INTERIOR_LIGHTING_PROMPTS]);
+      }
+
+      // Decorative Items
+      selectedDecorativeItems.forEach(item => {
+        if (DECORATIVE_ITEM_PROMPTS[item as keyof typeof DECORATIVE_ITEM_PROMPTS]) {
+            promptParts.push(DECORATIVE_ITEM_PROMPTS[item as keyof typeof DECORATIVE_ITEM_PROMPTS]);
         }
-    };
+      });
 
-    const handleTransform = async (transformation: 'rotate-left' | 'rotate-right' | 'flip-horizontal' | 'flip-vertical' | 'crop') => {
-        const baseImage = getBaseImage();
-        if (!activeProject || !baseImage || !activeProject.mimeType) {
-            setError("Please upload an image first.");
-            return;
+      // Backgrounds
+      selectedBackgrounds.forEach(bg => {
+          if (sceneType === 'interior') {
+              if (INTERIOR_BACKGROUND_PROMPTS[bg as keyof typeof INTERIOR_BACKGROUND_PROMPTS]) {
+                  promptParts.push(INTERIOR_BACKGROUND_PROMPTS[bg as keyof typeof INTERIOR_BACKGROUND_PROMPTS]);
+              }
+          } else { // exterior
+              const generator = ADJUSTABLE_PROMPT_GENERATORS[bg];
+              if (generator) {
+                  promptParts.push(generator(optionIntensities[bg]));
+              } else if (BACKGROUND_PROMPTS[bg as keyof typeof BACKGROUND_PROMPTS]) {
+                  promptParts.push(BACKGROUND_PROMPTS[bg as keyof typeof BACKGROUND_PROMPTS]);
+              }
+          }
+      });
+      
+      // Foregrounds
+      selectedForegrounds.forEach(fg => {
+          const generator = ADJUSTABLE_PROMPT_GENERATORS[fg];
+          if (generator) {
+              promptParts.push(generator(optionIntensities[fg]));
+          } else if (FOREGROUND_PROMPTS[fg as keyof typeof FOREGROUND_PROMPTS]) {
+              promptParts.push(FOREGROUND_PROMPTS[fg as keyof typeof FOREGROUND_PROMPTS]);
+          }
+      });
+      
+      // Time of Day
+      if (selectedTimeOfDay && TIME_OF_DAY_PROMPTS[selectedTimeOfDay as keyof typeof TIME_OF_DAY_PROMPTS]) {
+        promptParts.push(TIME_OF_DAY_PROMPTS[selectedTimeOfDay as keyof typeof TIME_OF_DAY_PROMPTS]);
+      }
+      
+      // Weather
+      if (selectedWeather && WEATHER_PROMPTS[selectedWeather as keyof typeof WEATHER_PROMPTS]) {
+          promptParts.push(WEATHER_PROMPTS[selectedWeather as keyof typeof WEATHER_PROMPTS]);
+      }
+
+      // Vegetation
+      const treeAgePromptText = getTreeAgePrompt(treeAge);
+      if (treeAgePromptText) promptParts.push(treeAgePromptText);
+      const seasonPromptText = getSeasonPrompt(season);
+      if (seasonPromptText) promptParts.push(seasonPromptText);
+
+      // Camera Angle
+      if (selectedCameraAngle) {
+        const predefinedPrompt = CAMERA_ANGLE_PROMPTS[selectedCameraAngle];
+        if (predefinedPrompt !== undefined && predefinedPrompt !== '') {
+          // It's a predefined angle like 'High Angle'
+          promptParts.push(predefinedPrompt);
+        } else if (predefinedPrompt === undefined) {
+          // It's a custom/suggested angle string, not a key in CAMERA_ANGLE_PROMPTS
+          promptParts.push(`Re-render the image as a ${selectedCameraAngle}.`);
         }
+        // if predefinedPrompt is '', do nothing.
+      }
+      
+      // Filter
+      if (selectedFilter && selectedFilter !== 'None' && FILTER_PROMPTS[selectedFilter as keyof typeof FILTER_PROMPTS]) {
+          promptParts.push(FILTER_PROMPTS[selectedFilter as keyof typeof FILTER_PROMPTS]);
+      }
+      
+      // Art Style
+      if (selectedStyle && STYLE_PROMPTS[selectedStyle as keyof typeof STYLE_PROMPTS]) {
+          let stylePrompt = `transform the image to be ${STYLE_PROMPTS[selectedStyle as keyof typeof STYLE_PROMPTS]}`;
+          // Use the existing helper for more granular control and consistency
+          const intensityDesc = getIntensityDescriptor(styleIntensity, ['a very subtle', 'a subtle', 'a moderate', 'a strong', 'a very strong and exaggerated']);
+          // Only add the intensity descriptor if it's not the default "moderate" level.
+          if (intensityDesc !== 'a moderate') {
+            stylePrompt += ` with ${intensityDesc} intensity.`;
+          }
+          promptParts.push(stylePrompt);
+      }
 
-        setIsLoading(true);
-        setError(null);
+      const colorAdjustments = [];
+      if (brightness !== 100) {
+        const change = brightness - 100;
+        colorAdjustments.push(`${change > 0 ? 'increase the' : 'decrease the'} brightness`);
+      }
+      if (contrast !== 100) {
+        const change = contrast - 100;
+        colorAdjustments.push(`${change > 0 ? 'increase the' : 'decrease the'} contrast`);
+      }
+      if (saturation !== 100) {
+        const change = saturation - 100;
+        colorAdjustments.push(`${change > 0 ? 'increase the' : 'decrease the'} color saturation`);
+      }
+      if (sharpness !== 100) {
+        const change = sharpness - 100;
+        colorAdjustments.push(`${change > 0 ? 'increase the' : 'decrease the'} sharpness`);
+      }
 
-        try {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
+      if (colorAdjustments.length > 0) {
+          promptParts.push(`Regenerate the image to ${colorAdjustments.join(', and to ')}.`);
+      }
+
+      if (isAddLightActive) {
+          let brightnessDesc;
+          if (lightingBrightness <= 33) {
+              brightnessDesc = "subtle and dim";
+          } else if (lightingBrightness > 66) {
+              brightnessDesc = "bright and strong";
+          } else {
+              brightnessDesc = "a natural medium";
+          }
+          
+          let tempDesc;
+          if (lightingTemperature <= 20) {
+              tempDesc = "a very cool, almost blue light";
+          } else if (lightingTemperature <= 40) {
+              tempDesc = "a cool white light";
+          } else if (lightingTemperature > 80) {
+              tempDesc = "a very warm, orange-toned light";
+          } else if (lightingTemperature > 60) {
+              tempDesc = "a warm yellow light";
+          } else {
+              tempDesc = "a neutral white light";
+          }
+
+          promptParts.push(`Add realistic interior lighting coming from within the windows and open doorways of the building, making it look as though the lights are on inside at dusk or night. The light should have ${tempDesc} and have ${brightnessDesc} brightness.`);
+      }
+
+      if (isCoveLightActive) {
+          const brightnessDesc = getIntensityDescriptor(coveLightBrightness, ['very dim', 'soft', 'medium', 'bright', 'very bright']);
+          promptParts.push(`Add decorative indirect LED cove lighting with a color of ${coveLightColor}. The light should be ${brightnessDesc} and concealed along ceiling edges or under furniture to create a soft, ambient glow.`);
+      }
+
+      if (isSpotlightActive) {
+          const brightnessDesc = getIntensityDescriptor(spotlightBrightness, ['subtle accent', 'softly focused', 'moderately bright', 'strong, focused', 'very bright, dramatic']);
+          promptParts.push(`Incorporate ${spotlightColor} modern spotlights or track lighting. The spotlights should be ${brightnessDesc} and strategically placed to highlight specific features like artwork, plants, or architectural details, creating focused pools of light and adding depth to the scene.`);
+      }
+       
+      if (addFourWayAC) {
+        promptParts.push('Add a modern, ceiling-mounted 4-way cassette air conditioner unit, integrating it naturally into the ceiling design.');
+      }
+    }
+    
+    if (negativePrompt.trim()) {
+      promptParts.push(`Avoid: ${negativePrompt.trim()}`);
+    }
+
+    const finalPromptBody = cleanPrompt(promptParts.join('. '));
+    const promptForHistoryDisplay = finalPromptBody;
+    
+    if (!finalPromptBody) {
+        setError('Please provide an edit instruction or select an option.');
+        return;
+    }
+    
+    executeGeneration(finalPromptBody, promptForHistoryDisplay);
+  };
+  
+  const handleRandomQuickAction = async () => {
+    if (!activeImage || !sceneType || sceneType === 'plan') return;
+
+    const availableActions = sceneType === 'exterior' ? quickActions : [...interiorQuickActions, ...livingRoomQuickActions];
+    if (availableActions.length === 0) return;
+
+    const randomAction = availableActions[Math.floor(Math.random() * availableActions.length)];
+    const randomPrompt = QUICK_ACTION_PROMPTS[randomAction.id];
+
+    if (!randomPrompt) return;
+
+    // Reset other inputs to prevent them from being applied.
+    setPrompt('');
+    setNegativePrompt('');
+    setSelectedStyle('');
+    setSelectedGardenStyle('');
+    setSelectedArchStyle('');
+    setSelectedInteriorStyle('');
+    setSelectedBackgrounds([]);
+    setSelectedForegrounds([]);
+    setSelectedTimeOfDay('');
+    setSelectedWeather('');
+    setSelectedCameraAngle('');
+    setSelectedFilter('None');
+    setBrightness(100);
+    setContrast(100);
+    setSaturation(100);
+    setSharpness(100);
+    setTreeAge(50);
+    setSeason(50);
+    setOutputSize('Original');
+    setIsAddLightActive(false);
+
+    // Set the selected action for UI feedback
+    setSelectedQuickAction(randomAction.id);
+
+    // Execute the generation
+    executeGeneration(randomPrompt, `Random Preset: ${randomAction.label}`);
+  };
+
+
+  const handleUpscale = async () => {
+    if (!activeImage || activeImage.historyIndex < 0 || activeImage.selectedResultIndex === null) {
+      setError('No image selected to upscale.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    
+    const sourceUrl = activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex];
+    const mimeType = sourceUrl.substring(5, sourceUrl.indexOf(';'));
+    const base64 = sourceUrl.split(',')[1];
+    const upscalePrompt = "Upscale this image to a higher resolution, significantly enhance fine details, and make it photorealistically sharp without adding new elements.";
+
+    try {
+      const generatedImageBase64 = await editImage(base64, mimeType, upscalePrompt);
+      if (!mountedRef.current) return;
+
+      const newImageDataUrl = `data:image/jpeg;base64,${generatedImageBase64}`;
+      
+       updateActiveImage(img => {
+          const newHistory = img.history.slice(0, img.historyIndex + 1);
+          const previousResults = img.history[img.historyIndex];
+          const newResults = [...previousResults];
+          // Replace the upscaled image in the result set
+          newResults[img.selectedResultIndex!] = newImageDataUrl;
+          
+          // Add this modified result set as a new history step
+          newHistory.push(newResults);
+          const newIndex = newHistory.length - 1;
+
+          const newPromptHistory = [...img.promptHistory.slice(0, img.historyIndex + 1)];
+          newPromptHistory.push(upscalePrompt);
+          const newApiPromptHistory = [...img.apiPromptHistory.slice(0, img.historyIndex + 1), upscalePrompt];
+          const newGenerationTypeHistory: ImageState['generationTypeHistory'] = [...img.generationTypeHistory.slice(0, img.historyIndex + 1), 'upscale'];
+          
+          return {
+              ...img,
+              history: newHistory,
+              historyIndex: newIndex,
+              promptHistory: newPromptHistory,
+              apiPromptHistory: newApiPromptHistory,
+              generationTypeHistory: newGenerationTypeHistory,
+              lastGeneratedLabels: img.lastGeneratedLabels, // Preserve labels from previous step
+          };
+      });
+
+    } catch (err) {
+      if (!mountedRef.current) return;
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred during upscaling.';
+      setError(errorMessage);
+    } finally {
+      if (!mountedRef.current) return;
+      setIsLoading(false);
+    }
+  };
+
+  const handleUndo = () => {
+    if (!activeImage || !canUndo) return;
+    updateActiveImage(img => {
+        const newIndex = img.historyIndex - 1;
+        return {
+            ...img,
+            historyIndex: newIndex,
+            selectedResultIndex: newIndex < 0 ? null : 0,
+        };
+    });
+  };
+  
+  const handleRedo = () => {
+    if (!activeImage || !canRedo) return;
+    updateActiveImage(img => {
+        const newIndex = img.historyIndex + 1;
+        return {
+            ...img,
+            historyIndex: newIndex,
+            selectedResultIndex: 0,
+        };
+    });
+  };
+
+  const handleHistoryClick = (index: number) => {
+    if (!activeImage) return;
+    updateActiveImage(img => ({
+      ...img,
+      historyIndex: index,
+      selectedResultIndex: index < 0 ? null : 0, // Reset to first result of that step
+    }));
+  };
+
+  const handleResetEdits = () => {
+    if (!activeImage || activeImage.history.length === 0) return;
+    updateActiveImage(img => ({
+        ...img,
+        history: [],
+        historyIndex: -1,
+        selectedResultIndex: null,
+        promptHistory: [],
+        apiPromptHistory: [],
+        lastGeneratedLabels: [],
+        generationTypeHistory: [],
+    }));
+  };
+  
+  const handleOpenSaveModal = () => {
+    const currentResults = activeImage && activeImage.historyIndex > -1 ? activeImage.history[activeImage.historyIndex] : null;
+    const selectedImageUrl = currentResults && activeImage.selectedResultIndex !== null ? currentResults[activeImage.selectedResultIndex] : null;
+    if (!selectedImageUrl) return;
+    setIsSaveModalOpen(true);
+  };
+
+  const handleConfirmSave = () => {
+      const currentResults = activeImage && activeImage.historyIndex > -1 ? activeImage.history[activeImage.historyIndex] : null;
+      const selectedImageUrl = currentResults && activeImage.selectedResultIndex !== null ? currentResults[activeImage.selectedResultIndex] : null;
+      if (!selectedImageUrl) return;
+
+      const img = new Image();
+      img.onload = () => {
+          if (!mountedRef.current) return;
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+              ctx.drawImage(img, 0, 0);
+              const dataUrl = canvas.toDataURL('image/jpeg', saveQuality);
+              const link = document.createElement('a');
+              link.href = dataUrl;
+              link.download = `edited-image-${Date.now()}.jpeg`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+          }
+          setIsSaveModalOpen(false);
+      };
+      img.onerror = () => {
+          if (!mountedRef.current) return;
+          setError("Could not process image for saving.");
+          setIsSaveModalOpen(false);
+      };
+      img.src = selectedImageUrl;
+  };
+  
+  const currentResults = activeImage && activeImage.historyIndex > -1 ? activeImage.history[activeImage.historyIndex] : null;
+  const selectedImageUrl = currentResults && activeImage?.selectedResultIndex !== null ? currentResults[activeImage.selectedResultIndex] : null;
+  const currentLabels = activeImage && activeImage.historyIndex > -1 ? activeImage.lastGeneratedLabels : [];
+  
+  const applyTransformation = async (transformation: 'rotateLeft' | 'rotateRight' | 'flipHorizontal' | 'flipVertical') => {
+    if (!activeImage || !selectedImageUrl) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+        const newTransformedDataUrl = await new Promise<string>((resolve, reject) => {
             const img = new Image();
-
-            await new Promise((resolve, reject) => {
-                img.onload = resolve;
-                img.onerror = reject;
-                img.src = `data:${activeProject.mimeType};base64,${baseImage}`;
-            });
-
-            if (!ctx) throw new Error("Canvas context not available");
-            
-            let newBase64 = '';
-
-            if (transformation === 'rotate-left' || transformation === 'rotate-right') {
-                canvas.width = img.height;
-                canvas.height = img.width;
-                ctx.translate(canvas.width / 2, canvas.height / 2);
-                const angle = transformation === 'rotate-left' ? -90 : 90;
-                ctx.rotate(angle * Math.PI / 180);
-                ctx.drawImage(img, -img.width / 2, -img.height / 2);
-            } else if (transformation === 'flip-horizontal' || transformation === 'flip-vertical') {
-                canvas.width = img.width;
-                canvas.height = img.height;
-                if (transformation === 'flip-horizontal') {
-                    ctx.translate(img.width, 0);
-                    ctx.scale(-1, 1);
-                } else {
-                    ctx.translate(0, img.height);
-                    ctx.scale(1, -1);
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    reject(new Error("Could not get canvas context"));
+                    return;
                 }
-                ctx.drawImage(img, 0, 0);
-            }
-            
-            // Always output as high-quality JPEG for transformed images for efficiency
-            newBase64 = canvas.toDataURL('image/jpeg', 0.95).split(',')[1];
-            
-            const label = transformation.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
-            const newHistoryStep = [newBase64, newBase64, newBase64, newBase64];
+                
+                if (transformation === 'rotateLeft' || transformation === 'rotateRight') {
+                    canvas.width = img.height;
+                    canvas.height = img.width;
+                    ctx.translate(canvas.width / 2, canvas.height / 2);
+                    ctx.rotate(transformation === 'rotateLeft' ? -Math.PI / 2 : Math.PI / 2);
+                    ctx.drawImage(img, -img.width / 2, -img.height / 2);
+                } else { // Flips
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    if (transformation === 'flipHorizontal') {
+                        ctx.translate(img.width, 0);
+                        ctx.scale(-1, 1);
+                    } else { // flipVertical
+                        ctx.translate(0, img.height);
+                        ctx.scale(1, -1);
+                    }
+                    ctx.drawImage(img, 0, 0);
+                }
+                
+                resolve(canvas.toDataURL('image/png'));
+            };
+            img.onerror = () => reject(new Error("Could not load image to transform."));
+            img.src = selectedImageUrl;
+        });
 
-            const newHistory = activeProject.history.slice(0, activeProject.historyIndex + 1);
-            newHistory.push(newHistoryStep);
-            
-            const newPromptHistory = activeProject.promptHistory.slice(0, activeProject.historyIndex + 1);
-            newPromptHistory.push(label);
-            
-            const newApiPromptHistory = activeProject.apiPromptHistory.slice(0, activeProject.historyIndex + 1);
-            newApiPromptHistory.push(`[TRANSFORM] ${transformation}`);
+        if (!mountedRef.current) return;
 
-            const newGenerationTypeHistory = activeProject.generationTypeHistory.slice(0, activeProject.historyIndex + 1);
-            newGenerationTypeHistory.push('transform');
+        const transformLabels: Record<typeof transformation, string> = {
+            rotateLeft: 'Rotate Left 90°',
+            rotateRight: 'Rotate Right 90°',
+            flipHorizontal: 'Flip Horizontal',
+            flipVertical: 'Flip Vertical',
+        };
 
-            updateProjectState(activeProject.id, {
+        updateActiveImage(img => {
+            const newHistory = img.history.slice(0, img.historyIndex + 1);
+            newHistory.push([newTransformedDataUrl]);
+            const newIndex = newHistory.length - 1;
+
+            const newPromptHistory = [...img.promptHistory.slice(0, img.historyIndex + 1)];
+            newPromptHistory.push(transformLabels[transformation]);
+            const newApiPromptHistory = [...img.apiPromptHistory.slice(0, img.historyIndex + 1), 'TRANSFORM'];
+
+            const newGenerationTypeHistory: ImageState['generationTypeHistory'] = [
+                ...img.generationTypeHistory.slice(0, img.historyIndex + 1),
+                'transform'
+            ];
+          
+            return {
+                ...img,
                 history: newHistory,
-                historyIndex: newHistory.length - 1,
-                selectedResultIndex: null, // No variations for transform
-                base64: newBase64,
-                dataUrl: `data:image/jpeg;base64,${newBase64}`,
-                mimeType: 'image/jpeg',
+                historyIndex: newIndex,
+                selectedResultIndex: 0,
                 promptHistory: newPromptHistory,
                 apiPromptHistory: newApiPromptHistory,
                 generationTypeHistory: newGenerationTypeHistory,
-            });
+                lastGeneratedLabels: ['Transformed'],
+            };
+        });
+    } catch (err) {
+      if (!mountedRef.current) return;
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred during image transformation.';
+      setError(errorMessage);
+    } finally {
+      if (!mountedRef.current) return;
+      setIsLoading(false);
+    }
+  };
 
-        } catch (err) {
-            setError("Failed to apply transformation.");
-            console.error(err);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+  const handleRegenerate = async () => {
+    if (!activeImage || activeImage.historyIndex < 0) return;
+
+    const lastApiPrompt = activeImage.apiPromptHistory[activeImage.historyIndex];
+    const lastGenType = activeImage.generationTypeHistory[activeImage.historyIndex];
     
-    const handleUpscale = () => {
-      const prompt = "Upscale this image to the highest possible resolution, enhancing all details, textures, and clarity to make it look like a hyper-realistic 8k photograph. Ensure the final image is sharp and free of any digital artifacts or blurriness.";
-      handleSubmit('upscale', prompt, 'Upscale to 8K');
-    };
-
-    const handleFinalizeOutput = async () => {
-        const baseImage = getBaseImage();
-        if (!activeProject || !baseImage || !activeProject.mimeType || outputSize === 'Original') {
-            handleDownload(); // If no resizing, just download
-            return;
+    if (lastApiPrompt.startsWith('VARIATION:')) {
+        const variationType = lastApiPrompt.split(':')[1];
+        if (variationType === 'style' || variationType === 'angle') {
+            await handleVariationSubmit(variationType as 'style' | 'angle');
+        } else if (variationType === 'plan') {
+            await handleGenerate4PlanViews();
         }
+    } else if (lastGenType === 'edit' || lastGenType === 'upscale') {
+        const lastDisplayPrompt = activeImage.promptHistory[activeImage.historyIndex];
+        await executeGeneration(lastApiPrompt, `(Regen) ${lastDisplayPrompt}`);
+    } else {
+        console.warn("This action cannot be regenerated.", lastGenType);
+    }
+  };
 
-        setIsLoading(true);
-        setError(null);
-        try {
-            const originalDataUrl = `data:${activeProject.mimeType};base64,${baseImage}`;
-            const resizedDataUrl = await cropAndResizeImage(originalDataUrl, outputSize);
+  const getResultsTitle = () => {
+    if (!activeImage || activeImage.historyIndex < 0 || !currentResults) return 'Results';
+    const currentType = activeImage.generationTypeHistory[activeImage.historyIndex];
+    const currentPrompt = activeImage.promptHistory[activeImage.historyIndex];
+    switch (currentType) {
+        case 'style':
+            return 'Style Variations';
+        case 'angle':
+            return 'Camera Angle Variations';
+        case 'variation':
+             if (currentPrompt?.includes('3D views')) {
+                return 'Four 3D View Results';
+            }
+            return 'Variations';
+        case 'edit':
+            return 'Edit Result';
+        case 'upscale':
+            return 'Upscale Result';
+        case 'transform':
+            return 'Transform Result';
+        default:
+            return 'Results';
+    }
+  };
 
-            const link = document.createElement('a');
-            link.href = resizedDataUrl;
-            link.download = `final-image-${outputSize}-${Date.now()}.jpg`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        } catch(err) {
-            setError(err instanceof Error ? err.message : "Failed to finalize and download image.");
-        } finally {
-            setIsLoading(false);
-        }
-    };
+  const quickActions = [
+    { id: 'sereneTwilightEstate', label: 'Serene Twilight Estate', description: 'A dusk setting with specific tree framing (large tree left, pine right) for a modern, serene look.' },
+    { id: 'sereneHomeWithGarden', label: 'Serene Garden Home', description: 'Adds a lush garden, foreground trees, and warm interior lights for a peaceful, high-end look.' },
+    { id: 'modernTwilightHome', label: 'Modern Twilight', description: 'A dusk setting with warm interior lights and a manicured garden.' },
+    { id: 'vibrantModernEstate', label: 'Vibrant Modern Estate', description: 'Creates a perfect sunny day with a blue sky and lush green trees, like the example photo.' },
+    { id: 'modernPineEstate', label: 'Modern Pine Estate', description: 'A serene, professional look with a pine forest background and warm interior lighting.' },
+    { id: 'proPhotoFinish', label: 'Photorealistic', description: 'Transform into an 8K ultra-sharp, pro-camera shot.' },
+    { id: 'luxuryHomeDusk', label: 'Luxury Home', description: 'Atmosphere of a luxury home at dusk after rain.' },
+    { id: 'morningHousingEstate', label: 'Morning Estate', description: 'Warm morning sunlight in a peaceful housing estate.' },
+    { id: 'pristineShowHome', label: 'Pristine Show Home', description: 'Creates a brand new look with a perfectly manicured lawn, road, and hedge fence.' },
+    { id: 'highriseNature', label: 'High-rise & Nature', description: 'Blend the building with a lush landscape and a city skyline.' },
+    { id: 'fourSeasonsTwilight', label: 'Luxury Riverfront Twilight', description: 'A modern high-rise at dusk with city lights reflecting on a river.' },
+    { id: 'urbanCondoDayHighAngle', label: 'Urban Condo High Angle', description: 'A high-angle daytime shot of a modern building in a dense urban setting.' },
+    { id: 'modernWoodHouseTropical', label: 'Modern Wood & Tropical', description: 'A modern home with wood siding in a lush, warm tropical garden.' },
+    { id: 'classicMansionFormalGarden', label: 'Classic Mansion & Garden', description: 'An elegant white house with a symmetrical, formal garden in bright daylight.' },
+    { id: 'urbanSketch', label: 'Urban Sketch', description: 'Convert into a lively, urban watercolor sketch.' },
+    { id: 'sketchToPhoto', label: 'Sketch to Photo', description: 'Turn an architectural sketch into a photorealistic image.' },
+    { id: 'architecturalSketch', label: 'Architectural Sketch', description: 'Convert into an architect\'s concept sketch.' },
+    { id: 'midjourneyArtlineSketch', label: 'Midjourney Artline', description: 'Create a photorealistic render blended with an artline sketch, Midjourney style.' },
+  ];
+  
+  const interiorQuickActions = [
+    { id: 'sketchupToPhotoreal', label: 'SketchUp to Photoreal', description: 'Convert a SketchUp model to a photorealistic 3D render.' },
+    { id: 'darkMoodyLuxuryBedroom', label: 'Dark & Moody Luxury', description: 'A sophisticated bedroom with dark wood, marble, and dramatic warm lighting.' },
+    { id: 'softModernSanctuary', label: 'Soft Modern Sanctuary', description: 'A serene bedroom with a large, curved, backlit headboard and a calming color palette.' },
+    { id: 'geometricChicBedroom', label: 'Geometric Chic Bedroom', description: 'An elegant, modern bedroom featuring a geometric patterned headboard and pendant lights.' },
+    { id: 'symmetricalGrandeurBedroom', label: 'Symmetrical Grandeur', description: 'A grand, luxurious bedroom with a symmetrical design and a modern sculptural chandelier.' },
+  ];
 
+  const livingRoomQuickActions = [
+    { id: 'classicSymmetryLivingRoom', label: 'Classic Symmetrical', description: 'A formal, elegant space with curved sofas, a fireplace, and ornate wall moldings in a soft, neutral palette.' },
+    { id: 'modernDarkMarbleLivingRoom', label: 'Modern Dark Marble', description: 'A sophisticated, moody living room with dark wood, a dramatic marble wall, and a modern suspended fireplace.' },
+    { id: 'contemporaryGoldAccentLivingRoom', label: 'Contemporary & Gold', description: 'A bright, airy, and modern space featuring a light marble wall, a large white sofa, and striking gold accents.' },
+    { id: 'modernEclecticArtLivingRoom', label: 'Modern Eclectic', description: 'An artistic and contemporary living room with mixed materials, integrated lighting, and a prominent abstract artwork.' },
+    { id: 'brightModernClassicLivingRoom', label: 'Bright Modern Classic', description: 'A bright and luxurious open-plan space with a marble feature wall, backlit shelving, and gold accents.' },
+    { id: 'parisianChicLivingRoom', label: 'Parisian Chic', description: 'An elegant, neoclassical living room with intricate wall paneling, a large arched window, and chic, modern furniture.' }
+  ];
 
-    const renderCurrentStep = () => {
-        if (!activeProject || activeProject.history.length === 0) {
-            return { currentImages: [], originalImage: null };
-        }
-        const currentImages = activeProject.history[activeProject.historyIndex] || [];
-        const originalImage = currentImages[0];
-        
-        return { currentImages, originalImage };
-    };
-    
-    const { currentImages, originalImage } = renderCurrentStep();
-    const currentImageUrl = activeProject?.selectedResultIndex !== null 
-        ? currentImages[activeProject.selectedResultIndex] 
-        : (currentImages.length > 0 ? currentImages[0] : null);
+  const canUndo = activeImage ? activeImage.historyIndex >= 0 : false;
+  const canRedo = activeImage ? activeImage.historyIndex < activeImage.history.length - 1 : false;
+  const canRegenerate = activeImage && activeImage.historyIndex >= 0 && activeImage.generationTypeHistory[activeImage.historyIndex] !== 'transform';
 
-    const dataUrl = currentImageUrl ? `data:${activeProject?.mimeType};base64,${currentImageUrl}` : null;
-    const originalDataUrl = originalImage ? `data:${activeProject?.mimeType};base64,${originalImage}` : null;
+  const isPlanResultsView = activeImage && sceneType === 'plan' && activeImage.historyIndex > -1;
 
-    const renderHistoryItem = (item: string, index: number) => {
-        const isActive = index === activeProject?.historyIndex;
-        const promptText = activeProject?.promptHistory[index] || "Unknown Edit";
+  const imageForDisplay = selectedImageUrl || (activeImage ? activeImage.dataUrl : null);
+  const imageForMasking = (sceneType === 'plan' ? (activeImage ? activeImage.dataUrl : null) : imageForDisplay);
 
-        return (
-            <button
-                key={index}
-                onClick={() => activeProject && updateProjectState(activeProject.id, { historyIndex: index, selectedResultIndex: null })}
-                className={`w-full text-left p-3 rounded-md transition-colors text-sm flex items-center gap-3 ${isActive ? 'bg-red-600/20 text-red-300 font-semibold' : 'hover:bg-gray-700 text-gray-400'}`}
-            >
-                <div className="flex-shrink-0 w-12 h-12 bg-gray-900 rounded-md overflow-hidden">
-                    <img src={`data:${activeProject?.mimeType};base64,${item}`} alt={`History ${index}`} className="w-full h-full object-cover"/>
-                </div>
-                <div className="flex-grow truncate">
-                    <span className="font-bold text-gray-200">Step {index}:</span>
-                    <p className="truncate text-gray-400">{promptText}</p>
-                </div>
-            </button>
-        );
-    };
-
-    const QuickActionButton: React.FC<{ actionKey: string; children: React.ReactNode; icon: React.ReactNode; }> = ({ actionKey, children, icon }) => (
-        <button
-            onClick={() => handleQuickAction(actionKey)}
-            disabled={!activeProject?.base64 || isLoading}
-            className="flex flex-col items-center justify-center gap-2 p-3 text-center bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-            <div className="w-8 h-8 text-red-400">{icon}</div>
-            <span className="text-xs font-semibold text-gray-300">{children}</span>
-        </button>
-    );
-    
-    const SceneTypeButton: React.FC<{ type: SceneType; label: string; icon: React.ReactNode; }> = ({ type, label, icon }) => (
-      <button
-        onClick={() => setSceneType(type)}
-        className={`flex-1 p-3 rounded-lg text-sm font-semibold flex flex-col items-center gap-2 transition-all ${
-          sceneType === type ? 'bg-red-600 text-white shadow-lg' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-        }`}
-      >
-        {icon}
-        {label}
-      </button>
-    );
-
-    const EditingModeButton: React.FC<{ mode: EditingMode; label: string; icon: React.ReactNode; }> = ({ mode, label, icon }) => (
-        <button
-            onClick={() => {
-                setEditingMode(mode);
-                if (mode !== 'object') {
-                    setIsMaskingMode(false); // Turn off masking when leaving object mode
-                }
-            }}
-            className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-full transition-colors ${
-                editingMode === mode ? 'bg-red-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-            }`}
-        >
-            {icon}
-            {label}
-        </button>
-    );
-
-    const renderToggleButton = (label: string, state: boolean, setState: (value: boolean) => void, id: string) => (
-        <div className="flex items-center justify-between">
-            <label htmlFor={id} className="text-sm text-gray-300">{label}</label>
-            <button
-                id={id}
-                type="button"
-                onClick={() => setState(!state)}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800 ${state ? 'bg-red-600' : 'bg-gray-600'}`}
-                aria-pressed={state}
-            >
-                <span
-                    aria-hidden="true"
-                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${state ? 'translate-x-5' : 'translate-x-0'}`}
-                />
-            </button>
+  const LightingAndAtmosphereControls: React.FC<{ sceneType: SceneType | null }> = ({ sceneType }) => (
+    <CollapsibleSection title="Lighting & Atmosphere" sectionKey="lighting" isOpen={openSections.lighting} onToggle={() => toggleSection('lighting')} icon={<SunriseIcon className="w-5 h-5" />}>
+      <div className="flex flex-col gap-4">
+        <div>
+          <h4 className="text-sm font-semibold text-gray-300 mb-2">Time of Day</h4>
+          <div className="flex flex-wrap gap-2">
+            {timeOfDayOptions.map(option => (
+              <OptionButton key={option} option={option} isSelected={selectedTimeOfDay === option} onClick={() => handleLightingSelection(setSelectedTimeOfDay, option)} />
+            ))}
+          </div>
         </div>
-    );
-    
+        <div>
+          <h4 className="text-sm font-semibold text-gray-300 mb-2">Weather</h4>
+          <div className="flex flex-wrap gap-2">
+            {weatherOptions.map(option => (
+              <OptionButton key={option} option={option} isSelected={selectedWeather === option} onClick={() => handleLightingSelection(setSelectedWeather, option)} />
+            ))}
+          </div>
+        </div>
+        {sceneType === 'interior' && (
+          <div className="pt-4 border-t border-gray-700">
+            <h4 className="text-sm font-semibold text-gray-300 mb-2">Interior Lighting Presets</h4>
+            <div className="flex flex-wrap gap-2">
+              {interiorLightingOptions.map(option => (
+                <OptionButton
+                  key={option}
+                  option={option}
+                  isSelected={selectedInteriorLighting === option}
+                  onClick={() => handleLightingSelection(setSelectedInteriorLighting, option)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+        {sceneType === 'exterior' && (
+          <div className="pt-4 border-t border-gray-700">
+            <h4 className="text-sm font-semibold text-gray-300 mb-2">Add Building Lights</h4>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" checked={isAddLightActive} onChange={(e) => setIsAddLightActive(e.target.checked)} className="sr-only peer" />
+              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+              <span className="ml-3 text-sm font-medium text-gray-300">Enable</span>
+            </label>
+            <div className={`mt-3 space-y-3 transition-opacity duration-300 ${isAddLightActive ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Brightness</label>
+                <input type="range" min="1" max="100" value={lightingBrightness} onChange={(e) => setLightingBrightness(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Color Temperature (Cool - Warm)</label>
+                <input type="range" min="1" max="100" value={lightingTemperature} onChange={(e) => setLightingTemperature(Number(e.target.value))} className="w-full h-2 bg-gradient-to-r from-blue-400 to-orange-400 rounded-lg appearance-none cursor-pointer accent-red-600" />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </CollapsibleSection>
+  );
+
+  const BackgroundControls: React.FC = () => {
+    const backgroundOptions = sceneType === 'interior' ? interiorBackgrounds : backgrounds;
+    const title = sceneType === 'interior' ? "Window View" : "Background";
+
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Panel */}
-          <div className="lg:col-span-4 bg-gray-800 p-4 sm:p-6 rounded-xl shadow-lg border border-gray-700 flex flex-col">
-            <div className="flex-shrink-0">
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold text-gray-200">Projects</h2>
-                    <div className="flex items-center gap-2">
-                         <button onClick={() => { if(window.confirm('Are you sure you want to delete all projects? This cannot be undone.')) { clearProjects(); setProjects([]); setActiveProjectId(null); handleNewProject(); } }} className="px-3 py-1 text-xs font-semibold text-gray-300 bg-gray-700 rounded-full hover:bg-gray-600">Clear All</button>
-                         <button onClick={handleNewProject} className="px-3 py-1 text-xs font-semibold text-white bg-red-600 rounded-full hover:bg-red-700">+ New</button>
-                    </div>
-                </div>
-                 {/* Project Tabs */}
-                <div className="flex space-x-2 border-b border-gray-700 mb-4">
-                    {projects.slice(0, 5).map((p, index) => (
+      <CollapsibleSection title={title} sectionKey="background" isOpen={openSections.background} onToggle={() => toggleSection('background')} icon={<LandscapeIcon className="w-5 h-5" />}>
+        <div className="flex flex-wrap gap-2">
+            {backgroundOptions.map(bg => (
+                <OptionButton
+                    key={bg}
+                    option={bg}
+                    isSelected={bg === 'No Change' ? selectedBackgrounds.length === 0 : selectedBackgrounds.includes(bg)}
+                    onClick={() => handleBackgroundToggle(bg)}
+                />
+            ))}
+        </div>
+        {sceneType === 'exterior' && selectedBackgrounds.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-gray-700 space-y-3">
+                {selectedBackgrounds.map(bg => {
+                    const config = adjustableOptions[bg];
+                    if (!config) return null;
+                    return (
+                        <div key={bg}>
+                            <label className="block text-sm font-medium text-gray-400 mb-1">{config.label} ({bg})</label>
+                            <input
+                                type="range"
+                                min="1"
+                                max="100"
+                                value={optionIntensities[bg] || config.default}
+                                onChange={(e) => handleIntensityChange(bg, Number(e.target.value))}
+                                className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600"
+                            />
+                        </div>
+                    )
+                })}
+            </div>
+        )}
+      </CollapsibleSection>
+    );
+  };
+
+  const ForegroundControls: React.FC = () => (
+      <CollapsibleSection title="Foreground Elements" sectionKey="foreground" isOpen={openSections.foreground} onToggle={() => toggleSection('foreground')} icon={<FlowerIcon className="w-5 h-5" />}>
+          <div className="flex flex-wrap gap-2">
+              {foregrounds.map(fg => (
+                  <OptionButton
+                      key={fg}
+                      option={fg}
+                      isSelected={selectedForegrounds.includes(fg)}
+                      onClick={() => handleForegroundToggle(fg)}
+                  />
+              ))}
+          </div>
+          {selectedForegrounds.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-gray-700 space-y-3">
+                  {selectedForegrounds.map(fg => {
+                      const config = adjustableOptions[fg];
+                      if (!config) return null;
+                      return (
+                          <div key={fg}>
+                              <label className="block text-sm font-medium text-gray-400 mb-1">{config.label} ({fg})</label>
+                              <input
+                                  type="range"
+                                  min="1"
+                                  max="100"
+                                  value={optionIntensities[fg] || config.default}
+                                  onChange={(e) => handleIntensityChange(fg, Number(e.target.value))}
+                                  className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600"
+                              />
+                          </div>
+                      )
+                  })}
+              </div>
+          )}
+      </CollapsibleSection>
+  );
+
+  const ArtStyleControls = () => (
+    <CollapsibleSection title="Artistic Style" sectionKey="artStyle" isOpen={openSections.artStyle} onToggle={() => toggleSection('artStyle')} icon={<BrushIcon className="w-5 h-5" />}>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-wrap gap-2">
+          {styleOptions.map(option => (
+            <OptionButton
+              key={option.name}
+              option={option.name}
+              isSelected={selectedStyle === option.name}
+              onClick={() => handleArtStyleChange(option.name)}
+            />
+          ))}
+        </div>
+        {selectedStyle && (
+          <div className="mt-2 pt-4 border-t border-gray-700/50">
+            <label htmlFor="style-intensity" className="block text-sm font-medium text-gray-400 mb-1">
+              Style Intensity ({styleIntensity}%)
+            </label>
+            <input
+              id="style-intensity"
+              type="range"
+              min="1"
+              max="100"
+              value={styleIntensity}
+              onChange={(e) => setStyleIntensity(Number(e.target.value))}
+              className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600"
+            />
+          </div>
+        )}
+      </div>
+    </CollapsibleSection>
+  );
+
+  return (
+    <>
+    {isSaveModalOpen && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+            <div className="bg-gray-800 p-6 rounded-xl shadow-lg w-full max-w-sm border border-gray-700 flex flex-col">
+                <h2 className="text-xl font-bold text-gray-200 mb-4">Select JPEG Quality</h2>
+                <div className="flex flex-col gap-3 mb-6">
+                    {qualityOptions.map(option => (
                         <button
-                            key={p.id}
-                            onClick={() => setActiveProjectId(p.id)}
-                            className={`px-3 py-2 text-sm font-semibold rounded-t-md ${
-                                activeProjectId === p.id
-                                    ? 'bg-gray-700 text-white'
-                                    : 'text-gray-400 hover:bg-gray-700/50'
+                            key={option.label}
+                            type="button"
+                            onClick={() => setSaveQuality(option.value)}
+                            className={`w-full px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
+                                saveQuality === option.value
+                                ? 'bg-red-600 text-white'
+                                : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
                             }`}
                         >
-                            Project {projects.length - index}
+                            {option.label}
                         </button>
                     ))}
                 </div>
-
-                <div className="relative mb-4">
-                    <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                        className="hidden"
-                        ref={fileInputRef}
-                        disabled={isLoading}
-                    />
-                    <button
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isLoading}
-                        className="w-full bg-gray-700 text-gray-300 font-semibold py-3 px-4 rounded-lg hover:bg-gray-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                <div className="flex justify-end gap-4">
+                    <button 
+                        onClick={() => setIsSaveModalOpen(false)} 
+                        className="px-6 py-2 rounded-full text-sm font-semibold bg-gray-600 text-gray-200 hover:bg-gray-500 transition-colors"
                     >
-                        <PhotoIcon className="w-5 h-5"/>
-                        {activeProject?.base64 ? "Change Image" : "Upload Image"}
+                        Cancel
+                    </button>
+                    <button 
+                        onClick={handleConfirmSave} 
+                        className="px-6 py-2 rounded-full text-sm font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors"
+                    >
+                        Download
                     </button>
                 </div>
-
-                <div className="flex items-center justify-center gap-2 bg-gray-900/50 p-1.5 rounded-full mb-4">
-                  <SceneTypeButton type="exterior" label="Exterior" icon={<HomeIcon className="w-5 h-5" />} />
-                  <SceneTypeButton type="interior" label="Interior" icon={<HomeModernIcon className="w-5 h-5" />} />
-                  <SceneTypeButton type="plan" label="Plan to 3D" icon={<PlanIcon className="w-5 h-5" />} />
-                </div>
             </div>
+        </div>
+      )}
+    
+    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
+      {/* Left Column: Controls */}
+      <div className="md:col-span-1 lg:col-span-1">
+        <div className="sticky top-8 max-h-[calc(100vh-6rem)] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="bg-gray-800/50 p-4 rounded-xl shadow-lg border border-gray-700">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+                <div>
+                  <label htmlFor="file-upload" className="block text-sm font-medium text-gray-300 mb-2">1. Start New Project / Upload</label>
+                  <label htmlFor="file-upload" className="cursor-pointer flex justify-center items-center w-full px-4 py-6 bg-gray-700 text-gray-400 rounded-lg border-2 border-dashed border-gray-600 hover:border-red-400 hover:bg-gray-600 transition-colors">
+                    <span className={imageList.length > 0 ? 'text-green-400' : ''}>
+                      {imageList.length > 0 ? `${imageList.length} project(s) loaded. Add more?` : 'Click to select files'}
+                    </span>
+                  </label>
+                  <input id="file-upload" name="file-upload" type="file" className="sr-only" accept="image/*" onChange={handleImageChange} multiple />
+                </div>
 
-            {/* Editing Controls - Scrollable */}
-            <div className="flex-grow overflow-y-auto custom-scrollbar -mr-3 pr-3 space-y-4">
-              {sceneType === 'exterior' && (
-                <>
-                {/* Exterior Quick Actions */}
-                <CollapsibleSection title="Quick Actions" icon={<SparklesIcon className="w-5 h-5 text-yellow-400" />} defaultOpen>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                        <QuickActionButton actionKey="sereneTwilightEstate" icon={<SparklesIcon className="w-6 h-6" />}>Serene Twilight</QuickActionButton>
-                        <QuickActionButton actionKey="vibrantModernEstate" icon={<SunriseIcon className="w-6 h-6" />}>Sunny Day</QuickActionButton>
-                        <QuickActionButton actionKey="proPhotoFinish" icon={<CameraIcon className="w-6 h-6" />}>Photo Finish</QuickActionButton>
-                        <QuickActionButton actionKey="luxuryHomeDusk" icon={<HomeModernIcon className="w-6 h-6" />}>Luxe Dusk</QuickActionButton>
-                        <QuickActionButton actionKey="morningHousingEstate" icon={<HomeIcon className="w-6 h-6" />}>Morning Estate</QuickActionButton>
-                        <QuickActionButton actionKey="architecturalSketch" icon={<PencilIcon className="w-6 h-6" />}>Arch Sketch</QuickActionButton>
-                        <QuickActionButton actionKey="pristineShowHome" icon={<StarIcon className="w-6 h-6" />}>Show Home</QuickActionButton>
-                        <QuickActionButton actionKey="highriseNature" icon={<LandscapeIcon className="w-6 h-6" />}>Urban Nature</QuickActionButton>
-                    </div>
-                </CollapsibleSection>
-
-                 {/* Garden Style */}
-                <CollapsibleSection title="Garden Style" icon={<FlowerIcon className="w-5 h-5 text-green-400" />}>
-                     <div className="grid grid-cols-2 gap-2">
-                        {gardenStyleOptions.map(style => (
-                          <button
-                            key={style.name}
-                            onClick={() => setSelectedGardenStyle(style.name)}
-                            title={style.description}
-                            className={`p-2 text-xs font-semibold rounded-md text-left transition-colors ${selectedGardenStyle === style.name ? 'bg-red-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-                          >
-                            {style.name}
-                          </button>
-                        ))}
-                      </div>
-                </CollapsibleSection>
-                
-                {/* Architectural Style */}
-                <CollapsibleSection title="Architectural Style" icon={<HomeModernIcon className="w-5 h-5 text-blue-400" />}>
-                     <div className="grid grid-cols-2 gap-2">
-                        {architecturalStyleOptions.map(style => (
-                          <button
-                            key={style.name}
-                            onClick={() => setSelectedArchitecturalStyle(style.name)}
-                            title={style.description}
-                            className={`p-2 text-xs font-semibold rounded-md text-left transition-colors ${selectedArchitecturalStyle === style.name ? 'bg-red-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-                          >
-                            {style.name}
-                          </button>
-                        ))}
-                      </div>
-                </CollapsibleSection>
-                </>
-              )}
-
-              {sceneType === 'interior' && (
-                  <>
-                  {/* Interior Quick Actions */}
-                    <CollapsibleSection title="Quick Actions" icon={<SparklesIcon className="w-5 h-5 text-yellow-400" />} defaultOpen>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                            <QuickActionButton actionKey="sketchupToPhotoreal" icon={<CameraIcon className="w-6 h-6" />}>Photoreal</QuickActionButton>
-                            <QuickActionButton actionKey="darkMoodyLuxuryBedroom" icon={<HomeModernIcon className="w-6 h-6" />}>Moody Luxe</QuickActionButton>
-                            <QuickActionButton actionKey="softModernSanctuary" icon={<HomeIcon className="w-6 h-6" />}>Soft Modern</QuickActionButton>
-                            <QuickActionButton actionKey="parisianChicLivingRoom" icon={<StarIcon className="w-6 h-6" />}>Parisian Chic</QuickActionButton>
-                            <QuickActionButton actionKey="classicSymmetryLivingRoom" icon={<PencilIcon className="w-6 h-6" />}>Classic</QuickActionButton>
-                            <QuickActionButton actionKey="contemporaryGoldAccentLivingRoom" icon={<SparklesIcon className="w-6 h-6" />}>Gold Accent</QuickActionButton>
+                {imageList.length > 0 && (
+                    <div>
+                        <div className="flex justify-between items-center mb-2">
+                            <h3 className="text-sm font-medium text-gray-300">Your Projects</h3>
+                            <button
+                                type="button"
+                                onClick={handleClearAllProjects}
+                                className="px-2 py-1 text-xs font-semibold text-red-300 bg-red-900/50 rounded-md hover:bg-red-800/50 transition-colors"
+                            >
+                                Clear All
+                            </button>
                         </div>
-                    </CollapsibleSection>
-                    
-                    {/* Interior Style */}
-                    <CollapsibleSection title="Interior Style" icon={<HomeModernIcon className="w-5 h-5 text-blue-400" />}>
-                         <div className="grid grid-cols-2 gap-2">
-                            {interiorStyleOptions.map(style => (
+                        <div className="flex flex-wrap gap-4 p-4 bg-gray-900/50 rounded-lg">
+                            {imageList.map((image, index) => (
+                                <div key={image.id} className="relative group">
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveImageIndex(index)}
+                                        className={`block w-20 h-20 rounded-lg overflow-hidden border-4 transition-colors ${
+                                            index === activeImageIndex ? 'border-red-500' : 'border-transparent hover:border-gray-500'
+                                        }`}
+                                    >
+                                        <img src={image.dataUrl} alt={`Uploaded thumbnail ${index + 1}`} className="w-full h-full object-cover" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRemoveImage(index)}
+                                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold hover:bg-red-700 transition-colors z-10 opacity-0 group-hover:opacity-100"
+                                        title="Remove image"
+                                    >
+                                        &times;
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+                
+                {activeImage && (
+                    <CollapsibleSection
+                      title="Project History"
+                      sectionKey="projectHistory"
+                      isOpen={openSections.projectHistory}
+                      onToggle={() => toggleSection('projectHistory')}
+                      icon={<HistoryIcon className="w-5 h-5" />}
+                    >
+                        <div className="flex flex-col gap-2 max-h-60 overflow-y-auto custom-scrollbar pr-1">
+                            {/* Original State */}
+                            <button
+                              type="button"
+                              onClick={() => handleHistoryClick(-1)}
+                              className={`w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors ${
+                                activeImage.historyIndex === -1
+                                  ? 'bg-red-900/50 ring-2 ring-red-500'
+                                  : 'bg-gray-900/50 hover:bg-gray-700/50'
+                              }`}
+                            >
+                              <img src={activeImage.dataUrl} className="w-12 h-12 rounded-md object-cover flex-shrink-0" alt="Original image" />
+                              <div className="flex-grow overflow-hidden">
+                                <p className="text-sm font-semibold text-gray-200">Original Image</p>
+                                {activeImage.historyIndex === -1 && <span className="text-xs text-red-400 font-bold">Current</span>}
+                              </div>
+                            </button>
+
+                            {/* Edit History States */}
+                            {activeImage.history.map((results, index) => (
                               <button
-                                key={style.name}
-                                onClick={() => setSelectedInteriorStyle(style.name)}
-                                title={style.description}
-                                className={`p-2 text-xs font-semibold rounded-md text-left transition-colors ${selectedInteriorStyle === style.name ? 'bg-red-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
+                                key={`${activeImage.id}-history-${index}`}
+                                type="button"
+                                onClick={() => handleHistoryClick(index)}
+                                className={`w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors ${
+                                  activeImage.historyIndex === index
+                                    ? 'bg-red-900/50 ring-2 ring-red-500'
+                                    : 'bg-gray-900/50 hover:bg-gray-700/50'
+                                }`}
                               >
-                                {style.name}
+                                <img src={results[0]} className="w-12 h-12 rounded-md object-cover flex-shrink-0" alt={`History step ${index + 1}`} />
+                                <div className="flex-grow overflow-hidden">
+                                  <p className="text-sm font-semibold text-gray-200 truncate" title={activeImage.promptHistory[index]}>
+                                    {activeImage.promptHistory[index] || `Edit ${index + 1}`}
+                                  </p>
+                                  {activeImage.historyIndex === index && <span className="text-xs text-red-400 font-bold">Current</span>}
+                                </div>
                               </button>
                             ))}
-                          </div>
+                        </div>
                     </CollapsibleSection>
-                  </>
-              )}
-              
-              {sceneType === 'plan' && (
-                <>
-                <CollapsibleSection title="Room Setup" icon={<CogIcon className="w-5 h-5 text-gray-400" />} defaultOpen>
-                  <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">Room Type</label>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                            {roomTypeOptions.map(room => (
-                                <button key={room} onClick={() => setSelectedRoomType(room)} className={`p-2 text-xs font-semibold rounded-md ${selectedRoomType === room ? 'bg-red-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>{room}</button>
-                            ))}
-                        </div>
+                )}
+
+                {!activeImage && (
+                    <div className="text-center p-4 bg-gray-900/50 rounded-lg">
+                        <h2 className="text-lg font-semibold text-gray-200">Welcome!</h2>
+                        <p className="text-gray-400 mt-2">Get started by uploading an image to edit, or convert a 2D plan to 3D.</p>
                     </div>
-                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">View Perspective</label>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                            {planViewOptions.map(view => (
-                                <button key={view.name} onClick={() => setSelectedPlanView(view.name)} className={`p-2 text-xs font-semibold rounded-md ${selectedPlanView === view.name ? 'bg-red-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>{view.name}</button>
-                            ))}
+                )}
+
+                {activeImage && (
+                  <div className="border-t border-gray-700 pt-4 mt-4">
+                    {!sceneType ? (
+                      <>
+                        <label className="block text-sm font-medium text-gray-300 mb-3 text-center">2. What would you like to do?</label>
+                        <div className="flex flex-col gap-3">
+                            <button
+                                type="button"
+                                onClick={() => handleSceneTypeSelect('exterior')}
+                                className="w-full flex items-center justify-center gap-3 p-3 text-base font-semibold rounded-lg transition-all duration-200 bg-gray-800 text-gray-200 hover:bg-red-600 hover:text-white border border-gray-600 hover:border-red-500"
+                            >
+                                <HomeModernIcon className="w-6 h-6"/>
+                                <span>Exterior Editing</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleSceneTypeSelect('interior')}
+                                className="w-full flex items-center justify-center gap-3 p-3 text-base font-semibold rounded-lg transition-all duration-200 bg-gray-800 text-gray-200 hover:bg-red-600 hover:text-white border border-gray-600 hover:border-red-500"
+                            >
+                                <HomeIcon className="w-6 h-6"/>
+                                <span>Interior Editing</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleSceneTypeSelect('plan')}
+                                className="w-full flex items-center justify-center gap-3 p-3 text-base font-semibold rounded-lg transition-all duration-200 bg-gray-800 text-gray-200 hover:bg-red-600 hover:text-white border border-gray-600 hover:border-red-500"
+                            >
+                                <PlanIcon className="w-6 h-6"/>
+                                <span>2D Plan to 3D</span>
+                            </button>
                         </div>
-                    </div>
+                      </>
+                    ) : (
+                      <div className="flex justify-between items-center px-2">
+                          <div>
+                              <label className="block text-sm font-medium text-gray-400">Editing Scene Type</label>
+                              <p className="text-base font-semibold text-gray-200 capitalize">{sceneType}</p>
+                          </div>
+                          <button
+                              type="button"
+                              onClick={() => setSceneType(null)}
+                              className="px-3 py-1.5 text-xs font-semibold text-gray-300 bg-gray-700 rounded-full hover:bg-gray-600 transition-colors"
+                          >
+                              Change Type
+                          </button>
+                      </div>
+                    )}
                   </div>
-                </CollapsibleSection>
-                <CollapsibleSection title="Materials & Lighting" icon={<TextureIcon className="w-5 h-5 text-yellow-400" />}>
-                  <div className="space-y-4">
-                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">Lighting Style</label>
-                        <div className="grid grid-cols-2 gap-2">
-                            {planLightingOptions.map(light => (
-                                <button key={light} onClick={() => setSelectedPlanLighting(light)} className={`p-2 text-xs font-semibold rounded-md ${selectedPlanLighting === light ? 'bg-red-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>{light}</button>
-                            ))}
-                        </div>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">Material Palette</label>
-                        <div className="grid grid-cols-2 gap-2">
-                            {planMaterialsOptions.map(mat => (
-                                <button key={mat} onClick={() => setSelectedPlanMaterials(mat)} className={`p-2 text-xs font-semibold rounded-md ${selectedPlanMaterials === mat ? 'bg-red-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>{mat}</button>
-                            ))}
-                        </div>
-                    </div>
-                  </div>
-                </CollapsibleSection>
-                 <CollapsibleSection title="Decorative Items" icon={<SparklesIcon className="w-5 h-5 text-indigo-400" />}>
-                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {decorativeItemOptions.map(item => (
-                             <button key={item} onClick={() => {
-                                 setSelectedDecorativeItems(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]);
-                             }} className={`p-2 text-xs font-semibold rounded-md ${selectedDecorativeItems.includes(item) ? 'bg-red-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>{item}</button>
-                        ))}
+                )}
+                
+                {activeImage && sceneType && sceneType !== 'plan' && (
+                  <div>
+                    <p className="block text-sm font-medium text-gray-300 mb-2">2. Select Editing Mode</p>
+                     <div className="flex items-center justify-center p-1 bg-gray-900/50 rounded-lg gap-1">
+                        <ModeButton 
+                          label="AI Editing" 
+                          icon={<SparklesIcon className="w-5 h-5" />}
+                          mode="default"
+                          activeMode={editingMode}
+                          onClick={changeEditingMode}
+                        />
+                         <ModeButton 
+                          label="Inpainting / Masking" 
+                          icon={<BrushIcon className="w-5 h-5" />}
+                          mode="object"
+                          activeMode={editingMode}
+                          onClick={changeEditingMode}
+                        />
                      </div>
-                 </CollapsibleSection>
-                </>
-              )}
-
-
-              {/* Manual Adjustments */}
-              <CollapsibleSection title="Manual Adjustments" icon={<AdjustmentsIcon className="w-5 h-5 text-gray-400" />} defaultOpen={sceneType !== 'plan'}>
-                <div className="space-y-4">
-                  {/* Editing Mode Selector */}
-                    <div className="flex items-center justify-center gap-2 bg-gray-900/50 p-1.5 rounded-full">
-                        <EditingModeButton mode="default" label="Global Edit" icon={<LandscapeIcon className="w-4 h-4" />} />
-                        <EditingModeButton mode="object" label="Object Edit" icon={<SquareDashedIcon className="w-4 h-4" />} />
-                    </div>
-
-                  {editingMode === 'object' && (
-                    <div className="p-3 bg-red-900/30 border border-red-700 rounded-lg space-y-3 animate-fade-in">
-                        <div className="flex justify-between items-center">
-                            <h3 className="text-sm font-semibold text-red-300">Object Editing Mode</h3>
-                            <button
-                                onClick={() => setIsMaskingMode(!isMaskingMode)}
-                                className={`px-3 py-1 text-xs font-bold rounded-full flex items-center gap-2 transition-colors ${
-                                    isMaskingMode ? 'bg-red-500 text-white' : 'bg-gray-700 text-gray-300'
-                                }`}
-                            >
-                                <BrushIcon className="w-4 h-4" />
-                                {isMaskingMode ? 'Drawing Mask...' : 'Draw Mask'}
-                            </button>
-                        </div>
-                         {isMaskingMode && (
-                             <div className="space-y-3">
-                                <p className="text-xs text-red-200/80">Paint over the area you want to change.</p>
-                                <div>
-                                    <label htmlFor="brush-size" className="block text-xs font-medium text-gray-300 mb-1">Brush Size: {brushSize}px</label>
-                                    <input
-                                        id="brush-size"
-                                        type="range"
-                                        min="5"
-                                        max="100"
-                                        value={brushSize}
-                                        onChange={(e) => setBrushSize(Number(e.target.value))}
-                                        className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-500"
-                                    />
-                                </div>
-                                <div className="flex items-center gap-2">
-                                     <button onClick={() => imageDisplayRef.current?.clearMask()} className="flex-1 text-xs bg-gray-600 hover:bg-gray-500 text-white font-semibold py-1 px-2 rounded-md transition">
-                                        Clear Mask
-                                    </button>
-                                     <button onClick={() => setIsMaskingMode(false)} className="flex-1 text-xs bg-gray-800 hover:bg-gray-700 text-white font-semibold py-1 px-2 rounded-md transition">
-                                        Done
-                                    </button>
-                                </div>
-                             </div>
-                         )}
-                         {!isMaskingMode && (
-                            <div className="space-y-2">
-                                <label className="block text-sm font-medium text-gray-300">Quick Materials:</label>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {materialQuickPrompts.map(({ name, prompt: materialPrompt }) => (
-                                        <button key={name} onClick={() => setPrompt(`change the selected object's material to ${materialPrompt}`)} className="p-2 text-xs font-semibold rounded-md bg-gray-700 text-gray-300 hover:bg-gray-600">{name}</button>
-                                    ))}
-                                </div>
-                            </div>
-                         )}
-                    </div>
-                  )}
-
-                  <div>
-                    <label htmlFor="prompt" className="block text-sm font-medium text-gray-300 mb-1">Describe Your Change</label>
-                    <textarea
-                      id="prompt"
-                      rows={3}
-                      value={prompt}
-                      onChange={(e) => setPrompt(e.target.value)}
-                      placeholder={editingMode === 'object' ? 'e.g., "make the selected object red"' : 'e.g., "add a swimming pool"'}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm text-white focus:outline-none focus:ring-red-500 focus:border-red-500"
-                    />
-                  </div>
-
-                {sceneType === 'exterior' && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="time-of-day" className="block text-sm font-medium text-gray-300 mb-1">Time of Day</label>
-                      <select id="time-of-day" value={timeOfDay} onChange={e => setTimeOfDay(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm text-white focus:outline-none focus:ring-red-500 focus:border-red-500">
-                        {timeOfDayOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label htmlFor="weather" className="block text-sm font-medium text-gray-300 mb-1">Weather</label>
-                      <select id="weather" value={weather} onChange={e => setWeather(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm text-white focus:outline-none focus:ring-red-500 focus:border-red-500">
-                        {weatherOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                      </select>
-                    </div>
-                  </div>
-                )}
-                
-                {sceneType === 'interior' && (
-                  <div>
-                    <label htmlFor="interior-lighting" className="block text-sm font-medium text-gray-300 mb-1">Lighting Style</label>
-                    <select id="interior-lighting" value={interiorLighting} onChange={e => setInteriorLighting(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm text-white focus:outline-none focus:ring-red-500 focus:border-red-500">
-                      {interiorLightingOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                    </select>
                   </div>
                 )}
 
-
-                  <div>
-                    <label htmlFor="cameraAngle" className="block text-sm font-medium text-gray-300 mb-1">Camera Angle</label>
-                    <select id="cameraAngle" value={selectedCameraAngle} onChange={e => setSelectedCameraAngle(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm text-white focus:outline-none focus:ring-red-500 focus:border-red-500">
-                      {cameraAngleOptions.map(opt => <option key={opt.name} value={opt.name}>{opt.name}</option>)}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label htmlFor="background" className="block text-sm font-medium text-gray-300 mb-1">Background</label>
-                    <select id="background" value={selectedBackground} onChange={e => setSelectedBackground(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm text-white focus:outline-none focus:ring-red-500 focus:border-red-500">
-                      {(sceneType === 'interior' ? interiorBackgrounds : backgrounds).map(bg => <option key={bg} value={bg}>{bg}</option>)}
-                    </select>
-                  </div>
+                {/* --- CONTROLS START --- */}
+                <div className="flex flex-col gap-4">
                   
-                  {sceneType === 'exterior' && (
-                    <div>
-                        <label htmlFor="foreground" className="block text-sm font-medium text-gray-300 mb-1">Foreground Element</label>
-                        <select id="foreground" value={selectedForeground} onChange={e => setSelectedForeground(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm text-white focus:outline-none focus:ring-red-500 focus:border-red-500">
-                            <option value="">None</option>
-                            {foregrounds.map(fg => <option key={fg} value={fg}>{fg}</option>)}
-                        </select>
-                    </div>
-                  )}
-
-                </div>
-              </CollapsibleSection>
-              
-              {/* Color & Tone Section */}
-              <CollapsibleSection title="Color & Tone" icon={<BrushIcon className="w-5 h-5 text-purple-400" />}>
-                <div className="space-y-4">
-                    <div>
-                        <label htmlFor="brightness" className="block text-sm font-medium text-gray-300 mb-1">Brightness ({brightness}%)</label>
-                        <input id="brightness" type="range" min="50" max="150" value={brightness} onChange={e => setBrightness(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-500" />
-                    </div>
-                    <div>
-                        <label htmlFor="contrast" className="block text-sm font-medium text-gray-300 mb-1">Contrast ({contrast}%)</label>
-                        <input id="contrast" type="range" min="50" max="150" value={contrast} onChange={e => setContrast(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-500" />
-                    </div>
-                    <div>
-                        <label htmlFor="saturation" className="block text-sm font-medium text-gray-300 mb-1">Saturation ({saturation}%)</label>
-                        <input id="saturation" type="range" min="0" max="200" value={saturation} onChange={e => setSaturation(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-500" />
-                    </div>
-                    <div>
-                        <label htmlFor="filter" className="block text-sm font-medium text-gray-300 mb-1">Creative Filter</label>
-                        <select id="filter" value={selectedFilter} onChange={e => setSelectedFilter(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm text-white focus:outline-none focus:ring-red-500 focus:border-red-500">
-                          {filters.map(f => <option key={f} value={f}>{f}</option>)}
-                        </select>
-                    </div>
-                </div>
-              </CollapsibleSection>
-
-
-              {sceneType === 'interior' && (
-                <CollapsibleSection title="Advanced Lighting & Fixtures" icon={<LightbulbIcon className="w-5 h-5 text-yellow-400" />}>
-                  <div className="space-y-4">
-                    {renderToggleButton("Add Downlights", addDownlights, setAddDownlights, "downlight-toggle")}
-                    {renderToggleButton("Add Wall Sconces", addWallSconces, setAddWallSconces, "sconce-toggle")}
-                    {renderToggleButton("Add Central Ceiling Light", addCeilingLight, setAddCeilingLight, "ceiling-toggle")}
-                    {renderToggleButton("Add Indirect Strip Lighting", addStripLighting, setAddStripLighting, "strip-toggle")}
-                    {renderToggleButton("Wall Type Air Conditioner (18000 BTU)", addWallAC, setAddWallAC, "wall-ac-toggle")}
-                  </div>
-                </CollapsibleSection>
-              )}
-
-
-              <CollapsibleSection title="AI Suggestions" icon={<LightbulbIcon className="w-5 h-5 text-yellow-400" />}>
-                <div className="space-y-4">
-                  <button onClick={handleAnalyze} disabled={!activeProject?.base64 || isLoading} className="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-                    <SearchIcon className="w-5 h-5"/>
-                    Analyze Image
-                  </button>
-                  {aiAnalysis && (
-                    <div className="text-sm space-y-3 text-gray-300 p-3 bg-gray-700/50 rounded-lg">
-                      <p><strong>Style:</strong> {aiAnalysis.architecturalStyle}</p>
-                      <p><strong>Materials:</strong> {aiAnalysis.keyMaterials.join(', ')}</p>
-                      <p><strong>Lighting:</strong> {aiAnalysis.lightingConditions}</p>
-                       <div>
-                         <p className="font-semibold mb-2 text-gray-200">Improvement Ideas:</p>
-                         <div className="flex flex-col gap-2">
-                            {aiAnalysis.improvementSuggestions.map((s, i) => (
-                              <button key={i} onClick={() => handleSubmit('edit', s, s)} className="w-full text-left text-xs bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-3 rounded-md transition">{s}</button>
-                            ))}
-                         </div>
-                       </div>
-                    </div>
-                  )}
-                  {aiCameraAngles.length > 0 && (
-                     <div>
-                         <p className="font-semibold mb-2 text-gray-200 text-sm">Suggested Angles:</p>
-                         <div className="flex flex-col gap-2">
-                            {aiCameraAngles.map((angle, i) => (
-                              <button key={i} onClick={() => handleSubmit('angle', `re-render the image from a ${angle}`, angle)} className="w-full text-left text-xs bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-3 rounded-md transition">{angle}</button>
-                            ))}
-                         </div>
-                       </div>
-                  )}
-                </div>
-              </CollapsibleSection>
-            </div>
-          </div>
-
-
-            {/* Center Panel */}
-            <div className="lg:col-span-8 flex flex-col gap-6">
-                <ImageDisplay
-                  ref={imageDisplayRef}
-                  label={sceneType === 'plan' ? 'Floor Plan' : 'Image Preview'}
-                  imageUrl={dataUrl}
-                  originalImageUrl={originalDataUrl}
-                  isLoading={isLoading}
-                  selectedFilter={selectedFilter}
-                  brightness={brightness}
-                  contrast={contrast}
-                  saturation={saturation}
-                  isMaskingMode={isMaskingMode}
-                  brushSize={brushSize}
-                  onMaskChange={setIsMaskEmpty}
-                />
-                
-                {/* Action Buttons */}
-                <div className="bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-700">
-                    <div className="flex flex-wrap items-center justify-center gap-4">
-                        <button onClick={handleUndo} disabled={!activeProject || activeProject.historyIndex <= 0 || isLoading} className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-gray-700 rounded-full hover:bg-gray-600 transition-colors disabled:opacity-50"><UndoIcon className="w-5 h-5"/> Undo</button>
-                        <button onClick={handleRedo} disabled={!activeProject || activeProject.historyIndex >= activeProject.history.length - 1 || isLoading} className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-gray-700 rounded-full hover:bg-gray-600 transition-colors disabled:opacity-50"><RedoIcon className="w-5 h-5"/> Redo</button>
-                        <button onClick={handleResetAllEdits} disabled={!activeProject || activeProject.historyIndex <= 0 || isLoading} className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-gray-700 rounded-full hover:bg-gray-600 transition-colors disabled:opacity-50"><ResetEditsIcon className="w-5 h-5"/> Reset</button>
-                        <button onClick={handleUpscale} disabled={!activeProject?.base64 || isLoading} className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-gray-700 rounded-full hover:bg-gray-600 transition-colors disabled:opacity-50"><UpscaleIcon className="w-5 h-5"/> Upscale 8K</button>
-
-                        <button onClick={() => handleSubmit(editingMode === 'object' ? 'edit' : 'style', undefined, undefined, editingMode === 'object' ? 1 : 4)} disabled={!activeProject?.base64 || isLoading} className="flex items-center gap-2 px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-red-600 to-red-700 rounded-full hover:from-red-700 hover:to-red-800 transition-transform transform hover:scale-105 disabled:opacity-50 disabled:transform-none">
-                            <SparklesIcon className="w-5 h-5"/>
-                            Generate
-                        </button>
-                    </div>
-                </div>
-
-                {/* Output & Download Panel */}
-                <div className="bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-700">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                        <div className="space-y-4">
-                             <div>
-                                <label htmlFor="outputSize" className="block text-sm font-medium text-gray-300 mb-1">Output Size</label>
-                                <select 
-                                    id="outputSize" 
-                                    value={outputSize} 
-                                    onChange={(e) => setOutputSize(e.target.value)}
-                                    className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-red-500 focus:border-red-500"
-                                >
-                                  {outputSizeOptions.map(opt => (
-                                    <option key={opt.value} value={opt.value}>{opt.label} ({opt.description})</option>
+                  {activeImage && sceneType && sceneType !== 'plan' && (
+                    <CollapsibleSection 
+                      title={editingMode === 'object' ? '3. Describe edit for masked area' : '3. Describe your edit'}
+                      sectionKey="prompt" 
+                      isOpen={openSections.prompt} 
+                      onToggle={() => toggleSection('prompt')} 
+                      icon={<PencilIcon className="w-5 h-5" />}
+                    >
+                      <div className="flex flex-col gap-4">
+                        <div>
+                          <div className="flex justify-between items-center mb-2">
+                            <label htmlFor="prompt" className="block text-sm font-medium text-gray-300">
+                                Prompt
+                            </label>
+                            {activeImage && activeImage.promptHistory.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => setShowPromptHistory(prev => !prev)}
+                                className="flex items-center gap-1 px-2 py-1 text-xs font-semibold text-gray-300 bg-gray-600 rounded-md transition-colors hover:bg-gray-500"
+                                title="Show prompt history"
+                              >
+                                <HistoryIcon className="w-4 h-4" />
+                                <span>History</span>
+                              </button>
+                            )}
+                          </div>
+                          <div className="relative" ref={promptHistoryRef}>
+                            <textarea
+                              id="prompt"
+                              rows={3}
+                              className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 transition placeholder-gray-500 disabled:opacity-50"
+                              placeholder={
+                                editingMode === 'object'
+                                  ? 'e.g., make this red, remove this object...'
+                                  : activeImage
+                                  ? 'e.g., add a cat sitting on the roof...'
+                                  : 'Please upload an image first'
+                              }
+                              value={prompt}
+                              onChange={(e) => setPrompt(e.target.value)}
+                              disabled={!activeImage || !sceneType}
+                            />
+                            {showPromptHistory && activeImage && activeImage.promptHistory.length > 0 && (
+                              <div className="absolute top-full left-0 w-full max-h-48 overflow-y-auto bg-gray-800 border border-gray-600 rounded-b-lg shadow-lg z-20">
+                                <ul className="divide-y divide-gray-700">
+                                  {[...activeImage.promptHistory].reverse().map((p, i) => (
+                                      <li key={i}>
+                                          <button
+                                              type="button"
+                                              onClick={() => {
+                                                  setPrompt(p);
+                                                  setShowPromptHistory(false);
+                                              }}
+                                              className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors truncate"
+                                              title={p}
+                                          >
+                                              {p}
+                                          </button>
+                                      </li>
                                   ))}
-                                </select>
-                             </div>
+                                </ul>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <button onClick={handleFinalizeOutput} disabled={!activeProject?.base64 || isLoading} className="w-full flex items-center justify-center gap-2 px-6 py-3 text-sm font-bold text-white bg-green-600 rounded-full hover:bg-green-700 transition-transform transform hover:scale-105 disabled:opacity-50 disabled:transform-none">
-                            <DownloadIcon className="w-5 h-5"/>
-                            Download Final Image
-                        </button>
-                    </div>
-                </div>
+                        <div>
+                          <label htmlFor="negative-prompt" className="block text-sm font-medium text-gray-300 mb-2">
+                            Negative Prompt (what to avoid) <span className="text-gray-400 font-normal">(optional)</span>
+                          </label>
+                          <textarea
+                            id="negative-prompt"
+                            rows={2}
+                            className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 transition placeholder-gray-500 disabled:opacity-50"
+                            placeholder="e.g., text, watermarks, low quality..."
+                            value={negativePrompt}
+                            onChange={(e) => setNegativePrompt(e.target.value)}
+                            disabled={!activeImage || !sceneType}
+                          />
+                        </div>
+                      </div>
+                    </CollapsibleSection>
+                  )}
+
+                   {/* --- Material Examples Section (for object mode) --- */}
+                  {activeImage && sceneType && editingMode === 'object' && (
+                      <CollapsibleSection title="Material Examples" sectionKey="materialExamples" isOpen={openSections.materialExamples} onToggle={() => toggleSection('materialExamples')} icon={<TextureIcon className="w-5 h-5" />}>
+                          <div className="flex flex-wrap gap-2">
+                              {materialQuickPrompts.map(mat => (
+                                  <button
+                                      key={mat.name}
+                                      type="button"
+                                      onClick={() => setPrompt(`change this to ${mat.prompt}`)}
+                                      className="px-3 py-1 text-sm rounded-full font-semibold transition-colors duration-200 bg-gray-700 text-gray-300 hover:bg-gray-600 border-2 border-transparent"
+                                  >
+                                      {mat.name}
+                                  </button>
+                              ))}
+                          </div>
+                          <p className="text-xs text-gray-400 mt-3">Tip: Selecting a material will replace your current prompt.</p>
+                      </CollapsibleSection>
+                  )}
+
+                  {/* --- 2D Plan to 3D Controls --- */}
+                  {activeImage && sceneType === 'plan' && (
+                    <>
+                      <CollapsibleSection title="1. Define Room & Style" sectionKey="planConfig" isOpen={openSections.planConfig} onToggle={() => toggleSection('planConfig')} icon={<HomeModernIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
+                          <div className="flex flex-col gap-4">
+                              <div>
+                                  <h4 className="text-sm font-semibold text-gray-300 mb-2">Room Type</h4>
+                                  <div className="flex flex-wrap gap-2">
+                                      {roomTypeOptions.map(option => (
+                                          <OptionButton
+                                              key={option}
+                                              option={option}
+                                              isSelected={selectedRoomType === option}
+                                              onClick={() => handleRoomTypeChange(option)}
+                                          />
+                                      ))}
+                                  </div>
+                              </div>
+                              <div>
+                                  <h4 className="text-sm font-semibold text-gray-300 mb-2">Interior Style</h4>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                      {interiorStyleOptions.map(option => (
+                                          <PreviewCard
+                                              key={option.name}
+                                              label={option.name}
+                                              description={option.description}
+                                              isSelected={selectedInteriorStyle === option.name}
+                                              onClick={() => handleInteriorStyleChange(option.name)}
+                                              isNested
+                                              icon={<HomeIcon className="w-5 h-5" />}
+                                          />
+                                      ))}
+                                  </div>
+                                  {selectedInteriorStyle && INTERIOR_STYLE_PROMPTS[selectedInteriorStyle as keyof typeof INTERIOR_STYLE_PROMPTS] && (
+                                    <div className="mt-4 pt-4 border-t border-gray-700">
+                                      <h4 className="font-semibold text-gray-200 mb-1">"{selectedInteriorStyle}" Style Description:</h4>
+                                      <p className="text-sm text-gray-400 bg-gray-900/50 p-3 rounded-md">
+                                        {INTERIOR_STYLE_PROMPTS[selectedInteriorStyle as keyof typeof INTERIOR_STYLE_PROMPTS]}
+                                      </p>
+                                    </div>
+                                  )}
+                              </div>
+                          </div>
+                      </CollapsibleSection>
+
+                      <CollapsibleSection title="2. Details (Optional)" sectionKey="planDetails" isOpen={openSections.planDetails} onToggle={() => toggleSection('planDetails')} icon={<PencilIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
+                          <div className="flex flex-col gap-4">
+                              <div>
+                                  <h4 className="text-sm font-semibold text-gray-300 mb-2">Furniture Layout</h4>
+                                  <textarea
+                                    rows={3}
+                                    className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 transition placeholder-gray-500"
+                                    placeholder="Describe furniture placement, e.g., place bed against the left wall, wardrobe on the right wall..."
+                                    value={furniturePrompt}
+                                    onChange={(e) => setFurniturePrompt(e.target.value)}
+                                  />
+                              </div>
+                              <div>
+                                <h4 className="text-sm font-semibold text-gray-300 mb-2">Lighting & Atmosphere</h4>
+                                  <div className="flex flex-wrap gap-2">
+                                      {planLightingOptions.map(option => (
+                                          <OptionButton
+                                              key={option}
+                                              option={option}
+                                              isSelected={selectedPlanLighting === option}
+                                              onClick={(val) => setSelectedPlanLighting(prev => prev === val ? '' : val)}
+                                          />
+                                      ))}
+                                  </div>
+                              </div>
+                              <div>
+                                <h4 className="text-sm font-semibold text-gray-300 mb-2">Materials</h4>
+                                  <div className="flex flex-wrap gap-2">
+                                      {planMaterialsOptions.map(option => (
+                                          <OptionButton
+                                              key={option}
+                                              option={option}
+                                              isSelected={selectedPlanMaterials === option}
+                                              onClick={(val) => setSelectedPlanMaterials(prev => prev === val ? '' : val)}
+                                          />
+                                      ))}
+                                  </div>
+                              </div>
+                          </div>
+                      </CollapsibleSection>
+                      
+                      <div className="flex flex-col gap-1 p-1 bg-gray-900/50 rounded-lg">
+                        <CollapsibleSection title="3. Select View" sectionKey="planView" isOpen={openSections.planView} onToggle={() => toggleSection('planView')} icon={<CameraIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
+                            <div className="flex flex-wrap gap-2">
+                                {planViewOptions.map(option => (
+                                    <OptionButton
+                                        key={option.name}
+                                        option={option.name}
+                                        isSelected={selectedPlanView === option.name}
+                                        onClick={(val) => setSelectedPlanView(val)}
+                                    />
+                                ))}
+                            </div>
+                        </CollapsibleSection>
+                        <button
+                          type="button"
+                          onClick={() => {
+                              const newMode = editingMode === 'object' ? 'default' : 'object';
+                              changeEditingMode(newMode);
+                              if (newMode === 'object') {
+                                  imageDisplayRef.current?.clearMask();
+                              }
+                          }}
+                          className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg text-base font-semibold transition-colors duration-200 border-2 ${
+                              editingMode === 'object' 
+                              ? 'bg-red-600 text-white border-red-400'
+                              : 'bg-gray-700 text-gray-300 hover:bg-gray-600 border-transparent'
+                          }`}
+                        >
+                          <SquareDashedIcon className="w-6 h-6"/>
+                          <span>{editingMode === 'object' ? 'Finish Area Selection' : 'Select Area to Render'}</span>
+                      </button>
+                      </div>
+                    </>
+                  )}
 
 
-                {/* Results Viewer */}
-                {currentImages && currentImages.length > 1 && (
-                    <div className="bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-700 animate-fade-in">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-semibold text-gray-200">Generated Results</h3>
-                            <button
-                                onClick={confirmSelection}
-                                disabled={activeProject?.selectedResultIndex === null || isLoading}
-                                className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-full hover:bg-red-700 disabled:opacity-50"
-                            >
-                                Confirm Selection
-                            </button>
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            {currentImages.slice(1).map((imgBase64, index) => {
-                                const resultIndex = index + 1;
-                                const isSelected = activeProject?.selectedResultIndex === resultIndex;
-                                return (
-                                    <div key={index} className="relative group">
-                                        <img
-                                            src={`data:${activeProject?.mimeType};base64,${imgBase64}`}
-                                            alt={`Result ${resultIndex}`}
-                                            onClick={() => selectResult(resultIndex)}
-                                            className={`w-full h-auto object-cover rounded-lg cursor-pointer transition-all duration-200 ${
-                                                isSelected ? 'ring-4 ring-red-500 scale-105' : 'ring-2 ring-transparent hover:ring-red-400'
-                                            }`}
-                                        />
-                                        <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs text-center p-1 rounded-b-lg">
-                                            {activeProject?.lastGeneratedLabels[index] || `Result ${resultIndex}`}
+                  {/* --- Exterior Scene Controls --- */}
+                  {activeImage && sceneType === 'exterior' && editingMode === 'default' && (
+                    <>
+                      <CollapsibleSection title="Presets" sectionKey="quickActions" isOpen={openSections.quickActions} onToggle={() => toggleSection('quickActions')} icon={<StarIcon className="w-5 h-5" />}>
+                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {quickActions.map(({ id, label, description }) => (
+                               <PreviewCard
+                                  key={id}
+                                  label={label}
+                                  description={description}
+                                  isSelected={selectedQuickAction === id}
+                                  onClick={() => handleQuickActionClick(id)}
+                                  icon={<StarIcon className="w-5 h-5" />}
+                               />
+                            ))}
+                          </div>
+                      </CollapsibleSection>
+
+                      <LightingAndAtmosphereControls sceneType={sceneType} />
+                      
+                      <CollapsibleSection title="Manual Adjustments" sectionKey="manualAdjustments" isOpen={openSections.manualAdjustments} onToggle={() => toggleSection('manualAdjustments')} icon={<AdjustmentsIcon className="w-5 h-5" />}>
+                          <div className="flex flex-col gap-4 p-2 bg-gray-900/30 rounded-lg">
+                               <CollapsibleSection title="Architectural Style" sectionKey="archStyle" isOpen={openSections.archStyle} onToggle={() => toggleSection('archStyle')} icon={<TextureIcon className="w-5 h-5" />}>
+                                  <div className="flex flex-col gap-3">
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                          {architecturalStyleOptions.map(option => (
+                                              <PreviewCard
+                                                  key={option.name}
+                                                  label={option.name}
+                                                  description={option.description}
+                                                  isSelected={selectedArchStyle === option.name}
+                                                  onClick={() => handleArchStyleChange(option.name)}
+                                                  isNested
+                                                  icon={<TextureIcon className="w-5 h-5" />}
+                                              />
+                                          ))}
+                                      </div>
+                                      {selectedArchStyle && ARCHITECTURAL_STYLE_PROMPTS[selectedArchStyle as keyof typeof ARCHITECTURAL_STYLE_PROMPTS] && (
+                                        <div className="mt-4 pt-4 border-t border-gray-700">
+                                          <h4 className="font-semibold text-gray-200 mb-1">"{selectedArchStyle}" Style Description:</h4>
+                                          <p className="text-sm text-gray-400 bg-gray-900/50 p-3 rounded-md">
+                                            {ARCHITECTURAL_STYLE_PROMPTS[selectedArchStyle as keyof typeof ARCHITECTURAL_STYLE_PROMPTS]}
+                                          </p>
+                                        </div>
+                                      )}
+                                  </div>
+                              </CollapsibleSection>
+                              <CollapsibleSection title="Garden Style" sectionKey="gardenStyle" isOpen={openSections.gardenStyle} onToggle={() => toggleSection('gardenStyle')} icon={<FlowerIcon className="w-5 h-5" />}>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                      {gardenStyleOptions.map(option => (
+                                         <PreviewCard
+                                            key={option.name}
+                                            label={option.name}
+                                            description={option.description}
+                                            isSelected={selectedGardenStyle === option.name}
+                                            onClick={() => handleGardenStyleChange(option.name)}
+                                            isNested
+                                            icon={<FlowerIcon className="w-5 h-5" />}
+                                         />
+                                      ))}
+                                  </div>
+                                   {selectedGardenStyle && (
+                                    <div className="mt-4 pt-4 border-t border-gray-700 space-y-4">
+                                      {GARDEN_STYLE_PROMPTS[selectedGardenStyle as keyof typeof GARDEN_STYLE_PROMPTS] && (
+                                        <div>
+                                            <h4 className="font-semibold text-gray-200 mb-1">"{selectedGardenStyle}" Style Description:</h4>
+                                            <p className="text-sm text-gray-400 bg-gray-900/50 p-3 rounded-md">
+                                                {GARDEN_STYLE_PROMPTS[selectedGardenStyle as keyof typeof GARDEN_STYLE_PROMPTS]}
+                                            </p>
+                                        </div>
+                                      )}
+                                      {adjustableOptions[selectedGardenStyle] && (
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-400 mb-1">{adjustableOptions[selectedGardenStyle].label}</label>
+                                            <input
+                                                type="range"
+                                                min="1"
+                                                max="100"
+                                                value={optionIntensities[selectedGardenStyle] || adjustableOptions[selectedGardenStyle].default}
+                                                onChange={(e) => handleIntensityChange(selectedGardenStyle, Number(e.target.value))}
+                                                className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600"
+                                            />
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                              </CollapsibleSection>
+                               <CollapsibleSection title="Vegetation & Season" sectionKey="vegetation" isOpen={openSections.vegetation} onToggle={() => toggleSection('vegetation')} icon={<FlowerIcon className="w-5 h-5" />}>
+                                  <div className="flex flex-col gap-4">
+                                      <div>
+                                          <label htmlFor="treeAge" className="block text-sm font-medium text-gray-400">Tree Age</label>
+                                          <input id="treeAge" type="range" min="0" max="100" value={treeAge} onChange={e => setTreeAge(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600" />
+                                          <div className="flex justify-between text-xs text-gray-500 px-1">
+                                            <span>Young</span>
+                                            <span>Mature</span>
+                                            <span>Old</span>
+                                          </div>
+                                      </div>
+                                      <div>
+                                          <label htmlFor="season" className="block text-sm font-medium text-gray-400">Season</label>
+                                          <input id="season" type="range" min="0" max="100" value={season} onChange={e => setSeason(Number(e.target.value))} className="w-full h-2 bg-gradient-to-r from-green-400 via-yellow-400 to-orange-500 rounded-lg appearance-none cursor-pointer accent-red-600" />
+                                           <div className="flex justify-between text-xs text-gray-500 px-1">
+                                            <span>Spring</span>
+                                            <span>Summer</span>
+                                            <span>Autumn</span>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </CollapsibleSection>
+                          </div>
+                      </CollapsibleSection>
+                      
+                      <ArtStyleControls />
+                      <BackgroundControls />
+                      <ForegroundControls />
+
+                      <CollapsibleSection
+                        title="Camera Angle"
+                        sectionKey="cameraAngle"
+                        isOpen={openSections.cameraAngle}
+                        onToggle={() => toggleSection('cameraAngle')}
+                        icon={<CameraIcon className="w-5 h-5" />}
+                        actions={
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSuggestAngles();
+                            }}
+                            disabled={isSuggestingAngles || isLoading || !selectedImageUrl}
+                            className="flex items-center gap-1.5 px-2 py-1 text-xs font-semibold rounded-md transition-colors bg-gray-600 hover:bg-gray-500 text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Get AI camera angle suggestions"
+                          >
+                            <LightbulbIcon className="w-4 h-4" />
+                            <span>{isSuggestingAngles ? 'Suggesting...' : 'Suggest'}</span>
+                          </button>
+                        }
+                      >
+                          <div className="flex flex-wrap gap-2">
+                              {cameraAngleOptions.map(option => (
+                                  <OptionButton
+                                      key={option.name}
+                                      option={option.name}
+                                      isSelected={selectedCameraAngle === option.name}
+                                      onClick={handleCameraAngleChange}
+                                  />
+                              ))}
+                          </div>
+                          {suggestedAngles.length > 0 && (
+                            <div className="mt-4 pt-4 border-t border-gray-700/50">
+                              <h4 className="text-sm font-semibold text-gray-300 mb-2">Suggested Angles:</h4>
+                              <div className="flex flex-wrap gap-2">
+                                {suggestedAngles.map((angle, index) => (
+                                  <OptionButton
+                                      key={index}
+                                      option={angle}
+                                      isSelected={selectedCameraAngle === angle}
+                                      onClick={handleCameraAngleChange}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                      </CollapsibleSection>
+                    </>
+                  )}
+                  
+                  {/* --- Interior Scene Controls --- */}
+                  {activeImage && sceneType === 'interior' && editingMode === 'default' && (
+                      <>
+                        <CollapsibleSection title="Bedroom Presets" sectionKey="interiorQuickActions" isOpen={openSections.interiorQuickActions} onToggle={() => toggleSection('interiorQuickActions')} icon={<StarIcon className="w-5 h-5" />}>
+                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {interiorQuickActions.map(({ id, label, description }) => (
+                                <PreviewCard
+                                   key={id}
+                                   label={label}
+                                   description={description}
+                                   isSelected={selectedQuickAction === id}
+                                   onClick={() => handleQuickActionClick(id)}
+                                   icon={<StarIcon className="w-5 h-5" />}
+                                />
+                              ))}
+                            </div>
+                        </CollapsibleSection>
+                        
+                        <CollapsibleSection title="Living Room Presets" sectionKey="livingRoomQuickActions" isOpen={openSections.livingRoomQuickActions} onToggle={() => toggleSection('livingRoomQuickActions')} icon={<StarIcon className="w-5 h-5" />}>
+                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {livingRoomQuickActions.map(({ id, label, description }) => (
+                                <PreviewCard
+                                   key={id}
+                                   label={label}
+                                   description={description}
+                                   isSelected={selectedQuickAction === id}
+                                   onClick={() => handleQuickActionClick(id)}
+                                   icon={<StarIcon className="w-5 h-5" />}
+                                />
+                              ))}
+                            </div>
+                        </CollapsibleSection>
+
+                        <LightingAndAtmosphereControls sceneType={sceneType} />
+                        
+                         <CollapsibleSection title="Manual Adjustments" sectionKey="manualAdjustments" isOpen={openSections.manualAdjustments} onToggle={() => toggleSection('manualAdjustments')} icon={<AdjustmentsIcon className="w-5 h-5" />}>
+                          <div className="flex flex-col gap-4 p-2 bg-gray-900/30 rounded-lg">
+                            <CollapsibleSection title="Room Type & Style" sectionKey="interiorStyle" isOpen={openSections.interiorStyle} onToggle={() => toggleSection('interiorStyle')} icon={<HomeIcon className="w-5 h-5" />}>
+                                <div className="flex flex-col gap-4">
+                                   <div>
+                                      <h4 className="text-sm font-semibold text-gray-300 mb-2">Room Type</h4>
+                                      <div className="flex flex-wrap gap-2">
+                                          {roomTypeOptions.map(option => (
+                                              <OptionButton
+                                                  key={option}
+                                                  option={option}
+                                                  isSelected={selectedRoomType === option}
+                                                  onClick={() => handleRoomTypeChange(option)}
+                                              />
+                                          ))}
+                                      </div>
+                                   </div>
+                                   <div className="pt-4 border-t border-gray-700">
+                                      <h4 className="text-sm font-semibold text-gray-300 mb-2">Interior Style</h4>
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                          {interiorStyleOptions.map(option => (
+                                              <PreviewCard
+                                                  key={option.name}
+                                                  label={option.name}
+                                                  description={option.description}
+                                                  isSelected={selectedInteriorStyle === option.name}
+                                                  onClick={() => handleInteriorStyleChange(option.name)}
+                                                  isNested
+                                                  icon={<HomeIcon className="w-5 h-5" />}
+                                              />
+                                          ))}
+                                      </div>
+                                      {selectedInteriorStyle && INTERIOR_STYLE_PROMPTS[selectedInteriorStyle as keyof typeof INTERIOR_STYLE_PROMPTS] && (
+                                        <div className="mt-4 pt-4 border-t border-gray-700">
+                                          <h4 className="font-semibold text-gray-200 mb-1">"{selectedInteriorStyle}" Style Description:</h4>
+                                          <p className="text-sm text-gray-400 bg-gray-900/50 p-3 rounded-md">
+                                            {INTERIOR_STYLE_PROMPTS[selectedInteriorStyle as keyof typeof INTERIOR_STYLE_PROMPTS]}
+                                          </p>
+                                        </div>
+                                      )}
+                                   </div>
+                                </div>
+                            </CollapsibleSection>
+
+                            <CollapsibleSection title="Advanced Lighting & Fixtures" sectionKey="specialLighting" isOpen={openSections.specialLighting} onToggle={() => toggleSection('specialLighting')} icon={<LightbulbIcon className="w-5 h-5" />}>
+                                <div className="flex flex-col gap-6">
+                                    {/* Cove Lighting */}
+                                    <div className="p-3 bg-gray-900/50 rounded-lg">
+                                        <label className="flex items-center cursor-pointer justify-between">
+                                            <span className="text-sm font-medium text-gray-300">LED Cove Light</span>
+                                            <div className="relative">
+                                                <input type="checkbox" checked={isCoveLightActive} onChange={(e) => setIsCoveLightActive(e.target.checked)} className="sr-only peer" />
+                                                <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                                            </div>
+                                        </label>
+                                        <div className={`mt-4 space-y-4 transition-all duration-300 ease-in-out overflow-hidden ${isCoveLightActive ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'}`}>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-400 mb-1">Brightness</label>
+                                                <input type="range" min="1" max="100" value={coveLightBrightness} onChange={(e) => setCoveLightBrightness(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-400 mb-1">Light Color</label>
+                                                <input type="color" value={coveLightColor} onChange={(e) => setCoveLightColor(e.target.value)} className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md cursor-pointer" />
+                                            </div>
                                         </div>
                                     </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
+
+                                    {/* Spotlight */}
+                                    <div className="p-3 bg-gray-900/50 rounded-lg">
+                                        <label className="flex items-center cursor-pointer justify-between">
+                                            <span className="text-sm font-medium text-gray-300">Spotlight / Track Light</span>
+                                            <div className="relative">
+                                                <input type="checkbox" checked={isSpotlightActive} onChange={(e) => setIsSpotlightActive(e.target.checked)} className="sr-only peer" />
+                                                <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                                            </div>
+                                        </label>
+                                        <div className={`mt-4 space-y-4 transition-all duration-300 ease-in-out overflow-hidden ${isSpotlightActive ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'}`}>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-400 mb-1">Brightness</label>
+                                                <input type="range" min="1" max="100" value={spotlightBrightness} onChange={(e) => setSpotlightBrightness(Number(e.target.value))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-400 mb-1">Light Color</label>
+                                                <input type="color" value={spotlightColor} onChange={(e) => setSpotlightColor(e.target.value)} className="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-md cursor-pointer" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                     {/* 4-way AC */}
+                                    <div className="p-3 bg-gray-900/50 rounded-lg">
+                                        <label className="flex items-center cursor-pointer justify-between">
+                                            <span className="text-sm font-medium text-gray-300">4-Way Air Conditioner</span>
+                                            <div className="relative">
+                                                <input type="checkbox" checked={addFourWayAC} onChange={(e) => setAddFourWayAC(e.target.checked)} className="sr-only peer" />
+                                                <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </CollapsibleSection>
+                          </div>
+                        </CollapsibleSection>
+
+                        <ArtStyleControls />
+
+                        <CollapsibleSection title="Decorative Items" sectionKey="decorativeItems" isOpen={openSections.decorativeItems} onToggle={() => toggleSection('decorativeItems')} icon={<FlowerIcon className="w-5 h-5" />}>
+                            <div className="flex flex-wrap gap-2">
+                                {decorativeItemOptions.map(item => (
+                                    <OptionButton
+                                        key={item}
+                                        option={item}
+                                        isSelected={selectedDecorativeItems.includes(item)}
+                                        onClick={() => handleDecorativeItemToggle(item)}
+                                    />
+                                ))}
+                            </div>
+                        </CollapsibleSection>
+                        <BackgroundControls />
+                      </>
+                  )}
 
 
-                {/* History Panel */}
-                {activeProject && activeProject.history.length > 0 && (
-                    <CollapsibleSection title="Generation History" icon={<HistoryIcon className="w-5 h-5 text-gray-400" />}>
-                         <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-2">
-                             {activeProject.history.map((step, index) => renderHistoryItem(step[0], index)).reverse()}
-                         </div>
+                  {/* --- Shared Controls for all non-plan modes --- */}
+                  { activeImage && sceneType && (
+                     <CollapsibleSection
+                          title={`Output Size${outputSize !== 'Original' ? `: ${outputSize}` : ''}`}
+                          sectionKey="output"
+                          isOpen={openSections.output}
+                          onToggle={() => toggleSection('output')}
+                          icon={<CropIcon className="w-5 h-5" />}
+                      >
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {outputSizeOptions.map(option => (
+                                  <PreviewCard
+                                      key={option.value}
+                                      label={option.label}
+                                      description={option.description}
+                                      isSelected={outputSize === option.value}
+                                      onClick={() => handleOutputSizeChange(option.value)}
+                                      isNested
+                                      icon={option.value === 'Original' ? <PhotoIcon className="w-5 h-5" /> : <CropIcon className="w-5 h-5" />}
+                                  />
+                              ))}
+                          </div>
+                          {editingMode === 'object' && <p className="text-xs text-gray-400 mt-3 text-center">Output size changes are disabled in Inpainting mode.</p>}
+                      </CollapsibleSection>
+                  )}
+
+
+                  {activeImage && sceneType && editingMode === 'object' && (
+                    <CollapsibleSection title="Brush Tool" sectionKey="brushTool" isOpen={openSections.brushTool} onToggle={() => toggleSection('brushTool')} icon={<BrushIcon className="w-5 h-5" />}>
+                      <div className="flex flex-col gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-400 mb-2">Brush Size</label>
+                            <input
+                              type="range"
+                              min="10"
+                              max="100"
+                              value={brushSize}
+                              onChange={(e) => setBrushSize(Number(e.target.value))}
+                              className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-600"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-400 mb-2">Brush Color</label>
+                              <div className="flex justify-around items-center">
+                                {brushColors.map(({ name, value, css }) => (
+                                  <button
+                                    key={name}
+                                    type="button"
+                                    title={name}
+                                    onClick={() => setBrushColor(value)}
+                                    className={`w-8 h-8 rounded-full ${css} transition-transform hover:scale-110 ${brushColor === value ? 'ring-2 ring-offset-2 ring-offset-gray-800 ring-white' : ''}`}
+                                  />
+                                ))}
+                              </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => imageDisplayRef.current?.clearMask()}
+                            disabled={isMaskEmpty}
+                            className="w-full px-4 py-2 mt-2 text-sm font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 disabled:bg-gray-600 disabled:opacity-50 transition-colors"
+                          >
+                            Clear Mask
+                          </button>
+                      </div>
                     </CollapsibleSection>
-                )}
-            </div>
+                  )}
+                </div>
+                {/* --- CONTROLS END --- */}
 
-            {error && (
-              <div className="fixed bottom-5 right-5 bg-red-800 text-white p-4 rounded-lg shadow-lg max-w-sm animate-fade-in z-50">
-                  <p className="font-bold">Error</p>
-                  <p className="text-sm">{error}</p>
-                  <button onClick={() => setError(null)} className="absolute top-2 right-2 text-xl font-bold">&times;</button>
-              </div>
+
+                {activeImage && sceneType && (
+                  <div className="border-t border-gray-700 pt-6 flex flex-col gap-4">
+                      <div className="flex gap-3">
+                        <button
+                          type="submit"
+                          disabled={isLoading || !activeImage || !hasEditInstruction}
+                          className="flex-grow w-full flex items-center justify-center gap-3 px-6 py-4 rounded-full text-lg font-bold text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105"
+                        >
+                          <SparklesIcon className="w-6 h-6" />
+                          <span>{sceneType === 'plan' ? 'Generate 3D' : 'Generate'}</span>
+                        </button>
+                        {sceneType !== 'plan' && (
+                            <button
+                                type="button"
+                                onClick={handleRandomQuickAction}
+                                disabled={isLoading || !activeImage}
+                                className="flex-shrink-0 p-4 rounded-full bg-gray-700 hover:bg-gray-600 text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Random Preset"
+                            >
+                                <ShuffleIcon className="w-6 h-6" />
+                            </button>
+                        )}
+                      </div>
+                      
+                      {sceneType === 'plan' && (
+                          <button
+                              type="button"
+                              onClick={handleGenerate4PlanViews}
+                              disabled={isLoading || !isPlanModeReady}
+                              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-full text-base font-semibold text-gray-200 bg-gray-700/80 hover:bg-gray-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                              <CameraIcon className="w-5 h-5" />
+                              <span>Generate 4 3D Views</span>
+                          </button>
+                      )}
+
+                      {sceneType !== 'plan' && (
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <button
+                                type="button"
+                                onClick={() => handleVariationSubmit('style')}
+                                disabled={isLoading || !selectedImageUrl}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-full text-base font-semibold text-gray-200 bg-gray-700/80 hover:bg-gray-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <SparklesIcon className="w-5 h-5" />
+                                <span>Generate 4 Styles</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleVariationSubmit('angle')}
+                                disabled={isLoading || !selectedImageUrl}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-full text-base font-semibold text-gray-200 bg-gray-700/80 hover:bg-gray-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <CameraIcon className="w-5 h-5" />
+                                <span>Generate 4 Angles</span>
+                            </button>
+                        </div>
+                      )}
+                      {error && <p className="text-red-400 text-sm mt-4 text-center">{error}</p>}
+                  </div>
+                )}
+            </form>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Column: Image Display and Results */}
+      <div className="md:col-span-2 lg:col-span-3">
+        <div className="sticky top-8 flex flex-col gap-4">
+            <ImageDisplay
+              ref={imageDisplayRef}
+              label={
+                selectedImageUrl 
+                  ? (isPlanResultsView ? '3D Result' : 'Workspace (Result)') 
+                  : (activeImage ? (sceneType === 'plan' ? 'Original 2D Plan' : 'Original Image') : 'Workspace')
+              }
+              imageUrl={editingMode === 'object' ? imageForMasking : imageForDisplay}
+              originalImageUrl={
+                (editingMode !== 'object' && selectedImageUrl && activeImage) ? activeImage.dataUrl : null
+              }
+              isLoading={isLoading}
+              selectedFilter={editingMode === 'object' ? 'None' : selectedFilter}
+              brightness={editingMode === 'object' ? 100 : brightness}
+              contrast={editingMode === 'object' ? 100 : contrast}
+              saturation={editingMode === 'object' ? 100 : saturation}
+              sharpness={editingMode === 'object' ? 100 : sharpness}
+              isMaskingMode={editingMode === 'object'}
+              brushSize={brushSize}
+              brushColor={brushColor}
+              onMaskChange={setIsMaskEmpty}
+            />
+
+            {selectedImageUrl && (
+                <ImageToolbar
+                    onUndo={handleUndo}
+                    onRedo={handleRedo}
+                    onReset={handleResetEdits}
+                    onUpscale={handleUpscale}
+                    onOpenSaveModal={handleOpenSaveModal}
+                    onTransform={applyTransformation}
+                    canUndo={canUndo}
+                    canRedo={canRedo}
+                    canReset={activeImage?.history.length > 0}
+                    canUpscaleAndSave={!!selectedImageUrl}
+                    isLoading={isLoading}
+                />
+            )}
+
+            {currentResults && (
+                <div className="bg-gray-800/50 p-4 rounded-xl border border-gray-700">
+                    <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
+                        <h3 className="text-lg font-semibold text-gray-300">{getResultsTitle()}</h3>
+                         <div className="flex gap-2 flex-wrap">
+                            <ActionButton onClick={handleRegenerate} disabled={!canRegenerate || isLoading} title="Generate a new result with the same prompt">
+                              <ShuffleIcon className="w-4 h-4" />
+                              <span>Regenerate</span>
+                            </ActionButton>
+                            <ActionButton onClick={handleUndo} disabled={!canUndo || isLoading} title="Undo">
+                              <UndoIcon className="w-4 h-4" />
+                              <span>Undo</span>
+                            </ActionButton>
+                            <ActionButton onClick={handleRedo} disabled={!canRedo || isLoading} title="Redo">
+                              <RedoIcon className="w-4 h-4" />
+                               <span>Redo</span>
+                            </ActionButton>
+                            <ActionButton onClick={handleResetEdits} disabled={!activeImage || activeImage.history.length === 0 || isLoading} title="Reset all edits" color="red">
+                                <ResetEditsIcon className="w-4 h-4" />
+                                <span>Reset</span>
+                            </ActionButton>
+                         </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {currentResults.map((result, index) => (
+                            <div key={index} className="relative group">
+                                <button
+                                    type="button"
+                                    onClick={() => updateActiveImage(img => ({ ...img, selectedResultIndex: index }))}
+                                    className={`block w-full aspect-square rounded-lg overflow-hidden border-4 transition-colors ${
+                                        index === activeImage?.selectedResultIndex ? 'border-red-500' : 'border-transparent hover:border-gray-500'
+                                    }`}
+                                >
+                                    <img src={result} alt={`Result ${index + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                                </button>
+                                {currentLabels[index] && (
+                                    <span className="absolute bottom-1 left-1/2 -translate-x-1/2 bg-black/60 text-white text-xs px-2 py-1 rounded-full">{currentLabels[index]}</span>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
             )}
         </div>
-    );
+      </div>
+    </div>
+    </>
+  );
 };
 
 export default ImageEditor;
