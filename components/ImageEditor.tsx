@@ -36,6 +36,7 @@ import Spinner from './Spinner';
 import { PhotoIcon } from './icons/PhotoIcon';
 import { CropIcon } from './icons/CropIcon';
 import { DownlightIcon } from './icons/DownlightIcon';
+import { GithubIcon } from './icons/GithubIcon';
 
 
 export interface ImageState {
@@ -851,6 +852,10 @@ const ImageEditor: React.FC = () => {
   });
   
   const [editingMode, setEditingMode] = useState<EditingMode>('default');
+
+  // GitHub Backup Modal State
+  const [isGithubModalOpen, setIsGithubModalOpen] = useState(false);
+  const [githubModalStep, setGithubModalStep] = useState<'confirm' | 'success'>('confirm');
 
   const toggleSection = (sectionName: string) => {
     setOpenSections(prev => ({ ...prev, [sectionName]: !prev[sectionName] }));
@@ -2276,6 +2281,54 @@ const ImageEditor: React.FC = () => {
     await executeGeneration(promptForGeneration, promptForHistory);
   };
 
+  const handleSaveToGithubClick = () => {
+    setGithubModalStep('confirm'); // Reset to confirm step each time
+    setIsGithubModalOpen(true);
+  };
+
+  const handleConfirmGithubSave = () => {
+    try {
+        // 1. Gather all data
+        const serializableImageList = imageList.map(({ file, ...rest }) => rest);
+        const users = JSON.parse(localStorage.getItem('fast-ai-users') || '[]');
+        const approvedUsers = JSON.parse(localStorage.getItem('fast-ai-approved-users') || '[]');
+        
+        const backupData = {
+            version: '1.0',
+            createdAt: new Date().toISOString(),
+            projects: serializableImageList,
+            activeProjectIndex: activeImageIndex,
+            users: {
+                all: users,
+                approved: approvedUsers
+            }
+        };
+
+        // 2. Create JSON blob and download link
+        const jsonString = JSON.stringify(backupData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `fast-ai-backup-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(link);
+        link.click();
+
+        // 3. Clean up
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        // 4. Move to success step
+        setGithubModalStep('success');
+
+    } catch (err) {
+        console.error("Failed to create backup:", err);
+        setError("Could not create the backup file. Please try again.");
+        setIsGithubModalOpen(false); // Close modal on error
+    }
+  };
+
   const quickActions = [
     { id: 'sereneTwilightEstate', label: 'Serene Twilight Estate', description: 'A dusk setting with specific tree framing (large tree left, pine right) for a modern, serene look.' },
     { id: 'sereneHomeWithGarden', label: 'Serene Garden Home', description: 'Adds a lush garden, foreground trees, and warm interior lights for a peaceful, high-end look.' },
@@ -2493,6 +2546,61 @@ const ImageEditor: React.FC = () => {
 
   return (
     <>
+      {isGithubModalOpen && (
+            <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 animate-fade-in">
+                <div className="bg-gray-800 p-6 rounded-xl shadow-lg w-full max-w-md border border-gray-700 flex flex-col">
+                    {githubModalStep === 'confirm' && (
+                        <>
+                            <div className="flex items-center gap-4 mb-4">
+                                <GithubIcon className="w-8 h-8 text-gray-200"/>
+                                <h2 className="text-xl font-bold text-gray-200">Save Backup to GitHub</h2>
+                            </div>
+                            <p className="text-gray-400 mb-6 text-sm">
+                                This will generate and download a single JSON backup file containing all your current projects, edits, and user data.
+                                <br/><br/>
+                                You can then manually upload this file to a private GitHub Gist or repository for safekeeping. This is a great way to back up your work.
+                            </p>
+                            <div className="flex justify-end gap-4">
+                                <button
+                                    onClick={() => setIsGithubModalOpen(false)}
+                                    className="px-6 py-2 rounded-full text-sm font-semibold bg-gray-600 text-gray-200 hover:bg-gray-500 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleConfirmGithubSave}
+                                    className="px-6 py-2 rounded-full text-sm font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors flex items-center gap-2"
+                                >
+                                    <DownloadIcon className="w-5 h-5"/>
+                                    Confirm & Download
+                                </button>
+                            </div>
+                        </>
+                    )}
+                    {githubModalStep === 'success' && (
+                         <>
+                            <div className="flex items-center gap-4 mb-4">
+                                <GithubIcon className="w-8 h-8 text-green-400"/>
+                                <h2 className="text-xl font-bold text-gray-200">Backup Created!</h2>
+                            </div>
+                            <p className="text-gray-400 mb-6 text-sm">
+                                Your backup file (`fast-ai-backup-...json`) has been downloaded.
+                                <br/><br/>
+                                <strong>Next Step:</strong> Go to <a href="https://gist.github.com/" target="_blank" rel="noopener noreferrer" className="text-red-400 hover:underline">gist.github.com</a>, create a new <strong>secret</strong> Gist, and upload the downloaded file to save it securely.
+                            </p>
+                            <div className="flex justify-end gap-4">
+                                <button
+                                    onClick={() => setIsGithubModalOpen(false)}
+                                    className="px-6 py-2 rounded-full text-sm font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors"
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>
+        )}
     {isSaveModalOpen && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
             <div className="bg-gray-800 p-6 rounded-xl shadow-lg w-full max-w-sm border border-gray-700 flex flex-col">
@@ -2551,13 +2659,24 @@ const ImageEditor: React.FC = () => {
                     <div>
                         <div className="flex justify-between items-center mb-2">
                             <h3 className="text-sm font-medium text-gray-300">Your Projects</h3>
-                            <button
-                                type="button"
-                                onClick={handleClearAllProjects}
-                                className="px-2 py-1 text-xs font-semibold text-red-300 bg-red-900/50 rounded-md hover:bg-red-800/50 transition-colors"
-                            >
-                                Clear All
-                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={handleSaveToGithubClick}
+                                    className="flex items-center gap-1.5 px-2 py-1 text-xs font-semibold text-gray-300 bg-gray-700/80 rounded-md hover:bg-gray-600/80 transition-colors"
+                                    title="Save a backup of all projects and users"
+                                >
+                                    <GithubIcon className="w-4 h-4" />
+                                    <span>Save to GitHub</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleClearAllProjects}
+                                    className="px-2 py-1 text-xs font-semibold text-red-300 bg-red-900/50 rounded-md hover:bg-red-800/50 transition-colors"
+                                >
+                                    Clear All
+                                </button>
+                            </div>
                         </div>
                         <div className="flex flex-wrap gap-4 p-4 bg-gray-900/50 rounded-lg">
                             {imageList.map((image, index) => (
