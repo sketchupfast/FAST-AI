@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, useEffect, ReactNode, useCallback, useMemo } from 'react';
 
 interface User {
@@ -8,13 +9,11 @@ interface AuthContextType {
   user: User | null;
   isLoggedIn: boolean;
   login: (email: string) => void;
-  signup: (email: string) => void;
   logout: () => void;
-  signupPending: boolean;
-  setSignupPending: React.Dispatch<React.SetStateAction<boolean>>;
   isAdmin: boolean;
   approveUser: (email: string) => void;
   getAllUsers: () => { email: string; isApproved: boolean }[];
+  createUserByAdmin: (email: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -42,7 +41,6 @@ const getStoredArray = (key: string): string[] => {
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [signupPending, setSignupPending] = useState(false);
 
   useEffect(() => {
     // Restore user session from localStorage on initial load
@@ -93,29 +91,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const approvedUsers = getStoredArray('fast-ai-approved-users');
 
     if (!users.includes(normalizedEmail)) {
-      throw new Error('Account not found. Please sign up first.');
+      throw new Error('Account not found. Please contact the creator to create an account.');
     }
 
     if (!approvedUsers.includes(normalizedEmail)) {
-      throw new Error('Your account is awaiting approval from the creator.');
+      throw new Error('Your account is not approved. Please contact the creator.');
     }
     
     // If we reach here, user exists and is approved.
     const newUser = { email: normalizedEmail };
     localStorage.setItem('fast-ai-user', JSON.stringify(newUser));
     setUser(newUser);
-    setSignupPending(false);
-  }, []);
-  
-  const signup = useCallback((email: string) => {
-    const normalizedEmail = String(email).toLowerCase();
-    const users = getStoredArray('fast-ai-users');
-    if (users.includes(normalizedEmail)) {
-        throw new Error('An account with this email already exists.');
-    }
-    users.push(normalizedEmail);
-    localStorage.setItem('fast-ai-users', JSON.stringify(users));
-    setSignupPending(true);
   }, []);
 
   const logout = useCallback(() => {
@@ -139,23 +125,42 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       .filter((email) => email !== ADMIN_EMAIL) // Don't show admin in the list
       .map((email) => ({
           email,
-          // This comparison is now guaranteed to be case-insensitive and reliable
           isApproved: approvedUsers.includes(email),
       }));
   }, []);
+
+  const createUserByAdmin = useCallback((email: string) => {
+    const normalizedEmail = String(email).toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!normalizedEmail || !emailRegex.test(normalizedEmail)) {
+      throw new Error('Please enter a valid email address.');
+    }
+
+    const users = getStoredArray('fast-ai-users');
+    if (users.includes(normalizedEmail)) {
+        throw new Error('An account with this email already exists.');
+    }
+
+    const approvedUsers = getStoredArray('fast-ai-approved-users');
+
+    users.push(normalizedEmail);
+    approvedUsers.push(normalizedEmail);
+
+    localStorage.setItem('fast-ai-users', JSON.stringify(users));
+    localStorage.setItem('fast-ai-approved-users', JSON.stringify(approvedUsers));
+  }, []);
+
 
   const value = useMemo(() => ({
     user,
     isLoggedIn: !!user,
     isAdmin: user?.email === ADMIN_EMAIL,
     login,
-    signup,
     logout,
-    signupPending,
-    setSignupPending,
     approveUser,
     getAllUsers,
-  }), [user, signupPending, login, signup, logout, approveUser, getAllUsers]);
+    createUserByAdmin,
+  }), [user, login, logout, approveUser, getAllUsers, createUserByAdmin]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

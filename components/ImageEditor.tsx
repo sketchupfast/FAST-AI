@@ -151,7 +151,7 @@ const outputSizeOptions = [
 ];
 
 // --- Plan to 3D Options ---
-const roomTypeOptions = ['Living Room', 'Bedroom', 'Kitchen', 'Bathroom', 'Office', 'Dining Room'];
+const roomTypeOptions = ['Living Room', 'Bedroom', 'Kid\'s Room', 'Kitchen', 'Bathroom', 'Office', 'Dining Room', 'Home Theater', 'Walk-in Closet', 'Lobby', 'Home Gym', 'Library', 'Game Room', 'Laundry Room', 'Sunroom', 'Nursery', 'Prayer Room', 'Home Bar', 'Pantry', 'Balcony', 'Seminar Room', 'Banquet Hall'];
 
 const planViewOptions = [
     { name: 'Eye-Level View', prompt: 'a realistic eye-level interior photo' },
@@ -165,6 +165,14 @@ const planMaterialsOptions = ['Modern Wood & Concrete', 'Classic Marble & Gold',
 
 const decorativeItemOptions = ['Wall Art', 'Flower Vase', 'Rug on Floor', 'Floor Lamp', 'Potted Plant', 'Stack of Books'];
 
+// New options for 2D Plan Colorization
+const planColorStyleOptions = [
+    { name: 'Modern Minimalist', description: 'Clean lines, neutral colors (grays, whites), with light wood floors and simple furniture symbols.' },
+    { name: 'Cozy Natural', description: 'Warm wood tones, earthy colors, textured rugs, and green plant symbols.' },
+    { name: 'Luxury Chic', description: 'Marble textures, dark wood accents, brass details, and a sophisticated color palette.' },
+    { name: 'Vibrant & Colorful', description: 'Bold accent colors, playful patterns, and a creative, energetic feel.' },
+];
+
 type EditingMode = 'default' | 'object';
 type SceneType = 'exterior' | 'interior' | 'plan';
 
@@ -172,10 +180,26 @@ type SceneType = 'exterior' | 'interior' | 'plan';
 const ROOM_TYPE_PROMPTS: Record<string, string> = {
     'Living Room': 'a living room',
     'Bedroom': 'a bedroom',
+    'Kid\'s Room': 'a kid\'s bedroom',
     'Kitchen': 'a kitchen',
     'Bathroom': 'a bathroom',
     'Office': 'an office space',
     'Dining Room': 'a dining room',
+    'Home Theater': 'a home theater or media room',
+    'Walk-in Closet': 'a spacious walk-in closet',
+    'Lobby': 'a building lobby or foyer area',
+    'Home Gym': 'a home gym with exercise equipment',
+    'Library': 'a home library or study room',
+    'Game Room': 'a game room with a TV, sofa, and entertainment systems',
+    'Laundry Room': 'a laundry room with a washer and dryer',
+    'Sunroom': 'a sunroom or conservatory with large windows and plants',
+    'Nursery': 'a nursery for a baby with a crib and changing table',
+    'Prayer Room': 'a serene prayer or meditation room',
+    'Home Bar': 'a stylish home bar area',
+    'Pantry': 'a kitchen pantry with shelves for food storage',
+    'Balcony': 'an outdoor balcony space',
+    'Seminar Room': 'a large seminar or conference room with rows of chairs and a stage or podium',
+    'Banquet Hall': 'a large banquet hall for events, with round tables and a stage',
 };
 
 const PLAN_VIEW_PROMPTS: Record<string, string> = {
@@ -183,6 +207,13 @@ const PLAN_VIEW_PROMPTS: Record<string, string> = {
     'Isometric View': 'a 3D isometric cutaway view',
     'Top-Down View': 'a 3D top-down view',
     'Wide-Angle View': 'a realistic wide-angle interior photo',
+};
+
+const PLAN_COLOR_STYLE_PROMPTS: Record<string, string> = {
+    'Modern Minimalist': 'Transform this black and white 2D floor plan line drawing into a professional, colored presentation floor plan in a modern minimalist style. Use a neutral color palette of whites and grays, with light-toned wood texture for flooring. Color the walls in a very light off-white. Add simple, clean-lined furniture symbols. The overall look must be clean, elegant, and easy to read.',
+    'Cozy Natural': 'Transform this black and white 2D floor plan line drawing into a beautiful, colored presentation floor plan with a cozy, natural aesthetic. Use warm wood textures for the floors, an earthy color palette (beiges, soft greens, terracotta), and show textured rugs in living areas. Include symbols for indoor plants. The walls should be a warm white. The final result should feel inviting, comfortable, and connected to nature.',
+    'Luxury Chic': 'Transform this black and white 2D floor plan line drawing into a luxurious and chic colored presentation floor plan. Use high-end material textures like polished marble for bathrooms and dark wood for bedrooms. Incorporate a sophisticated color palette of deep blues, charcoal grays, and creams, with brass or gold accents in fixture symbols. The style should be elegant, high-end, and impressive.',
+    'Vibrant & Colorful': 'Transform this black and white 2D floor plan line drawing into a vibrant and colorful presentation floor plan. Use bold accent colors for feature walls or furniture symbols. Incorporate playful patterns for rugs or tiles. The style should be energetic, creative, and modern, suitable for a dynamic and artistic space.',
 };
 
 const PLAN_LIGHTING_PROMPTS: Record<string, string> = {
@@ -753,6 +784,7 @@ const ImageEditor: React.FC = () => {
   const [selectedPlanLighting, setSelectedPlanLighting] = useState<string>('');
   const [selectedPlanMaterials, setSelectedPlanMaterials] = useState<string>('');
   const [furniturePrompt, setFurniturePrompt] = useState<string>('');
+  const [selectedPlanColorStyle, setSelectedPlanColorStyle] = useState<string>('');
   
   // Color adjustment states
   const [brightness, setBrightness] = useState<number>(100);
@@ -808,6 +840,7 @@ const ImageEditor: React.FC = () => {
     vegetation: false,
     materialExamples: false,
     specialLighting: false,
+    planColorize: false,
     planConfig: false,
     planDetails: false,
     planView: false,
@@ -973,6 +1006,7 @@ const ImageEditor: React.FC = () => {
     setSelectedPlanLighting('');
     setSelectedPlanMaterials('');
     setFurniturePrompt('');
+    setSelectedPlanColorStyle('');
     // Reset interior lighting
     setIsCoveLightActive(false);
     setCoveLightBrightness(70);
@@ -1108,8 +1142,9 @@ const ImageEditor: React.FC = () => {
         setPrompt('');
         setOpenSections({
             ...allClosed,
-            planConfig: true,
-            planView: true,
+            planColorize: true,
+            planConfig: false,
+            planView: false,
             projectHistory: true,
         });
     } else { // exterior
@@ -2232,6 +2267,15 @@ const ImageEditor: React.FC = () => {
     }
   };
 
+  const handleColorizePlan = async () => {
+    if (!activeImage || !selectedPlanColorStyle) return;
+
+    const promptForGeneration = PLAN_COLOR_STYLE_PROMPTS[selectedPlanColorStyle];
+    const promptForHistory = `Colorize Plan: ${selectedPlanColorStyle}`;
+
+    await executeGeneration(promptForGeneration, promptForHistory);
+  };
+
   const quickActions = [
     { id: 'sereneTwilightEstate', label: 'Serene Twilight Estate', description: 'A dusk setting with specific tree framing (large tree left, pine right) for a modern, serene look.' },
     { id: 'sereneHomeWithGarden', label: 'Serene Garden Home', description: 'Adds a lush garden, foreground trees, and warm interior lights for a peaceful, high-end look.' },
@@ -2603,31 +2647,40 @@ const ImageEditor: React.FC = () => {
                   <div className="border-t border-gray-700 pt-4 mt-4">
                     {!sceneType ? (
                       <>
-                        <label className="block text-sm font-medium text-gray-300 mb-3 text-center">2. What would you like to do?</label>
-                        <div className="flex flex-col gap-3">
+                        <label className="block text-sm font-medium text-gray-300 mb-3 text-center">2. Select an AI design tool</label>
+                        <div className="flex flex-col gap-4">
                             <button
                                 type="button"
                                 onClick={() => handleSceneTypeSelect('exterior')}
-                                className="w-full flex items-center justify-center gap-3 p-3 text-base font-semibold rounded-lg transition-all duration-200 bg-gray-800 text-gray-200 hover:bg-red-600 hover:text-white border border-gray-600 hover:border-red-500"
+                                className="w-full flex items-center gap-4 p-4 rounded-lg transition-all duration-200 bg-gray-800 text-gray-200 hover:bg-red-600 hover:text-white border border-gray-600 hover:border-red-500 group"
                             >
-                                <HomeModernIcon className="w-6 h-6"/>
-                                <span>Exterior Editing</span>
+                                <HomeModernIcon className="w-8 h-8 flex-shrink-0 text-red-400 group-hover:text-white transition-colors"/>
+                                <div className="text-left">
+                                    <span className="font-bold text-lg">Exterior Architect AI</span>
+                                    <p className="text-sm font-normal text-gray-400 group-hover:text-gray-200 transition-colors">Redesign building exteriors and landscapes.</p>
+                                </div>
                             </button>
                             <button
                                 type="button"
                                 onClick={() => handleSceneTypeSelect('interior')}
-                                className="w-full flex items-center justify-center gap-3 p-3 text-base font-semibold rounded-lg transition-all duration-200 bg-gray-800 text-gray-200 hover:bg-red-600 hover:text-white border border-gray-600 hover:border-red-500"
+                                className="w-full flex items-center gap-4 p-4 rounded-lg transition-all duration-200 bg-gray-800 text-gray-200 hover:bg-red-600 hover:text-white border border-gray-600 hover:border-red-500 group"
                             >
-                                <HomeIcon className="w-6 h-6"/>
-                                <span>Interior Editing</span>
+                                <HomeIcon className="w-8 h-8 flex-shrink-0 text-red-400 group-hover:text-white transition-colors"/>
+                                <div className="text-left">
+                                    <span className="font-bold text-lg">Interior Designer AI</span>
+                                    <p className="text-sm font-normal text-gray-400 group-hover:text-gray-200 transition-colors">Restyle interior spaces with new designs.</p>
+                                </div>
                             </button>
                             <button
                                 type="button"
                                 onClick={() => handleSceneTypeSelect('plan')}
-                                className="w-full flex items-center justify-center gap-3 p-3 text-base font-semibold rounded-lg transition-all duration-200 bg-gray-800 text-gray-200 hover:bg-red-600 hover:text-white border border-gray-600 hover:border-red-500"
+                                className="w-full flex items-center gap-4 p-4 rounded-lg transition-all duration-200 bg-gray-800 text-gray-200 hover:bg-red-600 hover:text-white border border-gray-600 hover:border-red-500 group"
                             >
-                                <PlanIcon className="w-6 h-6"/>
-                                <span>2D Plan to 3D</span>
+                                <PlanIcon className="w-8 h-8 flex-shrink-0 text-red-400 group-hover:text-white transition-colors"/>
+                                <div className="text-left">
+                                    <span className="font-bold text-lg">AI 3D Architect</span>
+                                    <p className="text-sm font-normal text-gray-400 group-hover:text-gray-200 transition-colors">Visualize your floor plan in stunning 3D.</p>
+                                </div>
                             </button>
                         </div>
                       </>
@@ -2779,7 +2832,39 @@ const ImageEditor: React.FC = () => {
                   {/* --- 2D Plan to 3D Controls --- */}
                   {activeImage && sceneType === 'plan' && (
                     <>
-                      <CollapsibleSection title="1. Define Room & Style" sectionKey="planConfig" isOpen={openSections.planConfig} onToggle={() => toggleSection('planConfig')} icon={<HomeModernIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
+                      <CollapsibleSection title="1. Colorize 2D Plan" sectionKey="planColorize" isOpen={openSections.planColorize} onToggle={() => toggleSection('planColorize')} icon={<BrushIcon className="w-5 h-5" />}>
+                          <p className="text-sm text-gray-400 mb-4">Transform your black & white line drawing into a beautiful presentation-ready color plan.</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {planColorStyleOptions.map(option => (
+                                  <PreviewCard
+                                      key={option.name}
+                                      label={option.name}
+                                      description={option.description}
+                                      isSelected={selectedPlanColorStyle === option.name}
+                                      onClick={() => setSelectedPlanColorStyle(prev => prev === option.name ? '' : option.name)}
+                                      isNested
+                                      icon={<BrushIcon className="w-5 h-5" />}
+                                  />
+                              ))}
+                          </div>
+                           <button
+                              type="button"
+                              onClick={handleColorizePlan}
+                              disabled={isLoading || !selectedPlanColorStyle}
+                              className="mt-4 w-full flex items-center justify-center gap-3 px-4 py-3 rounded-full text-base font-bold text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105"
+                            >
+                                <SparklesIcon className="w-6 h-6" />
+                                <span>Generate Color Plan</span>
+                            </button>
+                      </CollapsibleSection>
+                      
+                      <div className="text-center my-4">
+                        <span className="text-gray-400 font-semibold">— OR —</span>
+                      </div>
+
+                      <h3 className="text-lg font-semibold text-gray-200 mb-3 text-center">2. Generate 3D View from Plan</h3>
+
+                      <CollapsibleSection title="Step 1: Define Room & Style" sectionKey="planConfig" isOpen={openSections.planConfig} onToggle={() => toggleSection('planConfig')} icon={<HomeModernIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
                           <div className="flex flex-col gap-4">
                               <div>
                                   <h4 className="text-sm font-semibold text-gray-300 mb-2">Room Type</h4>
@@ -2821,7 +2906,7 @@ const ImageEditor: React.FC = () => {
                           </div>
                       </CollapsibleSection>
 
-                      <CollapsibleSection title="2. Details (Optional)" sectionKey="planDetails" isOpen={openSections.planDetails} onToggle={() => toggleSection('planDetails')} icon={<PencilIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
+                      <CollapsibleSection title="Step 2: Details (Optional)" sectionKey="planDetails" isOpen={openSections.planDetails} onToggle={() => toggleSection('planDetails')} icon={<PencilIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
                           <div className="flex flex-col gap-4">
                               <div>
                                   <h4 className="text-sm font-semibold text-gray-300 mb-2">Furniture Layout</h4>
@@ -2863,7 +2948,7 @@ const ImageEditor: React.FC = () => {
                       </CollapsibleSection>
                       
                       <div className="flex flex-col gap-1 p-1 bg-gray-900/50 rounded-lg">
-                        <CollapsibleSection title="3. Select View" sectionKey="planView" isOpen={openSections.planView} onToggle={() => toggleSection('planView')} icon={<CameraIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
+                        <CollapsibleSection title="Step 3: Select View" sectionKey="planView" isOpen={openSections.planView} onToggle={() => toggleSection('planView')} icon={<CameraIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
                             <div className="flex flex-wrap gap-2">
                                 {planViewOptions.map(option => (
                                     <OptionButton

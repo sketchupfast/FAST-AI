@@ -36,10 +36,14 @@ const FilterButton: React.FC<{
 
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
-    const { getAllUsers, approveUser } = useAuth();
+    const { getAllUsers, approveUser, createUserByAdmin } = useAuth();
     const [users, setUsers] = useState(() => getAllUsers());
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'approved'>('all');
+
+    const [newUserEmail, setNewUserEmail] = useState('');
+    const [createUserError, setCreateUserError] = useState('');
+    const [createUserSuccess, setCreateUserSuccess] = useState('');
 
     useEffect(() => {
         if (isOpen) {
@@ -50,6 +54,23 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
     const handleApprove = (email: string) => {
         approveUser(email);
         setUsers(getAllUsers()); // Refresh list
+    };
+    
+    const handleCreateUser = () => {
+        setCreateUserError('');
+        setCreateUserSuccess('');
+        try {
+            createUserByAdmin(newUserEmail);
+            setCreateUserSuccess(`Successfully created and approved user: ${newUserEmail}`);
+            setNewUserEmail('');
+            setUsers(getAllUsers()); // Refresh user list
+        } catch (err) {
+            if (err instanceof Error) {
+                setCreateUserError(err.message);
+            } else {
+                setCreateUserError('An unknown error occurred.');
+            }
+        }
     };
     
     const filteredUsers = useMemo(() => {
@@ -75,7 +96,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
 
     const emptyMessage = useMemo(() => {
         if (users.length === 0) {
-            return "No users have signed up yet.";
+            return "No users have been created yet.";
         }
         if (searchTerm) {
             return "No users found matching your search.";
@@ -105,6 +126,33 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                     <h2 className="text-xl font-bold text-gray-200">Creator Panel - User Management</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-white text-3xl font-bold leading-none">&times;</button>
                 </div>
+
+                <div className="mb-6 p-4 bg-gray-700/50 rounded-lg">
+                    <h3 className="text-lg font-semibold text-gray-200 mb-3">Add New User</h3>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <input
+                            type="email"
+                            placeholder="Enter new user's email"
+                            value={newUserEmail}
+                            onChange={(e) => {
+                                setNewUserEmail(e.target.value);
+                                setCreateUserError('');
+                                setCreateUserSuccess('');
+                            }}
+                            className="flex-grow bg-gray-700 border border-gray-600 rounded-md py-2 px-4 text-white focus:outline-none focus:ring-red-500 focus:border-red-500"
+                        />
+                        <button
+                            onClick={handleCreateUser}
+                            disabled={!newUserEmail}
+                            className="px-5 py-2 text-sm font-semibold text-white bg-red-600 rounded-full hover:bg-red-700 transition-colors disabled:opacity-50"
+                        >
+                            Add & Approve User
+                        </button>
+                    </div>
+                    {createUserError && <p className="text-red-400 text-sm mt-2">{createUserError}</p>}
+                    {createUserSuccess && <p className="text-green-400 text-sm mt-2">{createUserSuccess}</p>}
+                </div>
+
 
                 <div className="flex flex-col sm:flex-row gap-4 mb-4">
                     <div className="relative flex-grow">
