@@ -21,7 +21,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const ADMIN_EMAIL = 'creator@fast.ai';
 
 // Helper to safely read, parse, and normalize string arrays from localStorage.
-// This ensures data is always consistent and lowercase.
+// This ensures data is always consistent, trimmed, and lowercase.
 const getStoredArray = (key: string): string[] => {
     try {
         const storedValue = localStorage.getItem(key);
@@ -29,7 +29,8 @@ const getStoredArray = (key: string): string[] => {
         
         const parsed = JSON.parse(storedValue);
         if (Array.isArray(parsed) && parsed.every(item => typeof item === 'string')) {
-            return parsed.map(email => String(email).toLowerCase()); // Always return lowercase
+            // Trim and convert to lowercase for robust matching
+            return parsed.map(email => String(email).trim().toLowerCase());
         }
     } catch (error) {
         console.error(`Error parsing ${key} from localStorage`, error);
@@ -50,7 +51,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const parsedUser = JSON.parse(storedUser);
         if (parsedUser && typeof parsedUser.email === 'string') {
             // Ensure the user session email is also normalized
-            setUser({ email: String(parsedUser.email).toLowerCase() });
+            setUser({ email: String(parsedUser.email).trim().toLowerCase() });
         }
       } catch (error) {
         console.error("Failed to parse user from localStorage", error);
@@ -74,7 +75,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         approvedModified = true;
     }
 
-    // This also serves as a data migration step to ensure all stored emails are lowercase.
+    // This also serves as a data migration step to ensure all stored emails are trimmed and lowercase.
     // It rewrites the stored data only if modifications were necessary.
     if (usersModified) {
         localStorage.setItem('fast-ai-users', JSON.stringify(users));
@@ -85,7 +86,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const login = useCallback((email: string) => {
-    const normalizedEmail = String(email).toLowerCase();
+    const normalizedEmail = String(email).trim().toLowerCase();
     
     const users = getStoredArray('fast-ai-users');
     const approvedUsers = getStoredArray('fast-ai-approved-users');
@@ -110,93 +111,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const approveUser = useCallback((email: string) => {
-    const normalizedEmail = String(email).toLowerCase();
+    const normalizedEmail = String(email).trim().toLowerCase();
     
     // First, handle the approved list, which is the primary goal.
-    const approvedUsers = getStoredArray('fast-ai-approved-users');
-    if (!approvedUsers.includes(normalizedEmail)) {
-        // Create a new array and save it.
-        const updatedApproved = [...approvedUsers, normalizedEmail];
-        localStorage.setItem('fast-ai-approved-users', JSON.stringify(updatedApproved));
-    }
-
-    // Second, as a safeguard, ensure the user is also in the main list.
-    const users = getStoredArray('fast-ai-users');
-    if (!users.includes(normalizedEmail)) {
-        // Create a new array and save it.
-        const updatedUsers = [...users, normalizedEmail];
-        localStorage.setItem('fast-ai-users', JSON.stringify(updatedUsers));
-    }
-  }, []);
-
-  const getAllUsers = useCallback(() => {
-    const users = getStoredArray('fast-ai-users');
-    const approvedUsers = getStoredArray('fast-ai-approved-users');
-    return users
-      .filter((email) => email !== ADMIN_EMAIL) // Don't show admin in the list
-      .map((email) => ({
-          email,
-          isApproved: approvedUsers.includes(email),
-      }));
-  }, []);
-
-  const createUserByAdmin = useCallback((email: string) => {
-    const normalizedEmail = String(email).toLowerCase();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!normalizedEmail || !emailRegex.test(normalizedEmail)) {
-      throw new Error('Please enter a valid email address.');
-    }
-
-    const users = getStoredArray('fast-ai-users');
-    if (users.includes(normalizedEmail)) {
-        throw new Error('An account with this email already exists.');
-    }
-
-    const approvedUsers = getStoredArray('fast-ai-approved-users');
-
-    users.push(normalizedEmail);
-    approvedUsers.push(normalizedEmail);
-
-    localStorage.setItem('fast-ai-users', JSON.stringify(users));
-    localStorage.setItem('fast-ai-approved-users', JSON.stringify(approvedUsers));
-  }, []);
-
-  const deleteUser = useCallback((email: string) => {
-    const normalizedEmail = String(email).toLowerCase();
-    if (normalizedEmail === ADMIN_EMAIL) {
-      throw new Error("Cannot delete the admin account.");
-    }
-
-    let users = getStoredArray('fast-ai-users');
-    let approvedUsers = getStoredArray('fast-ai-approved-users');
-
-    const newUsers = users.filter(u => u !== normalizedEmail);
-    const newApprovedUsers = approvedUsers.filter(u => u !== normalizedEmail);
-    
-    localStorage.setItem('fast-ai-users', JSON.stringify(newUsers));
-    localStorage.setItem('fast-ai-approved-users', JSON.stringify(newApprovedUsers));
-  }, []);
-
-
-  const value = useMemo(() => ({
-    user,
-    isLoggedIn: !!user,
-    isAdmin: user?.email === ADMIN_EMAIL,
-    login,
-    logout,
-    approveUser,
-    getAllUsers,
-    createUserByAdmin,
-    deleteUser,
-  }), [user, login, logout, approveUser, getAllUsers, createUserByAdmin, deleteUser]);
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+    const approvedUsers = getStoredArray('fast-ai-
