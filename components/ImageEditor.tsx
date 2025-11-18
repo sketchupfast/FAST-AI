@@ -1292,7 +1292,7 @@ const ImageEditor: React.FC = () => {
 
   const handleDecorativeItemToggle = (item: string) => {
     setSelectedDecorativeItems(prev =>
-        prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]
+        prev.includes(item) ? prev.filter(i => i !== i) : [...prev, item]
     );
   };
   
@@ -2120,6 +2120,9 @@ const ImageEditor: React.FC = () => {
     ? activeImage?.lastGeneratedLabels 
     : null;
     
+  const adjustableOptionKey = selectedGardenStyle || selectedBackgrounds[0] || selectedForegrounds[0];
+  const adjustableOption = adjustableOptionKey ? adjustableOptions[adjustableOptionKey] : null;
+
   if (!isDataLoaded) {
     return (
         <div className="flex items-center justify-center h-[60vh]">
@@ -2208,7 +2211,7 @@ const ImageEditor: React.FC = () => {
                             {/* --- EXTERIOR CONTROLS --- */}
                             {sceneType === 'exterior' && (
                                 <>
-                                <CollapsibleSection title="Text Prompt" sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-5 h-5" />} disabled={editingMode === 'object' && isMaskEmpty}>
+                                <CollapsibleSection title="Text Prompt" sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-5 h-5" />}>
                                     <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={editingMode === 'object' ? 'Describe the change for the masked area...' : 'e.g., "add a swimming pool"'} className="w-full bg-gray-900/50 border border-gray-600 rounded-md p-2 text-gray-200 placeholder-gray-500" rows={3}></textarea>
                                     <textarea value={negativePrompt} onChange={(e) => setNegativePrompt(e.target.value)} placeholder="Negative prompt (optional): things to avoid..." className="mt-2 w-full bg-gray-900/50 border border-gray-600 rounded-md p-2 text-gray-200 placeholder-gray-500" rows={2}></textarea>
                                 </CollapsibleSection>
@@ -2225,26 +2228,348 @@ const ImageEditor: React.FC = () => {
                                     <PreviewCard label="Pristine Show Home" description="Brand new look, perfectly tidy landscape, neat hedge fence." isSelected={selectedQuickAction === 'pristineShowHome'} onClick={() => handleQuickActionClick('pristineShowHome')} />
                                     <PreviewCard label="Urban Watercolor" description="Loose ink lines with soft watercolor washes, capturing city energy." icon={<SketchWatercolorIcon className="w-5 h-5 text-gray-400"/>} isSelected={selectedQuickAction === 'urbanSketch'} onClick={() => handleQuickActionClick('urbanSketch')} />
                                     <PreviewCard label="Architectural Sketch" description="Clean linework over a blueprint-style background with annotations." icon={<ArchitecturalSketchIcon className="w-5 h-5 text-gray-400"/>} isSelected={selectedQuickAction === 'architecturalSketch'} onClick={() => handleQuickActionClick('architecturalSketch')} />
+                                    <PreviewCard label="Sketch to Photo" description="Transform an architectural sketch into a photorealistic image." isSelected={selectedQuickAction === 'sketchToPhoto'} onClick={() => handleQuickActionClick('sketchToPhoto')} />
                                   </div>
                                 </CollapsibleSection>
                                 
-                                {/* ... other controls ... */}
+                                <CollapsibleSection title="Architectural Style" sectionKey="archStyle" isOpen={openSections.archStyle} onToggle={() => toggleSection('archStyle')} icon={<HomeModernIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    {architecturalStyleOptions.map(style => (
+                                      <PreviewCard key={style.name} label={style.name} description={style.description} isSelected={selectedArchStyle === style.name} onClick={() => handleArchStyleChange(style.name)} isNested/>
+                                    ))}
+                                  </div>
+                                </CollapsibleSection>
+
+                                <CollapsibleSection title="Garden Style" sectionKey="gardenStyle" isOpen={openSections.gardenStyle} onToggle={() => toggleSection('gardenStyle')} icon={<FlowerIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                      {gardenStyleOptions.map(style => (
+                                          <PreviewCard key={style.name} label={style.name} description={style.description} isSelected={selectedGardenStyle === style.name} onClick={() => handleGardenStyleChange(style.name)} />
+                                      ))}
+                                  </div>
+                                </CollapsibleSection>
+
+                                <CollapsibleSection title="Background & Foreground" sectionKey="background" isOpen={openSections.background} onToggle={() => toggleSection('background')} icon={<LandscapeIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
+                                  <h4 className="text-sm font-semibold mb-2 text-gray-300">Background</h4>
+                                    <div className="flex flex-wrap gap-2 mb-4">
+                                        {backgrounds.map(bg => <OptionButton key={bg} option={bg} isSelected={selectedBackgrounds.includes(bg)} onClick={() => handleBackgroundToggle(bg)} />)}
+                                    </div>
+                                    <h4 className="text-sm font-semibold mb-2 text-gray-300">Foreground</h4>
+                                    <div className="flex flex-wrap gap-2">
+                                        {foregrounds.map(fg => <OptionButton key={fg} option={fg} isSelected={selectedForegrounds.includes(fg)} onClick={() => handleForegroundToggle(fg)} />)}
+                                    </div>
+                                </CollapsibleSection>
+                                
+                                <CollapsibleSection title="Lighting & Atmosphere" sectionKey="lighting" isOpen={openSections.lighting} onToggle={() => toggleSection('lighting')} icon={<LightbulbIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
+                                    <h4 className="text-sm font-semibold mb-2 text-gray-300">Time of Day</h4>
+                                    <div className="flex flex-wrap gap-2 mb-4">
+                                        {timeOfDayOptions.map(time => <OptionButton key={time} option={time} isSelected={selectedTimeOfDay === time} onClick={() => setSelectedTimeOfDay(prev => prev === time ? '' : time)} />)}
+                                    </div>
+                                    <h4 className="text-sm font-semibold mb-2 text-gray-300">Weather</h4>
+                                    <div className="flex flex-wrap gap-2">
+                                        {weatherOptions.map(weather => <OptionButton key={weather} option={weather} isSelected={selectedWeather === weather} onClick={() => setSelectedWeather(prev => prev === weather ? '' : weather)} />)}
+                                    </div>
+                                </CollapsibleSection>
+                                
+                                <CollapsibleSection title="Camera Angle" sectionKey="cameraAngle" isOpen={openSections.cameraAngle} onToggle={() => toggleSection('cameraAngle')} icon={<CameraAngleIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                        {cameraAngleOptions.map(angle => (
+                                            <OptionButton key={angle.name} option={angle.name} isSelected={selectedCameraAngle === angle.name} onClick={() => handleCameraAngleChange(angle.name)} size="md" />
+                                        ))}
+                                    </div>
+                                </CollapsibleSection>
+
                                 </>
                             )}
                             
                             {/* --- INTERIOR CONTROLS --- */}
                             {sceneType === 'interior' && (
                                 <>
-                                {/* ... interior controls ... */}
+                                 <CollapsibleSection title="Text Prompt" sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-5 h-5" />} disabled={editingMode === 'object' && isMaskEmpty}>
+                                    <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={editingMode === 'object' ? 'Describe the change for the masked area...' : 'e.g., "change the sofa to red leather"'} className="w-full bg-gray-900/50 border border-gray-600 rounded-md p-2 text-gray-200 placeholder-gray-500" rows={3}></textarea>
+                                    <textarea value={negativePrompt} onChange={(e) => setNegativePrompt(e.target.value)} placeholder="Negative prompt (optional): things to avoid..." className="mt-2 w-full bg-gray-900/50 border border-gray-600 rounded-md p-2 text-gray-200 placeholder-gray-500" rows={2}></textarea>
+                                </CollapsibleSection>
+                                
+                                <CollapsibleSection title="Bedroom Quick Actions" sectionKey="interiorQuickActions" isOpen={openSections.interiorQuickActions} onToggle={() => toggleSection('interiorQuickActions')} icon={<StarIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                      <PreviewCard label="Dark & Moody" description="Deep charcoals, rich browns, dark wood paneling, and soft accent lighting." isSelected={selectedQuickAction === 'darkMoodyLuxuryBedroom'} onClick={() => handleQuickActionClick('darkMoodyLuxuryBedroom')} />
+                                      <PreviewCard label="Soft Modern" description="Upholstered bed with backlit headboard, warm whites, soft beiges, and gentle curves." isSelected={selectedQuickAction === 'softModernSanctuary'} onClick={() => handleQuickActionClick('softModernSanctuary')} />
+                                      <PreviewCard label="Geometric Chic" description="Geometric headboard wall, modern pendant lights, and a single accent color." isSelected={selectedQuickAction === 'geometricChicBedroom'} onClick={() => handleQuickActionClick('geometricChicBedroom')} />
+                                      <PreviewCard label="Symmetrical Grandeur" description="Perfectly balanced layout, tufted headboard, wall moldings, and a statement chandelier." isSelected={selectedQuickAction === 'symmetricalGrandeurBedroom'} onClick={() => handleQuickActionClick('symmetricalGrandeurBedroom')} />
+                                  </div>
+                                </CollapsibleSection>
+                                
+                                <CollapsibleSection title="Living Room Quick Actions" sectionKey="livingRoomQuickActions" isOpen={openSections.livingRoomQuickActions} onToggle={() => toggleSection('livingRoomQuickActions')} icon={<StarIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <PreviewCard label="Classic Symmetry" description="Centered around a fireplace, with elegant sofas, moldings, and a refined feel." isSelected={selectedQuickAction === 'classicSymmetryLivingRoom'} onClick={() => handleQuickActionClick('classicSymmetryLivingRoom')} />
+                                    <PreviewCard label="Modern Dark Marble" description="Dramatic dark marble feature wall, minimalist fireplace, and rich, moody colors." isSelected={selectedQuickAction === 'modernDarkMarbleLivingRoom'} onClick={() => handleQuickActionClick('modernDarkMarbleLivingRoom')} />
+                                    <PreviewCard label="Contemporary Gold" description="Bright and airy, light marble wall, large sofa, with polished gold accents." isSelected={selectedQuickAction === 'contemporaryGoldAccentLivingRoom'} onClick={() => handleQuickActionClick('contemporaryGoldAccentLivingRoom')} />
+                                    <PreviewCard label="Eclectic & Artistic" description="Mix of concrete and wood, integrated lighting, with a large piece of modern art." isSelected={selectedQuickAction === 'modernEclecticArtLivingRoom'} onClick={() => handleQuickActionClick('modernEclecticArtLivingRoom')} />
+                                    <PreviewCard label="Bright Modern Classic" description="Open-plan, light marble feature wall, backlit shelving, and gold details." isSelected={selectedQuickAction === 'brightModernClassicLivingRoom'} onClick={() => handleQuickActionClick('brightModernClassicLivingRoom')} />
+                                    <PreviewCard label="Parisian Chic" description="High ceilings, ornate wall paneling, arched window, and a mix of modern/classic furniture." isSelected={selectedQuickAction === 'parisianChicLivingRoom'} onClick={() => handleQuickActionClick('parisianChicLivingRoom')} />
+                                  </div>
+                                </CollapsibleSection>
+
+                                <CollapsibleSection title="Interior Style" sectionKey="interiorStyle" isOpen={openSections.interiorStyle} onToggle={() => toggleSection('interiorStyle')} icon={<HomeIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                      {interiorStyleOptions.map(style => (
+                                          <PreviewCard key={style.name} label={style.name} description={style.description} isSelected={selectedInteriorStyle === style.name} onClick={() => handleInteriorStyleChange(style.name)} />
+                                      ))}
+                                  </div>
+                                </CollapsibleSection>
+
+                                <CollapsibleSection title="Lighting" sectionKey="lighting" isOpen={openSections.lighting} onToggle={() => toggleSection('lighting')} icon={<LightbulbIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
+                                    <div className="flex flex-wrap gap-2">
+                                        {interiorLightingOptions.map(light => <OptionButton key={light} option={light} isSelected={selectedInteriorLighting === light} onClick={() => handleLightingSelection(setSelectedInteriorLighting, light)} />)}
+                                    </div>
+                                </CollapsibleSection>
                                 </>
                             )}
                             
                             {/* --- 2D PLAN CONTROLS --- */}
                             {sceneType === 'plan' && (
                                 <>
-                                {/* ... plan controls ... */}
+                                <CollapsibleSection title="1. Colorize 2D Plan" sectionKey="planColorize" isOpen={openSections.planColorize} onToggle={() => toggleSection('planColorize')} icon={<BrushIcon className="w-5 h-5" />}>
+                                    <p className="text-sm text-gray-400 mb-4">First, colorize your black & white plan to prepare it for 3D conversion.</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        {planColorStyleOptions.map(style => (
+                                            <PreviewCard key={style.name} label={style.name} description={style.description} isSelected={selectedPlanColorStyle === style.name} onClick={() => setSelectedPlanColorStyle(p => p === style.name ? '' : style.name)} />
+                                        ))}
+                                    </div>
+                                </CollapsibleSection>
+                                
+                                <CollapsibleSection title="2. Configure 3D View" sectionKey="planConfig" isOpen={openSections.planConfig} onToggle={() => toggleSection('planConfig')} icon={<SparklesIcon className="w-5 h-5" />}>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-300 mb-2">Room Type</label>
+                                            <div className="flex flex-wrap gap-2">
+                                                {roomTypeOptions.slice(0, 10).map(room => <OptionButton key={room} option={room} isSelected={selectedRoomType === room} onClick={() => handleRoomTypeChange(room)} />)}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-300 mb-2">Interior Style</label>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                {interiorStyleOptions.map(style => (
+                                                    <PreviewCard key={style.name} label={style.name} description={style.description} isSelected={selectedInteriorStyle === style.name} onClick={() => handleInteriorStyleChange(style.name)} isNested />
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CollapsibleSection>
+
+                                 <CollapsibleSection title="3. Generate 4 View Options" sectionKey="planView" isOpen={openSections.planView} onToggle={() => toggleSection('planView')} icon={<CameraIcon className="w-5 h-5" />} disabled={!isPlanModeReady}>
+                                    <p className="text-sm text-gray-400 mb-4">Generate four different 3D views of your plan at once.</p>
+                                    <button
+                                        type="button"
+                                        onClick={handleGenerate4PlanViews}
+                                        disabled={!isPlanModeReady || isLoading}
+                                        className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100 disabled:shadow-lg flex items-center justify-center gap-3"
+                                    >
+                                        {isLoading ? <Spinner /> : <SparklesIcon className="w-5 h-5" />}
+                                        <span>Generate 4 Views</span>
+                                    </button>
+                                 </CollapsibleSection>
+
                                 </>
                             )}
+                            
+                            {/* --- COMMON CONTROLS --- */}
+                            
+                            {/* Brush Tool */}
+                            {editingMode === 'object' && sceneType !== 'plan' && (
+                                <CollapsibleSection title="Brush Tool" sectionKey="brushTool" isOpen={openSections.brushTool} onToggle={() => toggleSection('brushTool')} icon={<BrushIcon className="w-5 h-5" />}>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label htmlFor="brushSize" className="block text-sm font-medium text-gray-300">Brush Size: {brushSize}px</label>
+                                            <input type="range" id="brushSize" min="5" max="100" value={brushSize} onChange={(e) => setBrushSize(parseInt(e.target.value, 10))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-500" />
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex gap-2">
+                                                {brushColors.map(color => (
+                                                    <button key={color.name} type="button" onClick={() => setBrushColor(color.value)} className={`w-8 h-8 rounded-full ${color.css} transition-transform hover:scale-110 ${brushColor === color.value ? 'ring-2 ring-offset-2 ring-offset-gray-800 ring-white' : ''}`} title={color.name}></button>
+                                                ))}
+                                            </div>
+                                            <ActionButton onClick={() => imageDisplayRef.current?.clearMask()} disabled={isLoading}>
+                                                <ResetEditsIcon className="w-4 h-4" /> Clear
+                                            </ActionButton>
+                                        </div>
+                                    </div>
+                                </CollapsibleSection>
+                            )}
+                            
+                            {/* --- INTERIOR-SPECIFIC COMMON CONTROLS --- */}
+                            {(sceneType === 'interior' || sceneType === 'plan') && (
+                                <>
+                                    <CollapsibleSection title="Add Decorative Items" sectionKey="decorations" isOpen={openSections.decorations} onToggle={() => toggleSection('decorations')} icon={<TextureIcon className="w-5 h-5" />} disabled={editingMode === 'object' || sceneType === 'plan'}>
+                                        <div className="flex flex-wrap gap-2">
+                                            {decorativeItemOptions.map(item => <OptionButton key={item} option={item} isSelected={selectedDecorativeItems.includes(item)} onClick={() => handleDecorativeItemToggle(item)} />)}
+                                        </div>
+                                    </CollapsibleSection>
+                                    
+                                    <CollapsibleSection title="Specialty Lighting & HVAC" sectionKey="specialLighting" isOpen={openSections.specialLighting} onToggle={() => toggleSection('specialLighting')} icon={<DownlightIcon className="w-5 h-5" />} disabled={editingMode === 'object' || sceneType === 'plan'}>
+                                      <div className="space-y-4">
+                                          {/* Cove Light */}
+                                          <div className="flex items-center justify-between p-2 rounded-md hover:bg-gray-700/50">
+                                              <label htmlFor="coveLight" className="font-medium text-gray-300 cursor-pointer">Cove Light</label>
+                                              <input type="checkbox" id="coveLight" checked={isCoveLightActive} onChange={(e) => setIsCoveLightActive(e.target.checked)} className="h-4 w-4 rounded bg-gray-600 border-gray-500 text-red-600 focus:ring-red-500"/>
+                                          </div>
+                                           {/* Spotlight */}
+                                           <div className="flex items-center justify-between p-2 rounded-md hover:bg-gray-700/50">
+                                              <label htmlFor="spotlight" className="font-medium text-gray-300 cursor-pointer">Spotlight</label>
+                                              <input type="checkbox" id="spotlight" checked={isSpotlightActive} onChange={(e) => setIsSpotlightActive(e.target.checked)} className="h-4 w-4 rounded bg-gray-600 border-gray-500 text-red-600 focus:ring-red-500"/>
+                                          </div>
+                                          {/* Downlight */}
+                                          <div className="flex items-center justify-between p-2 rounded-md hover:bg-gray-700/50">
+                                              <label htmlFor="downlight" className="font-medium text-gray-300 cursor-pointer">Downlight</label>
+                                              <input type="checkbox" id="downlight" checked={isDownlightActive} onChange={(e) => setIsDownlightActive(e.target.checked)} className="h-4 w-4 rounded bg-gray-600 border-gray-500 text-red-600 focus:ring-red-500"/>
+                                          </div>
+                                          {/* 4-Way AC */}
+                                          <div className="flex items-center justify-between p-2 rounded-md hover:bg-gray-700/50">
+                                              <label htmlFor="fourWayAC" className="font-medium text-gray-300 cursor-pointer">Add 4-Way Ceiling AC</label>
+                                              <input type="checkbox" id="fourWayAC" checked={addFourWayAC} onChange={(e) => setAddFourWayAC(e.target.checked)} className="h-4 w-4 rounded bg-gray-600 border-gray-500 text-red-600 focus:ring-red-500"/>
+                                          </div>
+                                           {/* Wall Type AC */}
+                                          <div className="flex items-center justify-between p-2 rounded-md hover:bg-gray-700/50">
+                                              <label htmlFor="wallTypeAC" className="font-medium text-gray-300 cursor-pointer">Add Wall-Mounted AC</label>
+                                              <input type="checkbox" id="wallTypeAC" checked={addWallTypeAC} onChange={(e) => setAddWallTypeAC(e.target.checked)} className="h-4 w-4 rounded bg-gray-600 border-gray-500 text-red-600 focus:ring-red-500"/>
+                                          </div>
+                                      </div>
+                                    </CollapsibleSection>
+
+                                    {sceneType === 'interior' && (
+                                       <CollapsibleSection title="Window View (Background)" sectionKey="background" isOpen={openSections.background} onToggle={() => toggleSection('background')} icon={<LandscapeIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
+                                          <div className="flex flex-wrap gap-2">
+                                            {interiorBackgrounds.map(bg => <OptionButton key={bg} option={bg} isSelected={selectedBackgrounds.includes(bg)} onClick={() => handleBackgroundToggle(bg)} />)}
+                                          </div>
+                                      </CollapsibleSection>
+                                    )}
+                                </>
+                            )}
+                            
+                            {/* --- UNIVERSAL COMMON CONTROLS (NOT FOR PLAN MODE) --- */}
+                            {sceneType !== 'plan' && (
+                                <>
+                                    <CollapsibleSection title="Artistic Style" sectionKey="artStyle" isOpen={openSections.artStyle} onToggle={() => toggleSection('artStyle')} icon={<SparklesIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
+                                        <div className="flex flex-wrap gap-2">
+                                            {styleOptions.map(style => <OptionButton key={style.name} option={style.name} isSelected={selectedStyle === style.name} onClick={() => handleArtStyleChange(style.name)} />)}
+                                        </div>
+                                    </CollapsibleSection>
+                                    <CollapsibleSection title="Add General Light" sectionKey="addLight" isOpen={openSections.addLight} onToggle={() => toggleSection('addLight')} icon={<LightbulbIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <label htmlFor="addLightToggle" className="font-medium text-gray-300">Add/Modify Lighting</label>
+                                            <input type="checkbox" id="addLightToggle" checked={isAddLightActive} onChange={(e) => setIsAddLightActive(e.target.checked)} className="h-4 w-4 rounded bg-gray-600 border-gray-500 text-red-600 focus:ring-red-500"/>
+                                        </div>
+                                    </CollapsibleSection>
+                                </>
+                            )}
+
+                             {/* --- EXTERIOR-SPECIFIC COMMON CONTROLS --- */}
+                            {sceneType === 'exterior' && (
+                                <CollapsibleSection title="Vegetation" sectionKey="vegetation" isOpen={openSections.vegetation} onToggle={() => toggleSection('vegetation')} icon={<FlowerIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
+                                     <div className="space-y-4">
+                                        <div>
+                                            <label htmlFor="treeAge" className="block text-sm font-medium text-gray-300 mb-1">Tree Age (Young &larr; &rarr; Mature)</label>
+                                            <input type="range" id="treeAge" min="0" max="100" value={treeAge} onChange={e => setTreeAge(parseInt(e.target.value, 10))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-500" />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="season" className="block text-sm font-medium text-gray-300 mb-1">Season (Spring &larr; &rarr; Autumn)</label>
+                                            <input type="range" id="season" min="0" max="100" value={season} onChange={e => setSeason(parseInt(e.target.value, 10))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-500" />
+                                        </div>
+                                    </div>
+                                </CollapsibleSection>
+                            )}
+
+                            <CollapsibleSection title="Color & Filter" sectionKey="colorAdjust" isOpen={openSections.colorAdjust} onToggle={() => toggleSection('colorAdjust')} icon={<AdjustmentsIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
+                                <div className="space-y-4">
+                                    <h4 className="text-sm font-semibold text-gray-300">Filter</h4>
+                                    <div className="flex flex-wrap gap-2">
+                                        {filters.map(f => <OptionButton key={f} option={f} isSelected={selectedFilter === f} onClick={() => handleFilterChange(f)} />)}
+                                    </div>
+                                    <h4 className="text-sm font-semibold text-gray-300 pt-2">Color Adjustments</h4>
+                                    <div>
+                                        <label htmlFor="brightness" className="block text-xs font-medium text-gray-400">Brightness ({brightness}%)</label>
+                                        <input type="range" id="brightness" min="50" max="150" value={brightness} onChange={e => setBrightness(parseInt(e.target.value, 10))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-500" />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="contrast" className="block text-xs font-medium text-gray-400">Contrast ({contrast}%)</label>
+                                        <input type="range" id="contrast" min="50" max="150" value={contrast} onChange={e => setContrast(parseInt(e.target.value, 10))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-500" />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="saturation" className="block text-xs font-medium text-gray-400">Saturation ({saturation}%)</label>
+                                        <input type="range" id="saturation" min="0" max="200" value={saturation} onChange={e => setSaturation(parseInt(e.target.value, 10))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-500" />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="sharpness" className="block text-xs font-medium text-gray-400">Sharpness ({sharpness}%)</label>
+                                        <input type="range" id="sharpness" min="0" max="200" value={sharpness} onChange={e => setSharpness(parseInt(e.target.value, 10))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-500" />
+                                    </div>
+                                </div>
+                            </CollapsibleSection>
+                            
+                             <CollapsibleSection title="Fine-Tune Adjustments" sectionKey="manualAdjustments" isOpen={openSections.manualAdjustments} onToggle={() => toggleSection('manualAdjustments')} icon={<AdjustmentsIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
+                                <div className="space-y-4">
+                                     <div>
+                                        <label htmlFor="photorealisticIntensity" className="block text-sm font-medium text-gray-300 mb-1">Photorealism: {photorealisticIntensity}%</label>
+                                        <input type="range" id="photorealisticIntensity" min="0" max="100" value={photorealisticIntensity} onChange={e => setPhotorealisticIntensity(parseInt(e.target.value, 10))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-500" />
+                                    </div>
+                                    {selectedStyle && (
+                                        <div>
+                                            <label htmlFor="styleIntensity" className="block text-sm font-medium text-gray-300 mb-1">Art Style Intensity: {styleIntensity}%</label>
+                                            <input type="range" id="styleIntensity" min="0" max="100" value={styleIntensity} onChange={e => setStyleIntensity(parseInt(e.target.value, 10))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-500" />
+                                        </div>
+                                    )}
+                                    {isAddLightActive && (
+                                        <>
+                                        <div>
+                                            <label htmlFor="lightingBrightness" className="block text-sm font-medium text-gray-300 mb-1">Light Brightness: {lightingBrightness}%</label>
+                                            <input type="range" id="lightingBrightness" min="0" max="100" value={lightingBrightness} onChange={e => setLightingBrightness(parseInt(e.target.value, 10))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-500" />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="lightingTemperature" className="block text-sm font-medium text-gray-300 mb-1">Light Temperature (Cool &larr; &rarr; Warm): {lightingTemperature}%</label>
+                                            <input type="range" id="lightingTemperature" min="0" max="100" value={lightingTemperature} onChange={e => setLightingTemperature(parseInt(e.target.value, 10))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer bg-gradient-to-r from-blue-400 to-yellow-400" />
+                                        </div>
+                                        </>
+                                    )}
+                                    {selectedQuickAction === 'sketchToPhoto' && (
+                                        <div>
+                                            <label htmlFor="harmonizeIntensity" className="block text-sm font-medium text-gray-300 mb-1">Harmonize with Sketch: {harmonizeIntensity}%</label>
+                                            <input type="range" id="harmonizeIntensity" min="0" max="100" value={harmonizeIntensity} onChange={e => setHarmonizeIntensity(parseInt(e.target.value, 10))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-500" />
+                                        </div>
+                                    )}
+                                    {(selectedQuickAction === 'urbanSketch' || selectedQuickAction === 'architecturalSketch' || selectedQuickAction === 'midjourneyArtlineSketch') && (
+                                        <div>
+                                            <label htmlFor="sketchIntensity" className="block text-sm font-medium text-gray-300 mb-1">Linework Intensity: {sketchIntensity}%</label>
+                                            <input type="range" id="sketchIntensity" min="0" max="100" value={sketchIntensity} onChange={e => setSketchIntensity(parseInt(e.target.value, 10))} className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-500" />
+                                        </div>
+                                    )}
+                                    {adjustableOption && (
+                                        <div>
+                                            <label htmlFor="optionIntensity" className="block text-sm font-medium text-gray-300 mb-1">{adjustableOption.label}: {optionIntensities[adjustableOptionKey]}%</label>
+                                            <input
+                                                type="range"
+                                                id="optionIntensity"
+                                                min="0" max="100"
+                                                value={optionIntensities[adjustableOptionKey]}
+                                                onChange={(e) => handleIntensityChange(adjustableOptionKey, parseInt(e.target.value, 10))}
+                                                className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-500"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            </CollapsibleSection>
+                            
+                            <CollapsibleSection title="Output Settings" sectionKey="output" isOpen={openSections.output} onToggle={() => toggleSection('output')} icon={<CropIcon className="w-5 h-5" />} disabled={editingMode === 'object'}>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  {outputSizeOptions.map(opt => (
+                                    <PreviewCard 
+                                      key={opt.value} 
+                                      label={opt.label} 
+                                      description={opt.description} 
+                                      isSelected={outputSize === opt.value} 
+                                      onClick={() => handleOutputSizeChange(opt.value)} 
+                                      isNested
+                                    />
+                                  ))}
+                                </div>
+                            </CollapsibleSection>
 
                         </>
                     )}
