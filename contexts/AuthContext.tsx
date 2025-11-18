@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect, ReactNode, useCallback, useMemo } from 'react';
 
 interface User {
@@ -113,18 +112,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const approveUser = useCallback((email: string) => {
     const normalizedEmail = String(email).toLowerCase();
     
-    // Ensure user is in the main users list (robustness fix)
-    const users = getStoredArray('fast-ai-users');
-    if (!users.includes(normalizedEmail)) {
-        users.push(normalizedEmail);
-        localStorage.setItem('fast-ai-users', JSON.stringify(users));
-    }
-    
-    // Ensure user is in the approved users list
+    // First, handle the approved list, which is the primary goal.
     const approvedUsers = getStoredArray('fast-ai-approved-users');
     if (!approvedUsers.includes(normalizedEmail)) {
-        approvedUsers.push(normalizedEmail);
-        localStorage.setItem('fast-ai-approved-users', JSON.stringify(approvedUsers));
+        // Create a new array and save it.
+        const updatedApproved = [...approvedUsers, normalizedEmail];
+        localStorage.setItem('fast-ai-approved-users', JSON.stringify(updatedApproved));
+    }
+
+    // Second, as a safeguard, ensure the user is also in the main list.
+    const users = getStoredArray('fast-ai-users');
+    if (!users.includes(normalizedEmail)) {
+        // Create a new array and save it.
+        const updatedUsers = [...users, normalizedEmail];
+        localStorage.setItem('fast-ai-users', JSON.stringify(updatedUsers));
     }
   }, []);
 
