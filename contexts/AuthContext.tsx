@@ -21,7 +21,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const ADMIN_EMAIL = 'creator@fast.ai';
 
 // Helper to safely read, parse, and normalize string arrays from localStorage.
-// This ensures data is always consistent, trimmed, and lowercase.
 const getStoredArray = (key: string): string[] => {
     try {
         const storedValue = localStorage.getItem(key);
@@ -35,7 +34,6 @@ const getStoredArray = (key: string): string[] => {
     } catch (error) {
         console.error(`Error parsing ${key} from localStorage`, error);
     }
-    // Return an empty array on error, or if the data is not found or has an invalid format.
     return [];
 };
 
@@ -50,7 +48,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       try {
         const parsedUser = JSON.parse(storedUser);
         if (parsedUser && typeof parsedUser.email === 'string') {
-            // Ensure the user session email is also normalized
             setUser({ email: String(parsedUser.email).trim().toLowerCase() });
         }
       } catch (error) {
@@ -59,24 +56,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     }
 
-    // Initialize and sanitize user data stores to ensure integrity
-    const users = getStoredArray('fast-ai-users');
-    const approvedUsers = getStoredArray('fast-ai-approved-users');
+    // Initialize and sanitize user data stores to ensure integrity using immutable patterns
+    let users = getStoredArray('fast-ai-users');
+    let approvedUsers = getStoredArray('fast-ai-approved-users');
     
     let usersModified = false;
     if (!users.includes(ADMIN_EMAIL)) {
-        users.push(ADMIN_EMAIL);
+        users = [...users, ADMIN_EMAIL]; // Use immutable spread
         usersModified = true;
     }
     
     let approvedModified = false;
     if (!approvedUsers.includes(ADMIN_EMAIL)) {
-        approvedUsers.push(ADMIN_EMAIL);
+        approvedUsers = [...approvedUsers, ADMIN_EMAIL]; // Use immutable spread
         approvedModified = true;
     }
 
-    // This also serves as a data migration step to ensure all stored emails are trimmed and lowercase.
-    // It rewrites the stored data only if modifications were necessary.
     if (usersModified) {
         localStorage.setItem('fast-ai-users', JSON.stringify(users));
     }
@@ -99,7 +94,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       throw new Error('Your account is not approved. Please contact the creator.');
     }
     
-    // If we reach here, user exists and is approved.
     const newUser = { email: normalizedEmail };
     localStorage.setItem('fast-ai-user', JSON.stringify(newUser));
     setUser(newUser);
@@ -112,6 +106,90 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const approveUser = useCallback((email: string) => {
     const normalizedEmail = String(email).trim().toLowerCase();
+    if (!normalizedEmail) return;
+
+    // --- Update Approved Users List ---
+    const currentApproved = getStoredArray('fast-ai-approved-users');
+    if (!currentApproved.includes(normalizedEmail)) {
+      const newApproved = [...currentApproved, normalizedEmail];
+      localStorage.setItem('fast-ai-approved-users', JSON.stringify(newApproved));
+    }
+
+    // --- Update Main Users List for consistency ---
+    const currentUsers = getStoredArray('fast-ai-users');
+    if (!currentUsers.includes(normalizedEmail)) {
+      const newUsers = [...currentUsers, normalizedEmail];
+      localStorage.setItem('fast-ai-users', JSON.stringify(newUsers));
+    }
+  }, []);
+
+  const createUserByAdmin = useCallback((email: string) => {
+    const normalizedEmail = String(email).trim().toLowerCase();
+
+    if (!normalizedEmail || !/\S+@\S+\.\S+/.test(normalizedEmail)) {
+        throw new Error('Please enter a valid email address.');
+    }
     
-    // First, handle the approved list, which is the primary goal.
-    const approvedUsers = getStoredArray('fast-ai-
+    const users = getStoredArray('fast-ai-users');
+    if (users.includes(normalizedEmail)) {
+      throw new Error('User with this email already exists.');
+    }
+
+    const newUsers = [...users, normalizedEmail];
+    localStorage.setItem('fast-ai-users', JSON.stringify(newUsers));
+
+    approveUser(normalizedEmail);
+  }, [approveUser]);
+
+  const deleteUser = useCallback((email: string) => {
+    const normalizedEmail = String(email).trim().toLowerCase();
+    if (normalizedEmail === ADMIN_EMAIL) {
+        throw new Error('Cannot delete the creator account.');
+    }
+
+    const newUsers = getStoredArray('fast-ai-users').filter(u => u !== normalizedEmail);
+    localStorage.setItem('fast-ai-users', JSON.stringify(newUsers));
+    
+    const newApprovedUsers = getStoredArray('fast-ai-approved-users').filter(u => u !== normalizedEmail);
+    localStorage.setItem('fast-ai-approved-users', JSON.stringify(newApprovedUsers));
+  }, []);
+
+  const getAllUsers = useCallback((): { email: string; isApproved: boolean }[] => {
+    const users = getStoredArray('fast-ai-users');
+    const approvedUsers = getStoredArray('fast-ai-approved-users');
+    
+    return users.map(email => ({
+      email,
+      isApproved: approvedUsers.includes(email)
+    })).sort((a, b) => {
+        if (a.isApproved !== b.isApproved) {
+            return a.isApproved ? 1 : -1;
+        }
+        return a.email.localeCompare(b.email);
+    });
+  }, []);
+
+  const isAdmin = useMemo(() => user?.email === ADMIN_EMAIL, [user]);
+  
+  const value = useMemo(() => ({
+    user,
+    isLoggedIn: !!user,
+    login,
+    logout,
+    isAdmin,
+    approveUser,
+    getAllUsers,
+    createUserByAdmin,
+    deleteUser,
+  }), [user, login, logout, isAdmin, approveUser, getAllUsers, createUserByAdmin, deleteUser]);
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
