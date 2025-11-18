@@ -102,21 +102,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = useCallback((email: string) => {
     const normalizedEmail = String(email).trim().toLowerCase();
-    const users = getStoredUsers();
     
+    if (!normalizedEmail || !/\S+@\S+\.\S+/.test(normalizedEmail)) {
+        throw new Error('Please enter a valid email address.');
+    }
+
+    const users = getStoredUsers();
     const foundUser = users.find(u => u.email === normalizedEmail);
 
     if (!foundUser) {
-      throw new Error('Account not found. Please contact the creator to create an account.');
+      const newUserForDB: UserObject = { email: normalizedEmail, isApproved: false };
+      setStoredUsers([...users, newUserForDB]);
+      throw new Error('Account created. Please contact an admin for approval.');
     }
 
     if (!foundUser.isApproved) {
-      throw new Error('Your account is not approved. Please contact the creator.');
+      throw new Error('Your account is pending approval. Please contact an admin.');
     }
     
-    const newUser = { email: normalizedEmail };
-    localStorage.setItem('fast-ai-user', JSON.stringify(newUser));
-    setUser(newUser);
+    const userToLogin = { email: normalizedEmail };
+    localStorage.setItem('fast-ai-user', JSON.stringify(userToLogin));
+    setUser(userToLogin);
   }, []);
 
   const logout = useCallback(() => {

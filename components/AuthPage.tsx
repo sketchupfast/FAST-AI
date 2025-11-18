@@ -34,12 +34,12 @@ const AuthPage: React.FC = () => {
                 FAST AI Image Editor
             </h1>
             <p className="mt-2 text-lg text-gray-400">
-              Log in to start editing.
+              Log in or register to start editing.
             </p>
         </header>
         <div className="w-full max-w-md bg-gray-800/50 p-8 rounded-2xl shadow-lg border border-gray-700">
             <h2 className="text-2xl font-bold text-center text-gray-200 mb-6">
-              Welcome Back
+              Welcome
             </h2>
             
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -79,13 +79,13 @@ const AuthPage: React.FC = () => {
                   type="submit"
                   className="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-sm font-bold text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-red-500 transition-transform transform hover:scale-105"
                 >
-                  Log In
+                  Log In / Register
                 </button>
               </div>
             </form>
             
             <p className="mt-6 text-center text-sm text-gray-400">
-              Need an account? Please contact the creator.
+              First time? Enter your email and log in to register for approval.
             </p>
         </div>
         <footer className="text-center py-4 mt-8">
