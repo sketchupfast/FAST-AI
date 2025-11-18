@@ -36,7 +36,7 @@ const FilterButton: React.FC<{
 
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
-    const { getAllUsers, approveUser, createUserByAdmin } = useAuth();
+    const { getAllUsers, approveUser, createUserByAdmin, deleteUser } = useAuth();
     const [users, setUsers] = useState(() => getAllUsers());
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'approved'>('all');
@@ -56,6 +56,19 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
         setUsers(getAllUsers()); // Refresh list
     };
     
+    const handleDelete = (email: string) => {
+        if (window.confirm(`Are you sure you want to delete the user "${email}"? This action cannot be undone.`)) {
+            try {
+                deleteUser(email);
+                setUsers(getAllUsers()); // Refresh list
+            } catch (err) {
+                if (err instanceof Error) {
+                    console.error("Error deleting user:", err.message);
+                }
+            }
+        }
+    };
+
     const handleCreateUser = () => {
         setCreateUserError('');
         setCreateUserSuccess('');
@@ -179,7 +192,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                     {filteredUsers.length > 0 ? (
                         <div>
                             {/* Desktop Header */}
-                            <div className="hidden md:grid md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] gap-4 p-3 bg-gray-700/50 rounded-t-lg">
+                            <div className="hidden md:grid md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_140px] gap-4 p-3 bg-gray-700/50 rounded-t-lg">
                                 <div className="text-sm font-semibold text-gray-300">Email</div>
                                 <div className="text-sm font-semibold text-gray-300">Status</div>
                                 <div className="text-sm font-semibold text-gray-300 text-right">Action</div>
@@ -191,7 +204,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                                     <div 
                                         key={user.email} 
                                         className="bg-gray-900/50 rounded-lg p-4 flex flex-col gap-3
-                                                   md:bg-transparent md:rounded-none md:grid md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] md:gap-4 md:p-3 md:items-center 
+                                                   md:bg-transparent md:rounded-none md:grid md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_140px] md:gap-4 md:p-3 md:items-center 
                                                    md:border-b md:border-gray-700 md:hover:bg-gray-700/30"
                                     >
                                         {/* Email Column */}
@@ -211,15 +224,21 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                                         </div>
 
                                         {/* Action Column */}
-                                        <div className="md:text-right">
+                                        <div className="flex flex-col md:flex-row md:justify-end gap-2">
                                             {!user.isApproved && (
                                                 <button 
                                                     onClick={() => handleApprove(user.email)}
-                                                    className="w-full md:w-auto px-4 py-1.5 text-xs font-semibold text-white bg-red-600 rounded-full hover:bg-red-700 transition-colors disabled:opacity-50"
+                                                    className="px-4 py-1.5 text-xs font-semibold text-white bg-red-600 rounded-full hover:bg-red-700 transition-colors"
                                                 >
                                                     Approve
                                                 </button>
                                             )}
+                                            <button 
+                                                onClick={() => handleDelete(user.email)}
+                                                className="px-4 py-1.5 text-xs font-semibold text-red-400 bg-red-900/40 rounded-full hover:bg-red-900/70 hover:text-red-300 transition-colors"
+                                            >
+                                                Delete
+                                            </button>
                                         </div>
                                     </div>
                                 ))}

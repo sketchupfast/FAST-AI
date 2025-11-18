@@ -14,6 +14,7 @@ interface AuthContextType {
   approveUser: (email: string) => void;
   getAllUsers: () => { email: string; isApproved: boolean }[];
   createUserByAdmin: (email: string) => void;
+  deleteUser: (email: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -111,6 +112,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const approveUser = useCallback((email: string) => {
     const normalizedEmail = String(email).toLowerCase();
+    
+    // Ensure user is in the main users list (robustness fix)
+    const users = getStoredArray('fast-ai-users');
+    if (!users.includes(normalizedEmail)) {
+        users.push(normalizedEmail);
+        localStorage.setItem('fast-ai-users', JSON.stringify(users));
+    }
+    
+    // Ensure user is in the approved users list
     const approvedUsers = getStoredArray('fast-ai-approved-users');
     if (!approvedUsers.includes(normalizedEmail)) {
         approvedUsers.push(normalizedEmail);
@@ -150,6 +160,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.setItem('fast-ai-approved-users', JSON.stringify(approvedUsers));
   }, []);
 
+  const deleteUser = useCallback((email: string) => {
+    const normalizedEmail = String(email).toLowerCase();
+    if (normalizedEmail === ADMIN_EMAIL) {
+      throw new Error("Cannot delete the admin account.");
+    }
+
+    let users = getStoredArray('fast-ai-users');
+    let approvedUsers = getStoredArray('fast-ai-approved-users');
+
+    const newUsers = users.filter(u => u !== normalizedEmail);
+    const newApprovedUsers = approvedUsers.filter(u => u !== normalizedEmail);
+    
+    localStorage.setItem('fast-ai-users', JSON.stringify(newUsers));
+    localStorage.setItem('fast-ai-approved-users', JSON.stringify(newApprovedUsers));
+  }, []);
+
 
   const value = useMemo(() => ({
     user,
@@ -160,7 +186,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     approveUser,
     getAllUsers,
     createUserByAdmin,
-  }), [user, login, logout, approveUser, getAllUsers, createUserByAdmin]);
+    deleteUser,
+  }), [user, login, logout, approveUser, getAllUsers, createUserByAdmin, deleteUser]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
