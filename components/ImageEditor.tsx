@@ -77,7 +77,6 @@ const styleOptions = [
 ];
 
 const cameraAngleOptions = [
-    { name: 'Original Angle (No Change)', prompt: '' },
     { name: 'Eye-Level', prompt: 'from an eye-level angle' },
     { name: 'High Angle', prompt: 'from a high angle' },
     { name: 'Low Angle', prompt: 'from a low angle' },
@@ -87,7 +86,6 @@ const cameraAngleOptions = [
     { name: 'Bird\'s Eye View', prompt: 'from a bird\'s eye view' },
     { name: 'Dutch Angle', prompt: 'with a Dutch angle tilt' },
     { name: 'Long Shot', prompt: 'as a long shot' },
-    { name: 'Over-the-Shoulder', prompt: 'as an over-the-shoulder shot' },
 ];
 
 const gardenStyleOptions = [
@@ -111,6 +109,7 @@ const architecturalStyleOptions = [
     { name: 'Minimalist', description: 'Extreme simplicity, reducing elements to their essentials, using white/gray tones.' },
     { name: 'Contemporary', description: 'A mix of styles, curved lines, and use of natural materials.' },
     { name: 'Modern Thai', description: 'Combines Thai elements like high gabled roofs with modernism.' },
+    { name: '3D Render', description: 'A hyper-realistic, clean 3D rendering style with perfect lighting, sharp details, and idealized textures, looking like a high-end architectural visualization.' },
 ];
 
 const interiorStyleOptions = [
@@ -129,6 +128,19 @@ const backgrounds = ["No Change", "Bangkok High-rise View", "Mountain View", "Ba
 const interiorBackgrounds = ["No Change", "View from Inside to Garden", "Ground Floor View (Hedge & House)", "Upper Floor View (House)", "Bangkok High-rise View", "Mountain View", "Cityscape", "Beach", "Forest", "Chao Phraya River View", "Public Park"];
 
 const foregrounds = ["Foreground Large Tree", "Foreground River", "Foreground Road", "Foreground Flowers", "Foreground Fence", "Top Corner Leaves", "Bottom Corner Bush", "Foreground Lawn", "Foreground Pathway", "Foreground Water Feature", "Foreground Low Wall"];
+const interiorForegrounds = [
+    "Blurred Coffee Table", 
+    "Indoor Plant", 
+    "Sofa Edge", 
+    "Armchair", 
+    "Floor Lamp", 
+    "Rug/Carpet", 
+    "Curtains", 
+    "Decorative Vase", 
+    "Dining Table Edge", 
+    "Magazine/Books"
+];
+
 const filters = ['None', 'Black & White', 'Sepia', 'Invert', 'Grayscale', 'Vintage', 'Cool Tone', 'Warm Tone', 'HDR'];
 
 const interiorLightingOptions = ['Natural Daylight', 'Warm Evening Light', 'Studio Light', 'Cinematic Light'];
@@ -147,8 +159,31 @@ const planViewOptions = [
     { name: 'Wide-Angle View', prompt: 'a realistic wide-angle interior photo' },
 ];
 
+// --- Plan Constants ---
+const planConversionModes = [
+    { id: '2d_bw', label: '2D Black & White (CAD)', desc: 'Professional B&W technical drawing.' },
+    { id: '2d_real', label: '2D Realistic (Color)', desc: 'Colored textures and furniture.' },
+    { id: '3d_iso', label: '3D Isometric', desc: 'Cutaway 3D view with depth.' },
+    { id: '3d_top', label: '3D Top-Down', desc: 'Realistic bird\'s eye view.' },
+    { id: 'perspective', label: 'Perspective View (Room)', desc: 'Generate a room view from plan.' },
+];
+
+const roomTypeOptions = [
+    "Living Room",
+    "Master Bedroom",
+    "Kitchen",
+    "Dining Room",
+    "Bathroom",
+    "Home Office",
+    "Walk-in Closet",
+    "Balcony/Terrace",
+    "Kids Bedroom",
+    "Lobby/Entrance"
+];
+
 const exteriorQuickActionList = [
     { id: 'modernVillageWithProps', label: 'New Village Estate', desc: 'Lawn, shrubs, and staked trees.' },
+    { id: 'grandVillageEstate', label: 'Grand Village Estate', desc: 'Hedge fence, propped trees, grand view.' },
     { id: 'modernTwilightHome', label: 'Modern Twilight', desc: 'Dusk setting, warm lights.' },
     { id: 'vibrantModernEstate', label: 'Sunny Day', desc: 'Bright, vibrant daylight.' },
     { id: 'sketchToPhoto', label: 'Sketch to Photo', desc: 'Convert sketch to realism.', icon: <SketchWatercolorIcon className="w-4 h-4"/> },
@@ -187,17 +222,9 @@ const interiorQuickActionList: { id: string; label: string; desc: string; icon?:
 type EditingMode = 'default' | 'object';
 type SceneType = 'exterior' | 'interior' | 'plan';
 
-// --- Prompt Constants (Shortened for response limits, assuming they exist as before) ---
-
-const magicalGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Turn on the lights. Randomize the exterior atmosphere to be a large, beautiful, naturally landscaped garden. A clear stream creates a large pond where koi fish swim. Large trees and dense bushes surround the area. A curved, moss-covered stone path with detailed texture winds through lush tropical bushes, connecting to a wooden deck. The vegetation is hyper-realistic and diverse, featuring large plumeria trees, tree ferns with intricate fronds, colorful caladiums, anthuriums, and hostas. The entire scene is shrouded in a light, ethereal mist. Sunlight filters through the canopy, creating beautiful, volumetric light rays. The atmosphere is calm, shady, and natural after a rain, with visible dew drops on the leaves. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.";
-const modernTropicalGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. The setting is a house in a housing estate. Randomly turn on lights. The sky should be clear with few clouds. The main focus is to change the garden into a meticulously designed, luxurious, and contemporary modern tropical garden with the following details: - Key elements: Use a diverse array of large-leafed tropical plants like Monstera Deliciosa, Strelitzia nicolai (giant white bird of paradise), and various Alocasia species to create a dense, lush feel with detailed leaf textures. Use large, neatly arranged black slate or honed basalt slabs for the flooring to create a modern, minimalist contrast with visible texture. Incorporate large, smooth river stones as sculptural elements. Use dramatic uplighting from the ground to highlight the textures of plant leaves and architectural elements. - Overall feel: The design should blend tropical lushness with sharp, modern lines, creating a serene and private atmosphere like a high-end resort. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.";
-const formalGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Inside the living and dining rooms, randomly turn on the lights. Change the garden to a Formal Garden, designed with order and symmetry. Key elements include geometrically shaped topiary and meticulously trimmed low hedges made from Buxus sempervirens (boxwood) with detailed leaf textures. A multi-tiered classic marble fountain with flowing water is the centerpiece. An aged brick or crushed gravel path runs through a perfectly manicured lawn. Symmetrically placed beds of roses and lavender add color and fragrance. The design emphasizes balance and elegance, suitable for relaxation. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.";
-const modernNaturalGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Inside the living and dining rooms, randomly turn on the lights. Change the garden to a Modern Natural Garden. Key elements include a checkerboard path paved with large-format gray stone pavers with detailed texture, contrasting with a rich, dense lawn where individual blades are visible. The garden features a mix of ornamental grasses like Pennisetum and Miscanthus, and shrubs such as hydrangeas and viburnum. A seating area has a wooden bench, surrounded by ferns and hostas in minimalist concrete planters. The design emphasizes soft sunlight and a variety of green tones, creating a relaxing and private atmosphere. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.";
-const tropicalPathwayGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Inside the living and dining rooms, randomly turn on the lights. A textured flagstone or weathered brick pathway winds towards the house's door, surrounded by dense, multi-layered tropical vegetation. This includes plumeria trees, heliconias with vibrant flowers, elephant ear plants (Alocasia) with massive leaves, climbing philodendrons, and various species of ferns and orchids. The atmosphere is shady and humid, with visible dew drops on the leaves, giving the feeling of walking into a lush, tropical-style resort. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.";
-const thaiStreamGardenPrompt = "Transform the image to be highly realistic, as if it were an advertisement in a home design magazine. Maintain the original design and camera angle. Inside the living and dining rooms, randomly turn on the lights. The image shows a shady and serene natural Thai garden. A crystal-clear stream with a pebble-lined bed flows among moss-covered river rocks of varying sizes. Both sides of the stream are filled with tall bamboo culms, Bodhi trees, and a lush ground cover of moss and creeping Jenny. The atmosphere feels cool and fresh, beautifully mimicking a rainforest. The textures of the wet rocks, tree bark, and diverse leaves should be hyper-realistic. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.";
-
 const QUICK_ACTION_PROMPTS: Record<string, string> = {
     modernVillageWithProps: "Transform the image into a high-quality, photorealistic architectural photograph capturing the atmosphere of a well-maintained, modern housing estate. The landscape should feature a lush, perfectly manicured green lawn and neat rows of shrubbery. Crucially, include newly planted trees with visible wooden support stakes (tree props), typical of a new village development. The lighting should be bright and natural, enhancing the fresh and inviting community feel. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
+    grandVillageEstate: "Transform the image into a high-quality, photorealistic architectural photograph of a grand and luxurious village estate. The landscape features a perfectly manicured lawn and a neat green hedge fence outlining the property. Crucially, include large, newly planted trees with visible wooden support stakes (tree props). The scene is framed by beautiful, mature trees in the background and foreground, creating a lush 'tree view'. The lighting is bright and natural, emphasizing the spacious and upscale nature of the estate. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     sereneTwilightEstate: "Transform the image into a high-quality, photorealistic architectural photograph, maintaining the original architecture and camera angle. The scene is set at dusk, with a beautiful twilight sky. Turn on warm, inviting interior lights that are visible through the large glass windows. The landscape must feature a meticulously manicured green lawn. Crucially, frame the house with a large deciduous tree on the left and a tall pine tree on the right. The overall atmosphere should be serene, modern, and luxurious. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     sereneHomeWithGarden: "Transform the image into a high-quality, photorealistic architectural photograph, maintaining the original architecture and camera angle. Turn on warm, inviting interior lights visible through the windows. Add large, elegant trees in the foreground, framing the view slightly. Create a beautifully landscaped garden in front of the house with a neat lawn and some flowering bushes. The background should feature soft, out-of-focus trees, creating a sense of depth and tranquility. The overall atmosphere should be peaceful, serene, and welcoming, as if for a luxury real estate listing. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     modernTwilightHome: "Transform the image into a high-quality, photorealistic architectural photograph of a modern home. Set the time to dusk, with a soft twilight sky. Turn on warm, inviting interior lights that are visible through the windows, creating a cozy and welcoming glow. Surround the house with a modern, manicured landscape, including a neat green lawn, contemporary shrubs, and a healthy feature tree. The foreground should include a clean paved walkway and sidewalk. The final image must be hyper-realistic, mimicking a professional real estate photograph, maintaining the original camera angle and architecture. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
@@ -269,6 +296,7 @@ const INTERIOR_BACKGROUND_PROMPTS = interiorBackgrounds.reduce((acc, bg) => {
 }, {} as Record<string, string>);
 
 const FOREGROUND_PROMPTS: Record<string, string> = {
+  // Exterior
   "Foreground Large Tree": "Add a large tree in the foreground.",
   "Foreground River": "Add a river in the foreground.",
   "Foreground Road": "Add a road in the foreground.",
@@ -280,6 +308,18 @@ const FOREGROUND_PROMPTS: Record<string, string> = {
   "Foreground Pathway": "Add a pathway in the foreground.",
   "Foreground Water Feature": "Add a water feature in the foreground.",
   "Foreground Low Wall": "Add a low wall in the foreground.",
+  
+  // Interior
+  "Blurred Coffee Table": "Add a blurred coffee table surface in the immediate foreground to create depth of field.",
+  "Indoor Plant": "Add a large, healthy indoor potted plant in the foreground corner.",
+  "Sofa Edge": "Add the edge of a stylish sofa in the immediate foreground to frame the view.",
+  "Armchair": "Add a cozy armchair in the foreground.",
+  "Floor Lamp": "Add a modern floor lamp in the foreground.",
+  "Rug/Carpet": "Add a textured rug or carpet covering the floor in the foreground.",
+  "Curtains": "Add sheer curtains framing the sides of the image in the foreground.",
+  "Decorative Vase": "Add a decorative vase on a surface in the foreground.",
+  "Dining Table Edge": "Add the edge of a dining table with place settings in the foreground.",
+  "Magazine/Books": "Add a stack of design magazines or books on a surface in the foreground."
 };
 
 
@@ -468,13 +508,9 @@ const ImageEditor: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [sceneType, setSceneType] = useState<SceneType>('exterior'); // Default to exterior
   
-  // Plan to 3D state
-  const [selectedRoomType, setSelectedRoomType] = useState<string>('');
-  const [selectedPlanView, setSelectedPlanView] = useState<string>(planViewOptions[0].name);
-  const [selectedPlanLighting, setSelectedPlanLighting] = useState<string>('');
-  const [selectedPlanMaterials, setSelectedPlanMaterials] = useState<string>('');
-  const [furniturePrompt, setFurniturePrompt] = useState<string>('');
-  const [selectedPlanColorStyle, setSelectedPlanColorStyle] = useState<string>('');
+  // Plan Mode States
+  const [planConversionMode, setPlanConversionMode] = useState<string>('2d_bw');
+  const [selectedRoomType, setSelectedRoomType] = useState<string>('Living Room');
   
   // Color adjustment states
   const [brightness, setBrightness] = useState<number>(100);
@@ -489,15 +525,15 @@ const ImageEditor: React.FC = () => {
   // Special interior lighting state
   const [isCoveLightActive, setIsCoveLightActive] = useState<boolean>(false);
   const [coveLightBrightness, setCoveLightBrightness] = useState<number>(70);
-  const [coveLightColor, setCoveLightColor] = useState<string>('#FFDAB9'); 
+  const [coveLightColor, setCoveLightColor] = useState<string>('Warm'); 
 
   const [isSpotlightActive, setIsSpotlightActive] = useState<boolean>(false);
   const [spotlightBrightness, setSpotlightBrightness] = useState<number>(60);
-  const [spotlightColor, setSpotlightColor] = useState<string>('#FFFFE0'); 
+  const [spotlightColor, setSpotlightColor] = useState<string>('Warm'); 
   
   const [isDownlightActive, setIsDownlightActive] = useState<boolean>(false);
   const [downlightBrightness, setDownlightBrightness] = useState<number>(80);
-  const [downlightColor, setDownlightColor] = useState<string>('#FFFFFF');
+  const [downlightColor, setDownlightColor] = useState<string>('Neutral');
 
   const [addFourWayAC, setAddFourWayAC] = useState<boolean>(false);
   const [addWallTypeAC, setAddWallTypeAC] = useState<boolean>(false);
@@ -520,8 +556,8 @@ const ImageEditor: React.FC = () => {
     foreground: false,
     output: false,
     lighting: false,
-    vegetation: false,
     specialLighting: false,
+    vegetation: false,
     planColorize: true,
     planConfig: true,
     planDetails: false,
@@ -530,6 +566,8 @@ const ImageEditor: React.FC = () => {
     decorations: false,
     manualAdjustments: false,
     projectHistory: false,
+    planConversion: true,
+    perspectiveConfig: true,
   });
   
   const [editingMode, setEditingMode] = useState<EditingMode>('default');
@@ -737,6 +775,12 @@ const ImageEditor: React.FC = () => {
     setSelectedInteriorLighting('');
     setSelectedBackgrounds([]);
     setSelectedForegrounds([]);
+    setSelectedCameraAngle('');
+    setIsAddLightActive(false);
+    setIsCoveLightActive(false);
+    setIsDownlightActive(false);
+    setAddFourWayAC(false);
+    setAddWallTypeAC(false);
   };
 
   const updateActiveImage = (updater: (image: ImageState) => ImageState) => {
@@ -750,7 +794,7 @@ const ImageEditor: React.FC = () => {
   };
   
    const hasTextPrompt = prompt.trim() !== '';
-   const isPlanModeReady = sceneType === 'plan' && !!selectedRoomType && !!selectedInteriorStyle;
+   const isPlanModeReady = sceneType === 'plan'; // Always ready as it has defaults
    const isEditingWithMask = editingMode === 'object' && !isMaskEmpty;
    
    const hasEditInstruction = isEditingWithMask ? hasTextPrompt : (
@@ -763,6 +807,12 @@ const ImageEditor: React.FC = () => {
        selectedInteriorLighting !== '' ||
        selectedBackgrounds.length > 0 ||
        selectedForegrounds.length > 0 ||
+       selectedCameraAngle !== '' ||
+       isAddLightActive ||
+       isCoveLightActive ||
+       isDownlightActive ||
+       addFourWayAC ||
+       addWallTypeAC ||
        isPlanModeReady
    );
 
@@ -841,40 +891,96 @@ const ImageEditor: React.FC = () => {
     let constructedPrompt = prompt; 
     let constructedHistory = prompt || "Generated Image";
     
-    if (selectedQuickAction) {
-        constructedPrompt += " " + QUICK_ACTION_PROMPTS[selectedQuickAction];
-        constructedHistory = "Quick Action: " + selectedQuickAction;
-    }
-    
-    if (selectedArchStyle) {
-        constructedPrompt += " " + ARCHITECTURAL_STYLE_PROMPTS[selectedArchStyle];
-        constructedHistory = "Arch Style: " + selectedArchStyle;
-    }
-    
-    if (selectedGardenStyle) {
-        constructedPrompt += " " + GARDEN_STYLE_PROMPTS[selectedGardenStyle];
-        constructedHistory = "Garden: " + selectedGardenStyle;
-    }
-    
-    if (selectedInteriorStyle) {
-        constructedPrompt += " " + INTERIOR_STYLE_PROMPTS[selectedInteriorStyle];
-        constructedHistory = "Interior: " + selectedInteriorStyle;
-    }
-    
-    if (selectedInteriorLighting) {
-        constructedPrompt += " " + INTERIOR_LIGHTING_PROMPTS[selectedInteriorLighting];
-    }
+    if (sceneType === 'plan') {
+        if (planConversionMode === '2d_bw') {
+            constructedPrompt += " Transform this image into a professional, high-contrast black and white 2D architectural floor plan. Remove all colors and textures. Emphasize clear wall lines, door swings, and window symbols. The result should look like a clean CAD drawing or technical blueprint.";
+            constructedHistory = "Plan: 2D Black & White";
+        } else if (planConversionMode === '2d_real') {
+            constructedPrompt += " Transform this into a realistic colored 2D floor plan. Top-down view. Apply realistic textures to floors (e.g., wood parquet, tiles, carpet). Show furniture layout clearly with realistic top-down symbols and soft drop shadows. Keep architectural lines crisp.";
+            constructedHistory = "Plan: 2D Realistic";
+        } else if (planConversionMode === '3d_iso') {
+            constructedPrompt += " Transform this 2D floor plan into a stunning 3D isometric cutaway render. Extrude the walls to show height. Furnish the rooms with modern furniture appropriate for the layout. Add realistic lighting and shadows to create depth. The style should be photorealistic and architectural.";
+            constructedHistory = "Plan: 3D Isometric";
+        } else if (planConversionMode === '3d_top') {
+            constructedPrompt += " Transform this 2D floor plan into a realistic 3D top-down view (bird's eye view). Render realistic floor materials, 3D furniture models from above, and soft ambient occlusion shadows. It should look like a photograph of a roofless model house from directly above.";
+            constructedHistory = "Plan: 3D Top-Down";
+        } else if (planConversionMode === 'perspective') {
+            const styleText = selectedInteriorStyle ? `in a ${selectedInteriorStyle} style` : "in a modern style";
+            constructedPrompt += ` Transform this floor plan into a photorealistic eye-level interior perspective view of the ${selectedRoomType} ${styleText}. Interpret the layout from the plan to generate the room. Use photorealistic materials, natural lighting, and detailed furniture. The view should be immersive, as if standing inside the room.`;
+            constructedHistory = `Plan: ${selectedRoomType} Perspective`;
+        }
+    } else {
+        // ... Existing Logic for Exterior/Interior ...
+        if (selectedQuickAction) {
+            constructedPrompt += " " + QUICK_ACTION_PROMPTS[selectedQuickAction];
+            constructedHistory = "Quick Action: " + selectedQuickAction;
+        }
+        
+        if (selectedArchStyle) {
+            constructedPrompt += " " + ARCHITECTURAL_STYLE_PROMPTS[selectedArchStyle];
+            constructedHistory = "Arch Style: " + selectedArchStyle;
+        }
+        
+        if (selectedGardenStyle) {
+            constructedPrompt += " " + GARDEN_STYLE_PROMPTS[selectedGardenStyle];
+            constructedHistory = "Garden: " + selectedGardenStyle;
+        }
+        
+        if (selectedInteriorStyle) {
+            constructedPrompt += " " + INTERIOR_STYLE_PROMPTS[selectedInteriorStyle];
+            constructedHistory = "Interior: " + selectedInteriorStyle;
+        }
+        
+        if (selectedInteriorLighting) {
+            constructedPrompt += " " + INTERIOR_LIGHTING_PROMPTS[selectedInteriorLighting];
+        }
 
-    if (selectedBackgrounds.length > 0) {
-        const bgPrompts = selectedBackgrounds.map(bg => BACKGROUND_PROMPTS[bg] || INTERIOR_BACKGROUND_PROMPTS[bg]).join(' ');
-        constructedPrompt += " " + bgPrompts;
-        constructedHistory += ", BG: " + selectedBackgrounds.join(', ');
-    }
-    
-    if (selectedForegrounds.length > 0) {
-        const fgPrompts = selectedForegrounds.map(fg => FOREGROUND_PROMPTS[fg]).join(' ');
-        constructedPrompt += " " + fgPrompts;
-        constructedHistory += ", FG: " + selectedForegrounds.join(', ');
+        if (selectedBackgrounds.length > 0) {
+            const bgPrompts = selectedBackgrounds.map(bg => BACKGROUND_PROMPTS[bg] || INTERIOR_BACKGROUND_PROMPTS[bg]).join(' ');
+            constructedPrompt += " " + bgPrompts;
+            constructedHistory += ", BG: " + selectedBackgrounds.join(', ');
+        }
+        
+        if (selectedForegrounds.length > 0) {
+            const fgPrompts = selectedForegrounds.map(fg => FOREGROUND_PROMPTS[fg]).join(' ');
+            constructedPrompt += " " + fgPrompts;
+            constructedHistory += ", FG: " + selectedForegrounds.join(', ');
+        }
+
+        if (sceneType === 'exterior' && selectedCameraAngle) {
+             const angleOpt = cameraAngleOptions.find(o => o.name === selectedCameraAngle);
+             if (angleOpt?.prompt) {
+                 constructedPrompt += ` ${angleOpt.prompt}.`;
+                 constructedHistory += `, Angle: ${selectedCameraAngle}`;
+             }
+        }
+
+        if (sceneType === 'exterior' && isAddLightActive) {
+             const brightnessTerm = lightingBrightness > 75 ? "very bright and vibrant" : lightingBrightness > 40 ? "balanced and welcoming" : "soft and atmospheric";
+             const colorTerm = lightingTemperature > 75 ? "cool daylight white" : lightingTemperature > 40 ? "neutral white" : "warm golden";
+             
+             constructedPrompt += ` Turn on the building's interior and exterior lights. The lighting intensity should be ${brightnessTerm}. The light color temperature should be ${colorTerm}.`;
+             constructedHistory += `, Lights: On`;
+        }
+
+        if (sceneType === 'interior') {
+             if (isCoveLightActive) {
+                 constructedPrompt += ` Install hidden cove lighting (indirect lighting) along the ceiling edges or wall recesses. The light color should be ${coveLightColor} white with a brightness intensity of ${coveLightBrightness}%.`;
+                 constructedHistory += `, Cove Light: On`;
+             }
+             if (isDownlightActive) {
+                 constructedPrompt += ` Install recessed ceiling downlights arranged in a grid or logical pattern. The light color should be ${downlightColor} white with a brightness intensity of ${downlightBrightness}%.`;
+                 constructedHistory += `, Downlight: On`;
+             }
+             if (addFourWayAC) {
+                 constructedPrompt += ` Install a 4-way cassette type air conditioner embedded in the center of the ceiling.`;
+                 constructedHistory += `, 4-Way AC: On`;
+             }
+             if (addWallTypeAC) {
+                 constructedPrompt += ` Install a modern wall-mounted air conditioner unit on the upper part of the wall.`;
+                 constructedHistory += `, Wall AC: On`;
+             }
+        }
     }
 
     executeGeneration(constructedPrompt, constructedHistory);
@@ -1019,6 +1125,18 @@ const ImageEditor: React.FC = () => {
                                  ))}
                              </div>
                         </CollapsibleSection>
+                        <CollapsibleSection title="Camera Angle" sectionKey="cameraAngle" isOpen={openSections.cameraAngle} onToggle={() => toggleSection('cameraAngle')} icon={<CameraAngleIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                            <div className="grid grid-cols-2 gap-2">
+                                {cameraAngleOptions.map(angle => (
+                                    <OptionButton 
+                                        key={angle.name} 
+                                        option={angle.name} 
+                                        isSelected={selectedCameraAngle === angle.name} 
+                                        onClick={() => setSelectedCameraAngle(prev => prev === angle.name ? '' : angle.name)} 
+                                    />
+                                ))}
+                            </div>
+                        </CollapsibleSection>
                         <CollapsibleSection title="Style" sectionKey="archStyle" isOpen={openSections.archStyle} onToggle={() => toggleSection('archStyle')} icon={<HomeModernIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             <div className="flex flex-wrap gap-2">
                                 {architecturalStyleOptions.map(s => <OptionButton key={s.name} option={s.name} isSelected={selectedArchStyle === s.name} onClick={() => setSelectedArchStyle(prev => prev === s.name ? '' : s.name)} />)}
@@ -1027,6 +1145,58 @@ const ImageEditor: React.FC = () => {
                          <CollapsibleSection title="Garden" sectionKey="gardenStyle" isOpen={openSections.gardenStyle} onToggle={() => toggleSection('gardenStyle')} icon={<FlowerIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             <div className="flex flex-wrap gap-2">
                                 {gardenStyleOptions.map(s => <OptionButton key={s.name} option={s.name} isSelected={selectedGardenStyle === s.name} onClick={() => setSelectedGardenStyle(prev => prev === s.name ? '' : s.name)} />)}
+                            </div>
+                        </CollapsibleSection>
+                        <CollapsibleSection title="Lighting" sectionKey="addLight" isOpen={openSections.addLight} onToggle={() => toggleSection('addLight')} icon={<LightbulbIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm font-medium text-zinc-300">Turn On Lights</span>
+                                    <button 
+                                        onClick={() => setIsAddLightActive(!isAddLightActive)}
+                                        className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 ease-in-out ${isAddLightActive ? 'bg-red-600' : 'bg-zinc-700'}`}
+                                    >
+                                        <div className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-200 ease-in-out ${isAddLightActive ? 'translate-x-6' : 'translate-x-0'}`} />
+                                    </button>
+                                </div>
+                                
+                                {isAddLightActive && (
+                                    <div className="space-y-3 animate-fade-in p-3 bg-zinc-800/50 rounded-lg border border-zinc-700/50">
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-1 text-zinc-400">
+                                                <span>Brightness</span>
+                                                <span>{lightingBrightness}%</span>
+                                            </div>
+                                            <input 
+                                                type="range" 
+                                                min="0" 
+                                                max="100" 
+                                                value={lightingBrightness} 
+                                                onChange={(e) => setLightingBrightness(Number(e.target.value))}
+                                                className="w-full h-1 bg-zinc-600 rounded-lg appearance-none cursor-pointer accent-red-500"
+                                            />
+                                             <div className="flex justify-between text-[10px] text-zinc-500 mt-1">
+                                                <span>Soft</span>
+                                                <span>Vibrant</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="flex justify-between text-xs mb-1 text-zinc-400">
+                                                <span>Color Temp</span>
+                                                <span style={{ color: lightingTemperature < 50 ? '#fbbf24' : '#f8fafc' }}>
+                                                    {lightingTemperature < 30 ? 'Warm' : lightingTemperature > 70 ? 'Cool' : 'Neutral'}
+                                                </span>
+                                            </div>
+                                            <input 
+                                                type="range" 
+                                                min="0" 
+                                                max="100" 
+                                                value={lightingTemperature} 
+                                                onChange={(e) => setLightingTemperature(Number(e.target.value))}
+                                                className="w-full h-1 bg-gradient-to-r from-orange-400 via-white to-blue-400 rounded-lg appearance-none cursor-pointer accent-white"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </CollapsibleSection>
                         <CollapsibleSection title="Background" sectionKey="background" isOpen={openSections.background} onToggle={() => toggleSection('background')} icon={<LandscapeIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
@@ -1066,6 +1236,78 @@ const ImageEditor: React.FC = () => {
                                 {interiorStyleOptions.slice(0, 6).map(s => <OptionButton key={s.name} option={s.name} isSelected={selectedInteriorStyle === s.name} onClick={() => setSelectedInteriorStyle(prev => prev === s.name ? '' : s.name)} />)}
                             </div>
                         </CollapsibleSection>
+                        <CollapsibleSection title="ระบบไฟและแอร์ (Systems)" sectionKey="specialLighting" isOpen={openSections.specialLighting} onToggle={() => toggleSection('specialLighting')} icon={<DownlightIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                            {/* Cove Light */}
+                            <div className="mb-4 border-b border-zinc-700/50 pb-4">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-sm font-medium text-zinc-300">ไฟหลืบ (Cove Light)</span>
+                                    <button 
+                                        onClick={() => setIsCoveLightActive(!isCoveLightActive)}
+                                        className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 ease-in-out ${isCoveLightActive ? 'bg-red-600' : 'bg-zinc-700'}`}
+                                    >
+                                        <div className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-200 ease-in-out ${isCoveLightActive ? 'translate-x-6' : 'translate-x-0'}`} />
+                                    </button>
+                                </div>
+                                {isCoveLightActive && (
+                                    <div className="space-y-2 pl-2 border-l-2 border-zinc-700/50 animate-fade-in">
+                                        <div className="flex justify-between text-xs mb-1 text-zinc-400">
+                                            <span>Brightness</span>
+                                            <span>{coveLightBrightness}%</span>
+                                        </div>
+                                        <input 
+                                            type="range" min="0" max="100" value={coveLightBrightness} 
+                                            onChange={(e) => setCoveLightBrightness(Number(e.target.value))}
+                                            className="w-full h-1 bg-zinc-600 rounded-lg appearance-none cursor-pointer accent-red-500"
+                                        />
+                                        <div className="flex gap-2 mt-2">
+                                            {['Warm', 'Neutral', 'Cool'].map(c => (
+                                                <button key={c} onClick={() => setCoveLightColor(c)} className={`px-2 py-1 text-[10px] rounded border ${coveLightColor === c ? 'bg-zinc-700 border-zinc-500 text-white' : 'border-zinc-700 text-zinc-500 hover:border-zinc-600'}`}>{c}</button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Downlight */}
+                            <div className="mb-4 border-b border-zinc-700/50 pb-4">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-sm font-medium text-zinc-300">ไฟดาวน์ไลท์ (Downlight)</span>
+                                    <button 
+                                        onClick={() => setIsDownlightActive(!isDownlightActive)}
+                                        className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 ease-in-out ${isDownlightActive ? 'bg-red-600' : 'bg-zinc-700'}`}
+                                    >
+                                        <div className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-200 ease-in-out ${isDownlightActive ? 'translate-x-6' : 'translate-x-0'}`} />
+                                    </button>
+                                </div>
+                                {isDownlightActive && (
+                                    <div className="space-y-2 pl-2 border-l-2 border-zinc-700/50 animate-fade-in">
+                                        <div className="flex justify-between text-xs mb-1 text-zinc-400">
+                                            <span>Brightness</span>
+                                            <span>{downlightBrightness}%</span>
+                                        </div>
+                                        <input 
+                                            type="range" min="0" max="100" value={downlightBrightness} 
+                                            onChange={(e) => setDownlightBrightness(Number(e.target.value))}
+                                            className="w-full h-1 bg-zinc-600 rounded-lg appearance-none cursor-pointer accent-red-500"
+                                        />
+                                        <div className="flex gap-2 mt-2">
+                                            {['Warm', 'Neutral', 'Cool'].map(c => (
+                                                <button key={c} onClick={() => setDownlightColor(c)} className={`px-2 py-1 text-[10px] rounded border ${downlightColor === c ? 'bg-zinc-700 border-zinc-500 text-white' : 'border-zinc-700 text-zinc-500 hover:border-zinc-600'}`}>{c}</button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            
+                            {/* AC */}
+                            <div>
+                                <span className="text-sm font-medium text-zinc-300 block mb-2">เครื่องปรับอากาศ (Air Conditioner)</span>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <OptionButton option="แอร์ 4 ทิศทาง" isSelected={addFourWayAC} onClick={() => setAddFourWayAC(!addFourWayAC)} />
+                                    <OptionButton option="แอร์ติดผนัง" isSelected={addWallTypeAC} onClick={() => setAddWallTypeAC(!addWallTypeAC)} />
+                                </div>
+                            </div>
+                        </CollapsibleSection>
                          <CollapsibleSection title="Lighting" sectionKey="lighting" isOpen={openSections.lighting} onToggle={() => toggleSection('lighting')} icon={<LightbulbIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             <div className="flex flex-wrap gap-2">
                                 {interiorLightingOptions.map(l => <OptionButton key={l} option={l} isSelected={selectedInteriorLighting === l} onClick={() => setSelectedInteriorLighting(prev => prev === l ? '' : l)} />)}
@@ -1078,9 +1320,67 @@ const ImageEditor: React.FC = () => {
                         </CollapsibleSection>
                          <CollapsibleSection title="Foreground" sectionKey="foreground" isOpen={openSections.foreground} onToggle={() => toggleSection('foreground')} icon={<LandscapeIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             <div className="flex flex-wrap gap-2">
-                                {foregrounds.map(fg => <OptionButton key={fg} option={fg} isSelected={selectedForegrounds.includes(fg)} onClick={() => handleForegroundToggle(fg)} />)}
+                                {interiorForegrounds.map(fg => <OptionButton key={fg} option={fg} isSelected={selectedForegrounds.includes(fg)} onClick={() => handleForegroundToggle(fg)} />)}
                             </div>
                         </CollapsibleSection>
+                    </>
+                  )}
+                  
+                  {sceneType === 'plan' && (
+                    <>
+                        <CollapsibleSection title="Prompt" sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-4 h-4"/>}>
+                            <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Describe specific details for the plan..." className="w-full bg-zinc-950 border border-zinc-700 rounded-md p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none" rows={3} />
+                        </CollapsibleSection>
+
+                        {/* Plan Transformation Mode */}
+                        <CollapsibleSection title="Conversion Mode" sectionKey="planConversion" isOpen={openSections.planConversion} onToggle={() => toggleSection('planConversion')} icon={<PlanIcon className="w-4 h-4"/>}>
+                            <div className="space-y-2">
+                                {planConversionModes.map(mode => (
+                                    <PreviewCard
+                                        key={mode.id}
+                                        label={mode.label}
+                                        description={mode.desc}
+                                        isSelected={planConversionMode === mode.id}
+                                        onClick={() => setPlanConversionMode(mode.id)}
+                                        isNested
+                                    />
+                                ))}
+                            </div>
+                        </CollapsibleSection>
+
+                        {/* Additional Config for Perspective Mode */}
+                        {planConversionMode === 'perspective' && (
+                            <CollapsibleSection title="Room Configuration" sectionKey="perspectiveConfig" isOpen={openSections.perspectiveConfig} onToggle={() => toggleSection('perspectiveConfig')} icon={<HomeIcon className="w-4 h-4"/>}>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Room Type</label>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {roomTypeOptions.map(room => (
+                                                <OptionButton
+                                                    key={room}
+                                                    option={room}
+                                                    isSelected={selectedRoomType === room}
+                                                    onClick={() => setSelectedRoomType(room)}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Design Style</label>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {interiorStyleOptions.slice(0, 8).map(s => (
+                                                <OptionButton
+                                                    key={s.name}
+                                                    option={s.name}
+                                                    isSelected={selectedInteriorStyle === s.name}
+                                                    onClick={() => setSelectedInteriorStyle(prev => prev === s.name ? '' : s.name)}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </CollapsibleSection>
+                        )}
                     </>
                   )}
                   
