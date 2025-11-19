@@ -149,7 +149,6 @@ const planViewOptions = [
 
 const exteriorQuickActionList = [
     { id: 'modernVillageWithProps', label: 'New Village Estate', desc: 'Lawn, shrubs, and staked trees.' },
-    { id: 'modernVillageLargeStaked', label: 'Grand New Village', desc: 'Large staked trees, hedges, shady view.' },
     { id: 'modernTwilightHome', label: 'Modern Twilight', desc: 'Dusk setting, warm lights.' },
     { id: 'vibrantModernEstate', label: 'Sunny Day', desc: 'Bright, vibrant daylight.' },
     { id: 'sketchToPhoto', label: 'Sketch to Photo', desc: 'Convert sketch to realism.', icon: <SketchWatercolorIcon className="w-4 h-4"/> },
@@ -199,7 +198,6 @@ const thaiStreamGardenPrompt = "Transform the image to be highly realistic, as i
 
 const QUICK_ACTION_PROMPTS: Record<string, string> = {
     modernVillageWithProps: "Transform the image into a high-quality, photorealistic architectural photograph capturing the atmosphere of a well-maintained, modern housing estate. The landscape should feature a lush, perfectly manicured green lawn and neat rows of shrubbery. Crucially, include newly planted trees with visible wooden support stakes (tree props), typical of a new village development. The lighting should be bright and natural, enhancing the fresh and inviting community feel. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
-    modernVillageLargeStaked: "Transform the image into a high-quality, photorealistic architectural photograph of a premium modern housing estate. The scene features a neat green hedge fence acting as a boundary. Crucially, showcase large, newly planted trees with visible, sturdy wooden support stakes (large tree props) in the garden. The background and surroundings should be filled with mature, shady trees, creating a lush, green, and cool environment. The lawn is perfectly manicured. The lighting is bright and natural. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     sereneTwilightEstate: "Transform the image into a high-quality, photorealistic architectural photograph, maintaining the original architecture and camera angle. The scene is set at dusk, with a beautiful twilight sky. Turn on warm, inviting interior lights that are visible through the large glass windows. The landscape must feature a meticulously manicured green lawn. Crucially, frame the house with a large deciduous tree on the left and a tall pine tree on the right. The overall atmosphere should be serene, modern, and luxurious. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     sereneHomeWithGarden: "Transform the image into a high-quality, photorealistic architectural photograph, maintaining the original architecture and camera angle. Turn on warm, inviting interior lights visible through the windows. Add large, elegant trees in the foreground, framing the view slightly. Create a beautifully landscaped garden in front of the house with a neat lawn and some flowering bushes. The background should feature soft, out-of-focus trees, creating a sense of depth and tranquility. The overall atmosphere should be peaceful, serene, and welcoming, as if for a luxury real estate listing. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     modernTwilightHome: "Transform the image into a high-quality, photorealistic architectural photograph of a modern home. Set the time to dusk, with a soft twilight sky. Turn on warm, inviting interior lights that are visible through the windows, creating a cozy and welcoming glow. Surround the house with a modern, manicured landscape, including a neat green lawn, contemporary shrubs, and a healthy feature tree. The foreground should include a clean paved walkway and sidewalk. The final image must be hyper-realistic, mimicking a professional real estate photograph, maintaining the original camera angle and architecture. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
@@ -240,246 +238,1012 @@ const brushColors = [
   { name: 'Yellow', value: 'rgba(255, 204, 0, 0.7)', css: 'bg-yellow-400' },
 ];
 
+const ARCHITECTURAL_STYLE_PROMPTS = architecturalStyleOptions.reduce((acc, option) => {
+  acc[option.name] = `Change the architectural style to ${option.name}. ${option.description}`;
+  return acc;
+}, {} as Record<string, string>);
+
+const GARDEN_STYLE_PROMPTS = gardenStyleOptions.reduce((acc, option) => {
+  acc[option.name] = `Change the garden to ${option.name}. ${option.description}`;
+  return acc;
+}, {} as Record<string, string>);
+
+const INTERIOR_STYLE_PROMPTS = interiorStyleOptions.reduce((acc, option) => {
+  acc[option.name] = `Change the interior design style to ${option.name}. ${option.description}`;
+  return acc;
+}, {} as Record<string, string>);
+
+const INTERIOR_LIGHTING_PROMPTS = interiorLightingOptions.reduce((acc, option) => {
+  acc[option] = `Change the lighting to ${option}.`;
+  return acc;
+}, {} as Record<string, string>);
+
+const BACKGROUND_PROMPTS = backgrounds.reduce((acc, bg) => {
+  acc[bg] = bg === "No Change" ? "" : `Change the background to ${bg}.`;
+  return acc;
+}, {} as Record<string, string>);
+
+const INTERIOR_BACKGROUND_PROMPTS = interiorBackgrounds.reduce((acc, bg) => {
+  acc[bg] = bg === "No Change" ? "" : `Change the view outside the window to ${bg}.`;
+  return acc;
+}, {} as Record<string, string>);
+
+const FOREGROUND_PROMPTS: Record<string, string> = {
+  "Foreground Large Tree": "Add a large tree in the foreground.",
+  "Foreground River": "Add a river in the foreground.",
+  "Foreground Road": "Add a road in the foreground.",
+  "Foreground Flowers": "Add flowers in the foreground.",
+  "Foreground Fence": "Add a fence in the foreground.",
+  "Top Corner Leaves": "Add leaves in the top corners.",
+  "Bottom Corner Bush": "Add a bush in the bottom corner.",
+  "Foreground Lawn": "Add a lawn in the foreground.",
+  "Foreground Pathway": "Add a pathway in the foreground.",
+  "Foreground Water Feature": "Add a water feature in the foreground.",
+  "Foreground Low Wall": "Add a low wall in the foreground.",
+};
+
+
+// --- Helper Components ---
+const OptionButton: React.FC<{
+  option: string,
+  isSelected: boolean,
+  onClick: (option: string) => void,
+  size?: 'sm' | 'md'
+}> = ({ option, isSelected, onClick, size = 'sm' }) => {
+  const sizeClasses = size === 'md' ? 'px-4 py-2 text-base' : 'px-3 py-1 text-xs font-medium uppercase tracking-wide';
+  return (
+    <button
+      key={option}
+      type="button"
+      onClick={() => onClick(option)}
+      className={`${sizeClasses} rounded-md transition-all duration-200 border 
+        ${isSelected
+          ? 'bg-red-600 text-white border-red-500 shadow-md shadow-red-900/20'
+          : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 border-zinc-700 hover:text-zinc-200'
+        }`}
+    >
+      {option}
+    </button>
+  );
+};
+
+const CollapsibleSection: React.FC<{
+    title: string;
+    sectionKey: string;
+    isOpen: boolean;
+    onToggle: () => void;
+    children: React.ReactNode;
+    disabled?: boolean;
+    icon?: React.ReactNode;
+    actions?: React.ReactNode;
+  }> = ({ title, isOpen, onToggle, children, disabled = false, icon, actions }) => (
+    <div className={`bg-zinc-900/30 rounded-lg border border-zinc-800 overflow-hidden transition-all duration-300 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
+      <button
+        type="button"
+        onClick={onToggle}
+        disabled={disabled}
+        className="w-full flex justify-between items-center p-3 text-left bg-zinc-800/20 hover:bg-zinc-800/50 transition-colors disabled:cursor-not-allowed"
+        aria-expanded={isOpen}
+        aria-controls={`section-content-${title.replace(/\s+/g, '-')}`}
+      >
+        <h3 className="flex items-center gap-3 text-xs font-bold text-zinc-300 uppercase tracking-wider">
+          {icon && <span className="text-zinc-500">{icon}</span>}
+          <span>{title}</span>
+        </h3>
+        <div className="flex items-center gap-2">
+            {actions}
+            <ChevronDownIcon className={`w-4 h-4 text-zinc-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+        </div>
+      </button>
+      <div 
+          id={`section-content-${title.replace(/\s+/g, '-')}`}
+          className={`overflow-hidden transition-[max-height] duration-500 ease-in-out ${isOpen ? 'max-h-[1500px]' : 'max-h-0'}`}
+      >
+        <div className={`p-4 ${isOpen ? 'border-t border-zinc-800/50' : ''}`}>
+            {children}
+        </div>
+      </div>
+    </div>
+);
+
+const ModeButton: React.FC<{
+  label: string;
+  icon: React.ReactNode;
+  mode: EditingMode;
+  activeMode: EditingMode;
+  onClick: (mode: EditingMode) => void;
+}> = ({ label, icon, mode, activeMode, onClick }) => (
+  <button
+    type="button"
+    onClick={() => onClick(mode)}
+    className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-2 p-2 text-xs font-bold uppercase tracking-wide rounded-md transition-all duration-200 border
+      ${activeMode === mode 
+          ? 'bg-zinc-800 text-white border-zinc-600 shadow-inner'
+          : 'bg-transparent text-zinc-500 border-transparent hover:bg-zinc-800/50 hover:text-zinc-300'
+      }`}
+  >
+      {icon}
+      <span>{label}</span>
+  </button>
+);
+
+const PreviewCard: React.FC<{
+  label: string;
+  description: string;
+  isSelected: boolean;
+  onClick: () => void;
+  isNested?: boolean;
+  icon?: React.ReactNode;
+}> = ({ label, description, isSelected, onClick, isNested = false, icon }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`p-3 text-left rounded-lg border transition-all duration-200 group flex flex-col justify-between ${
+      isSelected 
+      ? 'bg-red-900/20 border-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.15)]' 
+      : 'bg-zinc-900/40 border-zinc-800 hover:border-zinc-600 hover:bg-zinc-800/60'
+    } ${isNested ? 'h-24' : 'h-28'}`}
+  >
+    <div>
+        <div className="flex items-center gap-2">
+            {icon && <span className={isSelected ? 'text-red-400' : 'text-zinc-500'}>{icon}</span>}
+            <span className={`font-bold transition-colors text-xs uppercase tracking-wide ${isSelected ? 'text-red-400' : 'text-zinc-300'}`}>
+              {label}
+            </span>
+        </div>
+        <p className={`mt-2 text-[10px] leading-relaxed transition-colors line-clamp-3 ${isSelected ? 'text-zinc-300' : 'text-zinc-500'}`}>
+            {description}
+        </p>
+    </div>
+  </button>
+);
+
+const ImageToolbar: React.FC<{
+  onUndo: () => void;
+  onRedo: () => void;
+  onReset: () => void;
+  onUpscale: () => void;
+  onOpenSaveModal: () => void;
+  onTransform: (type: 'rotateLeft' | 'rotateRight' | 'flipHorizontal' | 'flipVertical') => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  canReset: boolean;
+  canUpscaleAndSave: boolean;
+  isLoading: boolean;
+}> = ({ onUndo, onRedo, onReset, onUpscale, onOpenSaveModal, onTransform, canUndo, canRedo, canReset, canUpscaleAndSave, isLoading }) => (
+  <div className="flex items-center gap-2 bg-zinc-900/80 backdrop-blur-md p-1.5 rounded-full border border-zinc-700 shadow-2xl">
+    {/* History */}
+    <div className="flex items-center gap-1 px-2 border-r border-zinc-700">
+      <button onClick={onUndo} disabled={!canUndo || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors"><UndoIcon className="w-4 h-4" /></button>
+      <button onClick={onRedo} disabled={!canRedo || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors"><RedoIcon className="w-4 h-4" /></button>
+    </div>
+    
+    {/* Transformations */}
+    <div className="flex items-center gap-1 px-2 border-r border-zinc-700">
+      <button onClick={() => onTransform('rotateLeft')} disabled={!canUpscaleAndSave || isLoading} title="Rotate Left" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors"><RotateLeftIcon className="w-4 h-4" /></button>
+      <button onClick={() => onTransform('rotateRight')} disabled={!canUpscaleAndSave || isLoading} title="Rotate Right" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors"><RotateRightIcon className="w-4 h-4" /></button>
+      <button onClick={() => onTransform('flipHorizontal')} disabled={!canUpscaleAndSave || isLoading} title="Flip Horizontal" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors"><FlipHorizontalIcon className="w-4 h-4" /></button>
+    </div>
+
+    {/* Main Actions */}
+    <div className="flex items-center gap-2 pl-2">
+      <button onClick={onUpscale} disabled={!canUpscaleAndSave || isLoading} className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-full transition-colors disabled:opacity-50"><UpscaleIcon className="w-3 h-3" /> Upscale</button>
+      <button onClick={onOpenSaveModal} disabled={!canUpscaleAndSave || isLoading} className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-full transition-colors disabled:opacity-50"><DownloadIcon className="w-3 h-3" /> Download</button>
+      <button onClick={onReset} disabled={!canReset || isLoading} className="p-2 text-red-500 hover:text-red-400 disabled:opacity-30 transition-colors" title="Reset All"><ResetEditsIcon className="w-4 h-4" /></button>
+    </div>
+  </div>
+);
+
+
 const ImageEditor: React.FC = () => {
-  const [projects, setProjects] = useState<ImageState[]>([]);
-  const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [prompt, setPrompt] = useState('');
-  const [isMaskingMode, setIsMaskingMode] = useState(false);
+  const [imageList, setImageList] = useState<ImageState[]>([]);
+  const [activeImageIndex, setActiveImageIndex] = useState<number | null>(null);
+  const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
+  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+
+  const [prompt, setPrompt] = useState<string>('');
+  const [negativePrompt, setNegativePrompt] = useState<string>('');
+  const [selectedStyle, setSelectedStyle] = useState<string>('');
+  const [styleIntensity, setStyleIntensity] = useState<number>(100);
+  const [selectedGardenStyle, setSelectedGardenStyle] = useState<string>('');
+  const [selectedArchStyle, setSelectedArchStyle] = useState<string>('');
+  const [selectedInteriorStyle, setSelectedInteriorStyle] = useState<string>('');
+  const [selectedInteriorLighting, setSelectedInteriorLighting] = useState<string>('');
+  const [selectedBackgrounds, setSelectedBackgrounds] = useState<string[]>([]);
+  const [selectedForegrounds, setSelectedForegrounds] = useState<string[]>([]);
+  const [selectedDecorativeItems, setSelectedDecorativeItems] = useState<string[]>([]);
+  const [selectedTimeOfDay, setSelectedTimeOfDay] = useState<string>('');
+  const [selectedWeather, setSelectedWeather] = useState<string>('');
+  const [selectedCameraAngle, setSelectedCameraAngle] = useState<string>('');
+  const [selectedFilter, setSelectedFilter] = useState<string>('None');
+  const [selectedQuickAction, setSelectedQuickAction] = useState<string>('');
+  const [photorealisticIntensity, setPhotorealisticIntensity] = useState<number>(100);
+  const [isAddLightActive, setIsAddLightActive] = useState<boolean>(false);
+  const [lightingBrightness, setLightingBrightness] = useState<number>(50);
+  const [lightingTemperature, setLightingTemperature] = useState<number>(50);
+  const [harmonizeIntensity, setHarmonizeIntensity] = useState<number>(100);
+  const [sketchIntensity, setSketchIntensity] = useState<number>(100);
+  const [outputSize, setOutputSize] = useState<string>('Original');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sceneType, setSceneType] = useState<SceneType>('exterior'); // Default to exterior
   
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // Plan to 3D state
+  const [selectedRoomType, setSelectedRoomType] = useState<string>('');
+  const [selectedPlanView, setSelectedPlanView] = useState<string>(planViewOptions[0].name);
+  const [selectedPlanLighting, setSelectedPlanLighting] = useState<string>('');
+  const [selectedPlanMaterials, setSelectedPlanMaterials] = useState<string>('');
+  const [furniturePrompt, setFurniturePrompt] = useState<string>('');
+  const [selectedPlanColorStyle, setSelectedPlanColorStyle] = useState<string>('');
+  
+  // Color adjustment states
+  const [brightness, setBrightness] = useState<number>(100);
+  const [contrast, setContrast] = useState<number>(100);
+  const [saturation, setSaturation] = useState<number>(100);
+  const [sharpness, setSharpness] = useState<number>(100);
+  
+  // Vegetation state
+  const [treeAge, setTreeAge] = useState<number>(50);
+  const [season, setSeason] = useState<number>(50);
+
+  // Special interior lighting state
+  const [isCoveLightActive, setIsCoveLightActive] = useState<boolean>(false);
+  const [coveLightBrightness, setCoveLightBrightness] = useState<number>(70);
+  const [coveLightColor, setCoveLightColor] = useState<string>('#FFDAB9'); 
+
+  const [isSpotlightActive, setIsSpotlightActive] = useState<boolean>(false);
+  const [spotlightBrightness, setSpotlightBrightness] = useState<number>(60);
+  const [spotlightColor, setSpotlightColor] = useState<string>('#FFFFE0'); 
+  
+  const [isDownlightActive, setIsDownlightActive] = useState<boolean>(false);
+  const [downlightBrightness, setDownlightBrightness] = useState<number>(80);
+  const [downlightColor, setDownlightColor] = useState<string>('#FFFFFF');
+
+  const [addFourWayAC, setAddFourWayAC] = useState<boolean>(false);
+  const [addWallTypeAC, setAddWallTypeAC] = useState<boolean>(false);
+
+  // UI state
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    prompt: true,
+    quickActions: true,
+    addLight: false,
+    colorAdjust: false,
+    filter: false,
+    gardenStyle: false,
+    archStyle: false,
+    cameraAngle: false,
+    interiorStyle: true,
+    interiorQuickActions: true,
+    livingRoomQuickActions: false,
+    artStyle: false,
+    background: false,
+    foreground: false,
+    output: false,
+    lighting: false,
+    vegetation: false,
+    specialLighting: false,
+    planColorize: true,
+    planConfig: true,
+    planDetails: false,
+    planView: true,
+    brushTool: true,
+    decorations: false,
+    manualAdjustments: false,
+    projectHistory: false,
+  });
+  
+  const [editingMode, setEditingMode] = useState<EditingMode>('default');
+
+  const toggleSection = (sectionName: string) => {
+    setOpenSections(prev => ({ ...prev, [sectionName]: !prev[sectionName] }));
+  };
+  
+  const changeEditingMode = (mode: EditingMode) => {
+    setEditingMode(mode);
+  };
+
   const imageDisplayRef = useRef<ImageDisplayHandle>(null);
 
-  const currentProject = projects.find(p => p.id === currentProjectId) || null;
-  const currentImage = currentProject 
-    ? (currentProject.history[currentProject.historyIndex]?.[0] || currentProject.dataUrl) 
-    : null;
+  // State for saving
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState<boolean>(false);
+  const [saveQuality, setSaveQuality] = useState<number>(0.92); 
+  
+  // State for masking mode
+  const [brushSize, setBrushSize] = useState<number>(30);
+  const [brushColor, setBrushColor] = useState<string>(brushColors[0].value);
+  const [isMaskEmpty, setIsMaskEmpty] = useState<boolean>(true);
 
+
+  const mountedRef = useRef(true);
   useEffect(() => {
-    loadProjects().then(loaded => {
-        // Need to cast loaded because of the Omit<ImageState, 'file'> in dbService
-        const loadedWithFile = loaded.map(l => ({ ...l, file: null })) as ImageState[];
-        if (loadedWithFile.length > 0) {
-            setProjects(loadedWithFile);
-            setCurrentProjectId(loadedWithFile[0].id);
-        }
-    });
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
+  // Load state from IndexedDB on component mount
   useEffect(() => {
-      if (projects.length > 0) {
-          const projectsToSave = projects.map(({ file, ...rest }) => rest);
-          saveProjects(projectsToSave).catch(console.error);
-      }
-  }, [projects]);
+    let isMounted = true;
+    const loadData = async () => {
+      try {
+        const savedProjects = await loadProjects();
+        if (isMounted && Array.isArray(savedProjects)) {
+          const restoredProjects = savedProjects.map(p => ({ ...p, file: null }));
+          const validatedProjects = restoredProjects.filter(p => p.id && p.dataUrl);
+          setImageList(validatedProjects);
 
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const dataUrl = ev.target?.result as string;
-      const base64 = dataUrl.split(',')[1];
-      const newProject: ImageState = {
-        id: Date.now().toString(),
-        file,
-        base64,
-        mimeType: file.type,
-        dataUrl,
-        history: [[dataUrl]],
-        historyIndex: 0,
-        selectedResultIndex: 0,
-        promptHistory: [],
-        apiPromptHistory: [],
-        lastGeneratedLabels: [],
-        generationTypeHistory: [],
-      };
-      setProjects(prev => [...prev, newProject]);
-      setCurrentProjectId(newProject.id);
-    };
-    reader.readAsDataURL(file);
-    e.target.value = '';
-  };
-
-  const handleGenerate = async () => {
-    if (!currentProject || !currentImage || !prompt) return;
-    
-    setIsLoading(true);
-    try {
-      let mask = null;
-      if (isMaskingMode && imageDisplayRef.current) {
-          mask = imageDisplayRef.current.exportMask();
-      }
-
-      const imageBase64 = currentImage.includes(',') ? currentImage.split(',')[1] : currentImage;
-
-      const resultBase64 = await editImage(
-          imageBase64,
-          currentProject.mimeType || 'image/png',
-          prompt,
-          mask
-      );
-
-      const resultDataUrl = `data:image/jpeg;base64,${resultBase64}`;
-
-      setProjects(prev => prev.map(p => {
-          if (p.id === currentProjectId) {
-              const newHistory = p.history.slice(0, p.historyIndex + 1);
-              newHistory.push([resultDataUrl]);
-              return {
-                  ...p,
-                  history: newHistory,
-                  historyIndex: newHistory.length - 1,
-                  promptHistory: [...p.promptHistory, prompt],
-                  generationTypeHistory: [...p.generationTypeHistory, 'edit']
-              };
+          const savedIndexJSON = localStorage.getItem('fast-ai-active-project-index');
+          if (savedIndexJSON) {
+            const savedIndex = parseInt(savedIndexJSON, 10);
+            if (savedIndex >= 0 && savedIndex < validatedProjects.length) {
+              setActiveImageIndex(savedIndex);
+            } else if (validatedProjects.length > 0) {
+              setActiveImageIndex(0);
+            }
+          } else if (validatedProjects.length > 0) {
+            setActiveImageIndex(0);
           }
-          return p;
-      }));
-      
-      if (isMaskingMode) {
-          setIsMaskingMode(false);
-          imageDisplayRef.current?.clearMask();
+        }
+      } catch (e) {
+        console.error("Error loading projects from IndexedDB:", e);
+        setError("Could not load your saved projects. Please try refreshing the page.");
+      } finally {
+        if (isMounted) {
+          setIsDataLoaded(true);
+        }
       }
-      setPrompt('');
-      
-    } catch (e) {
-        alert((e as Error).message);
-    } finally {
-        setIsLoading(false);
+    };
+
+    loadData();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Save state to IndexedDB whenever it changes
+  useEffect(() => {
+    if (!isDataLoaded) {
+      return; // Don't save until initial data has been loaded
+    }
+    
+    const saveData = async () => {
+      try {
+        const serializableImageList = imageList.map(({ file, ...rest }) => rest);
+        await saveProjects(serializableImageList);
+
+        if (activeImageIndex !== null) {
+          localStorage.setItem('fast-ai-active-project-index', activeImageIndex.toString());
+        } else {
+          localStorage.removeItem('fast-ai-active-project-index');
+        }
+        
+        // If the current error is a storage error, clear it after a successful save.
+        if (error && error.startsWith("Could not save")) {
+            setError(null);
+        }
+      } catch (e) {
+        console.error("Error saving projects to IndexedDB:", e);
+        setError("Could not save your project progress. Changes might not be saved.");
+      }
+    };
+    
+    saveData();
+  }, [imageList, activeImageIndex, isDataLoaded]);
+
+  const activeImage = activeImageIndex !== null ? imageList[activeImageIndex] : null;
+  
+  useEffect(() => {
+    // Reset temporary state when active image changes
+    setPrompt('');
+    setNegativePrompt('');
+    // ... (other resets if needed)
+  }, [activeImage?.id]);
+
+
+  const handleImageChange = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      setError(null);
+
+      const newImagesPromises = Array.from(files).map((file: File) => {
+          return new Promise<ImageState>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => {
+                  if (mountedRef.current) {
+                      if (typeof reader.result === 'string') {
+                          const result = reader.result;
+                          const mimeType = result.substring(5, result.indexOf(';'));
+                          const base64 = result.split(',')[1];
+                          resolve({
+                              id: crypto.randomUUID(),
+                              file,
+                              base64,
+                              mimeType,
+                              dataUrl: result,
+                              history: [],
+                              historyIndex: -1,
+                              selectedResultIndex: null,
+                              promptHistory: [],
+                              apiPromptHistory: [],
+                              lastGeneratedLabels: [],
+                              generationTypeHistory: [],
+                          });
+                      } else {
+                        reject(new Error('File could not be read as a data URL.'));
+                      }
+                  }
+              };
+              reader.onerror = reject;
+              reader.readAsDataURL(file);
+          });
+      });
+
+      try {
+          const newImages = await Promise.all(newImagesPromises);
+          if (mountedRef.current) {
+              const currentListSize = imageList.length;
+              setImageList(prevList => [...prevList, ...newImages]);
+              if (activeImageIndex === null) {
+                  setActiveImageIndex(currentListSize);
+              }
+              setIsProjectModalOpen(false); // Close modal after upload
+          }
+      } catch (err) {
+          if (mountedRef.current) {
+              setError("Could not load some or all of the images.");
+          }
+      }
+    }
+  }, [activeImageIndex, imageList.length]);
+
+  const handleRemoveImage = (indexToRemove: number) => {
+    setImageList(prevImageList => {
+        const newList = prevImageList.filter((_, i) => i !== indexToRemove);
+        setActiveImageIndex(prevActiveIndex => {
+            if (prevActiveIndex === null) return null;
+            if (newList.length === 0) return null;
+            const activeId = prevImageList[prevActiveIndex].id;
+            const newIndexOfOldActive = newList.findIndex(img => img.id === activeId);
+            if (newIndexOfOldActive !== -1) return newIndexOfOldActive;
+            return Math.min(indexToRemove, newList.length - 1);
+        });
+        return newList;
+    });
+  };
+  
+  const handleClearAllProjects = async () => {
+    if (window.confirm("Are you sure you want to delete all projects?")) {
+        try {
+            await clearProjects();
+            localStorage.removeItem('fast-ai-active-project-index');
+            setImageList([]);
+            setActiveImageIndex(null);
+        } catch (err) {
+            setError("Error clearing projects.");
+        }
     }
   };
-  
-  const handleUndo = () => {
-      if (!currentProject || currentProject.historyIndex <= 0) return;
-      setProjects(prev => prev.map(p => {
-          if (p.id === currentProjectId) {
-              return { ...p, historyIndex: p.historyIndex - 1 };
-          }
-          return p;
-      }));
+
+  const handleSceneTypeSelect = (type: SceneType) => {
+    setSceneType(type);
+    setEditingMode('default');
+    // Reset specific selections to prevent crossover
+    setSelectedQuickAction('');
+    setSelectedArchStyle('');
+    setSelectedGardenStyle('');
+    setSelectedInteriorStyle('');
+    setSelectedInteriorLighting('');
+    setSelectedBackgrounds([]);
+    setSelectedForegrounds([]);
   };
 
-  const handleRedo = () => {
-      if (!currentProject || currentProject.historyIndex >= currentProject.history.length - 1) return;
-      setProjects(prev => prev.map(p => {
-          if (p.id === currentProjectId) {
-              return { ...p, historyIndex: p.historyIndex + 1 };
-          }
-          return p;
-      }));
+  const updateActiveImage = (updater: (image: ImageState) => ImageState) => {
+    if (activeImageIndex === null) return;
+    setImageList(currentList => {
+        const newList = [...currentList];
+        const updatedImage = updater(newList[activeImageIndex]);
+        newList[activeImageIndex] = updatedImage;
+        return newList;
+    });
   };
   
-  const handleClearProjects = async () => {
-      if (confirm("Are you sure you want to clear all projects?")) {
-          await clearProjects();
-          setProjects([]);
-          setCurrentProjectId(null);
+   const hasTextPrompt = prompt.trim() !== '';
+   const isPlanModeReady = sceneType === 'plan' && !!selectedRoomType && !!selectedInteriorStyle;
+   const isEditingWithMask = editingMode === 'object' && !isMaskEmpty;
+   
+   const hasEditInstruction = isEditingWithMask ? hasTextPrompt : (
+       hasTextPrompt ||
+       selectedQuickAction !== '' ||
+       selectedStyle !== '' ||
+       selectedArchStyle !== '' ||
+       selectedGardenStyle !== '' ||
+       selectedInteriorStyle !== '' ||
+       selectedInteriorLighting !== '' ||
+       selectedBackgrounds.length > 0 ||
+       selectedForegrounds.length > 0 ||
+       isPlanModeReady
+   );
+
+   const handleQuickActionClick = (action: string) => {
+    const isDeselecting = selectedQuickAction === action;
+    setSelectedQuickAction(isDeselecting ? '' : action);
+    if (!isDeselecting) setSelectedCameraAngle('');
+  };
+  
+  const handleBackgroundToggle = (bg: string) => {
+    if (bg === 'No Change') { setSelectedBackgrounds([]); return; }
+    if (sceneType === 'interior') { setSelectedBackgrounds(prev => (prev.includes(bg) ? [] : [bg])); return; }
+    setSelectedBackgrounds(prev => prev.includes(bg) ? prev.filter(item => item !== bg) : [...prev, bg]);
+  };
+  
+  const handleForegroundToggle = (fg: string) => {
+    setSelectedForegrounds(prev => prev.includes(fg) ? prev.filter(item => item !== fg) : [...prev, fg]);
+  };
+
+  const executeGeneration = async (promptForGeneration: string, promptForHistory: string) => {
+      if (!activeImage) return;
+      let maskBase64: string | null = null;
+      if (editingMode === 'object') {
+        maskBase64 = await imageDisplayRef.current?.exportMask() ?? null;
+        if (!maskBase64) { setError("Mask error."); return; }
+      }
+
+      const sourceDataUrl = (activeImage.history.length > 0 && activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null)
+      ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex]
+      : activeImage.dataUrl;
+
+      if (!sourceDataUrl) return;
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+          const sourceMimeType = sourceDataUrl.substring(5, sourceDataUrl.indexOf(';'));
+          const sourceBase64 = sourceDataUrl.split(',')[1];
+          const finalPrompt = `As an expert photo editor... ${promptForGeneration}`;
+          
+          const generatedImageBase64 = await editImage(sourceBase64, sourceMimeType, finalPrompt, maskBase64);
+          
+          if (!mountedRef.current) return;
+          const newResult = `data:image/jpeg;base64,${generatedImageBase64}`;
+          
+          updateActiveImage(img => {
+              const newHistory = img.history.slice(0, img.historyIndex + 1);
+              newHistory.push([newResult]);
+              return {
+                  ...img,
+                  history: newHistory,
+                  historyIndex: newHistory.length - 1,
+                  selectedResultIndex: 0,
+                  promptHistory: [...img.promptHistory.slice(0, img.historyIndex + 1), promptForHistory],
+                  apiPromptHistory: [...img.apiPromptHistory.slice(0, img.historyIndex + 1), promptForGeneration],
+                  lastGeneratedLabels: ['Edited'],
+                  generationTypeHistory: [...img.generationTypeHistory.slice(0, img.historyIndex + 1), 'edit'],
+              };
+          });
+
+          // Reset basic fields
+          setPrompt('');
+          setSelectedQuickAction('');
+          if (imageDisplayRef.current) imageDisplayRef.current.clearMask();
+
+      } catch (err) {
+          setError(err instanceof Error ? err.message : "Error.");
+      } finally {
+          setIsLoading(false);
       }
   };
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    let constructedPrompt = prompt; 
+    let constructedHistory = prompt || "Generated Image";
+    
+    if (selectedQuickAction) {
+        constructedPrompt += " " + QUICK_ACTION_PROMPTS[selectedQuickAction];
+        constructedHistory = "Quick Action: " + selectedQuickAction;
+    }
+    
+    if (selectedArchStyle) {
+        constructedPrompt += " " + ARCHITECTURAL_STYLE_PROMPTS[selectedArchStyle];
+        constructedHistory = "Arch Style: " + selectedArchStyle;
+    }
+    
+    if (selectedGardenStyle) {
+        constructedPrompt += " " + GARDEN_STYLE_PROMPTS[selectedGardenStyle];
+        constructedHistory = "Garden: " + selectedGardenStyle;
+    }
+    
+    if (selectedInteriorStyle) {
+        constructedPrompt += " " + INTERIOR_STYLE_PROMPTS[selectedInteriorStyle];
+        constructedHistory = "Interior: " + selectedInteriorStyle;
+    }
+    
+    if (selectedInteriorLighting) {
+        constructedPrompt += " " + INTERIOR_LIGHTING_PROMPTS[selectedInteriorLighting];
+    }
+
+    if (selectedBackgrounds.length > 0) {
+        const bgPrompts = selectedBackgrounds.map(bg => BACKGROUND_PROMPTS[bg] || INTERIOR_BACKGROUND_PROMPTS[bg]).join(' ');
+        constructedPrompt += " " + bgPrompts;
+        constructedHistory += ", BG: " + selectedBackgrounds.join(', ');
+    }
+    
+    if (selectedForegrounds.length > 0) {
+        const fgPrompts = selectedForegrounds.map(fg => FOREGROUND_PROMPTS[fg]).join(' ');
+        constructedPrompt += " " + fgPrompts;
+        constructedHistory += ", FG: " + selectedForegrounds.join(', ');
+    }
+
+    executeGeneration(constructedPrompt, constructedHistory);
+  };
+  
+  const handleUndo = () => { if (activeImage && activeImage.historyIndex > -1) updateActiveImage(img => ({ ...img, historyIndex: img.historyIndex - 1, selectedResultIndex: 0 })); };
+  const handleRedo = () => { if (activeImage && activeImage.historyIndex < activeImage.history.length - 1) updateActiveImage(img => ({ ...img, historyIndex: img.historyIndex + 1, selectedResultIndex: 0 })); };
+  const handleResetEdits = () => { if (window.confirm("Reset?")) updateActiveImage(img => ({ ...img, history: [], historyIndex: -1, selectedResultIndex: null, promptHistory: [] })); };
+  const handleUpscale = () => executeGeneration("Upscale 2x...", "Upscaled");
+  const handleOpenSaveModal = () => setIsSaveModalOpen(true);
+  const handleDownload = () => { 
+      if (!activeImage) return;
+      const link = document.createElement('a');
+      const url = activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex] : activeImage.dataUrl;
+      if(url) {
+          link.href = url;
+          link.download = `edited-image-${Date.now()}.jpg`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+      }
+      setIsSaveModalOpen(false); 
+  };
+  const handleTransform = (type: any) => { 
+     // Placeholder for transform logic 
+  };
+
+
+  const selectedImageUrl = activeImage
+    ? activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null
+      ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex]
+      : activeImage.dataUrl
+    : null;
+    
+  const currentResults = (activeImage && activeImage.historyIndex > -1) ? activeImage.history[activeImage.historyIndex] : [];
+  const canUndo = activeImage ? activeImage.historyIndex > -1 : false;
+  const canRedo = activeImage ? activeImage.historyIndex < activeImage.history.length - 1 : false;
+  const canReset = activeImage ? activeImage.history.length > 0 : false;
+  const canUpscaleAndSave = !!selectedImageUrl;
+
+  if (!isDataLoaded) return <div className="flex items-center justify-center h-screen bg-zinc-950"><Spinner /></div>;
 
   return (
-    <div className="flex flex-col h-full bg-zinc-950 text-gray-200">
-      <header className="flex justify-between items-center p-4 border-b border-gray-800 bg-gray-900/50 backdrop-blur-sm">
-         <div className="flex items-center gap-2">
-            <SparklesIcon className="w-6 h-6 text-red-500" />
-            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-orange-500">FastAI Editor</h1>
-         </div>
-         <div className="flex gap-2">
-            <button onClick={handleClearProjects} className="p-2 text-gray-400 hover:text-white" title="Clear History">
-                <HistoryIcon className="w-5 h-5" />
-            </button>
-            <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg border border-gray-700 flex items-center gap-2 transition-colors">
-                <PhotoIcon className="w-5 h-5" /> Open Image
-            </button>
-            <input ref={fileInputRef} type="file" hidden accept="image/*" onChange={handleUpload} />
-         </div>
-      </header>
-      
-      <div className="flex flex-grow overflow-hidden">
-         {/* Sidebar */}
-         <div className="w-80 bg-gray-900 border-r border-gray-800 p-4 flex flex-col gap-6 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700">
-            <div className="flex flex-col gap-3">
-                <label className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Prompt</label>
-                <textarea 
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 h-32 resize-none focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none text-sm transition-all placeholder-gray-500"
-                    placeholder="Describe what you want to change..."
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                />
-            </div>
-            
-            <div className="flex flex-col gap-3">
-                 <label className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Tools</label>
-                 <div className="grid grid-cols-2 gap-2">
-                    <button 
-                        onClick={() => setIsMaskingMode(!isMaskingMode)}
-                        className={`py-3 px-4 rounded-lg flex items-center justify-center gap-2 border transition-all ${isMaskingMode ? 'bg-red-500/20 border-red-500 text-red-400' : 'bg-gray-800 border-gray-700 hover:bg-gray-750 hover:border-gray-600'}`}
-                    >
-                        <BrushIcon className="w-4 h-4" /> 
-                        <span className="text-sm font-medium">{isMaskingMode ? 'Done' : 'Mask'}</span>
-                    </button>
-                    <div className="py-3 px-4 rounded-lg border border-gray-800 bg-gray-900/50 flex items-center justify-center gap-2 opacity-50 cursor-not-allowed">
-                         <AdjustmentsIcon className="w-4 h-4" />
-                         <span className="text-sm font-medium">Adjust</span>
+    <div className="flex h-screen w-full bg-zinc-950 text-zinc-300 overflow-hidden font-sans">
+      {/* Project Modal */}
+      {isProjectModalOpen && (
+         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setIsProjectModalOpen(false)}>
+            <div className="bg-zinc-900 rounded-xl border border-zinc-700 shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
+                <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-900">
+                    <h2 className="text-lg font-bold text-white">My Projects</h2>
+                    <button onClick={() => setIsProjectModalOpen(false)} className="text-zinc-400 hover:text-white"><CloseUpIcon className="w-5 h-5"/></button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-zinc-950/50">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <label className="cursor-pointer flex flex-col items-center justify-center p-6 border-2 border-dashed border-zinc-700 rounded-lg hover:border-red-500 hover:bg-zinc-800/50 transition-colors group">
+                             <PhotoIcon className="w-8 h-8 text-zinc-500 group-hover:text-red-500 mb-2"/>
+                             <span className="text-sm font-medium text-zinc-400 group-hover:text-zinc-200">New Project</span>
+                             <input type="file" accept="image/*" multiple onChange={handleImageChange} className="hidden" />
+                        </label>
+                        {imageList.map((img, index) => (
+                            <div key={img.id} onClick={() => { setActiveImageIndex(index); setIsProjectModalOpen(false); }} 
+                                 className={`flex items-center p-3 rounded-lg border cursor-pointer transition-all ${activeImageIndex === index ? 'bg-red-900/20 border-red-500/50' : 'bg-zinc-800 border-zinc-700 hover:border-zinc-500'}`}>
+                                <div className="w-16 h-16 bg-zinc-950 rounded-md overflow-hidden flex-shrink-0 border border-zinc-700">
+                                    {img.dataUrl && <img src={img.dataUrl} className="w-full h-full object-cover" alt="thumb" />}
+                                </div>
+                                <div className="ml-3 flex-1 min-w-0">
+                                    <p className="text-sm font-semibold text-zinc-200 truncate">{img.file?.name || `Project ${index + 1}`}</p>
+                                    <p className="text-xs text-zinc-500 mt-1">{img.history.length} edits made</p>
+                                </div>
+                                <button onClick={(e) => { e.stopPropagation(); handleRemoveImage(index); }} className="p-2 text-zinc-500 hover:text-red-500"><ResetEditsIcon className="w-4 h-4"/></button>
+                            </div>
+                        ))}
                     </div>
-                 </div>
-            </div>
-
-            <div className="mt-auto">
-                <button 
-                    onClick={handleGenerate} 
-                    disabled={isLoading || !currentProject || !prompt}
-                    className="w-full py-3 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-bold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-red-900/20 flex items-center justify-center gap-2"
-                >
-                    {isLoading ? <Spinner /> : <><SparklesIcon className="w-5 h-5" /> Generate</>}
-                </button>
+                </div>
+                <div className="p-4 border-t border-zinc-800 bg-zinc-900 flex justify-between">
+                    <button onClick={handleClearAllProjects} className="text-xs text-red-400 hover:text-red-300 underline">Clear All Data</button>
+                    <div className="text-xs text-zinc-600">Stored locally in your browser</div>
+                </div>
             </div>
          </div>
+      )}
 
-         {/* Main Area */}
-         <div className="flex-grow bg-zinc-950 relative flex flex-col">
-             {currentProject ? (
-                 <div className="flex-grow relative p-8 flex flex-col">
-                     <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-gray-800/90 backdrop-blur border border-gray-700 p-1.5 rounded-full flex gap-1 shadow-xl">
-                         <button onClick={handleUndo} disabled={currentProject.historyIndex <= 0} className="p-2 hover:bg-gray-700 rounded-full disabled:opacity-30 transition-colors text-gray-300">
-                             <UndoIcon className="w-5 h-5" />
-                         </button>
-                         <div className="w-px bg-gray-600 mx-1 my-1"></div>
-                         <button onClick={handleRedo} disabled={currentProject.historyIndex >= currentProject.history.length - 1} className="p-2 hover:bg-gray-700 rounded-full disabled:opacity-30 transition-colors text-gray-300">
-                             <RedoIcon className="w-5 h-5" />
-                         </button>
-                     </div>
-
-                     <div className="flex-grow overflow-hidden rounded-xl border border-gray-800/50 bg-gray-900/30 shadow-2xl">
-                        <ImageDisplay 
-                            ref={imageDisplayRef}
-                            label={currentProject.historyIndex === 0 ? "Original Image" : "Generated Result"}
-                            imageUrl={currentImage}
-                            originalImageUrl={currentProject.dataUrl}
-                            isLoading={isLoading}
-                            isMaskingMode={isMaskingMode}
-                            hideLabel={true}
-                            onMaskChange={() => {}}
-                        />
-                     </div>
-                     
-                     <div className="mt-4 flex justify-center gap-2 text-sm text-gray-500 font-mono">
-                        {currentProject.historyIndex + 1} / {currentProject.history.length}
-                     </div>
-                 </div>
-             ) : (
-                 <div className="flex flex-col items-center justify-center h-full text-gray-500 select-none">
-                     <div className="w-24 h-24 bg-gray-900 rounded-3xl flex items-center justify-center mb-6 border border-gray-800">
-                        <PhotoIcon className="w-12 h-12 opacity-50" />
-                     </div>
-                     <h3 className="text-xl font-bold text-gray-300 mb-2">No Image Selected</h3>
-                     <p className="max-w-sm text-center text-gray-400">Upload an image to start editing with AI. Use the "Open Image" button in the top right.</p>
-                 </div>
-             )}
+      {/* LEFT SIDEBAR */}
+      <aside className="w-80 flex flex-col border-r border-zinc-800 bg-zinc-900/95 backdrop-blur flex-shrink-0 z-20 shadow-2xl">
+         {/* Logo Area */}
+         <div className="h-16 flex items-center px-6 border-b border-zinc-800">
+             <h1 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">FAST AI</h1>
          </div>
-      </div>
+
+         {/* Scene Tabs */}
+         {activeImage && (
+           <div className="flex border-b border-zinc-800 bg-zinc-900">
+             <button onClick={() => handleSceneTypeSelect('exterior')} className={`flex-1 py-4 text-xs font-bold uppercase tracking-wider transition-colors relative ${sceneType === 'exterior' ? 'text-white bg-zinc-800/50' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/30'}`}>
+                Exterior
+                {sceneType === 'exterior' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-500"></div>}
+             </button>
+             <button onClick={() => handleSceneTypeSelect('interior')} className={`flex-1 py-4 text-xs font-bold uppercase tracking-wider transition-colors relative ${sceneType === 'interior' ? 'text-white bg-zinc-800/50' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/30'}`}>
+                Interior
+                {sceneType === 'interior' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-500"></div>}
+             </button>
+             <button onClick={() => handleSceneTypeSelect('plan')} className={`flex-1 py-4 text-xs font-bold uppercase tracking-wider transition-colors relative ${sceneType === 'plan' ? 'text-white bg-zinc-800/50' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/30'}`}>
+                Plan
+                {sceneType === 'plan' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-500"></div>}
+             </button>
+           </div>
+         )}
+
+         {/* Scrollable Controls */}
+         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3 bg-zinc-900">
+            {!activeImage ? (
+               <div className="flex flex-col items-center justify-center h-full text-zinc-500 space-y-4">
+                  <PhotoIcon className="w-12 h-12 opacity-20"/>
+                  <p className="text-sm">Select a project to start</p>
+                  <button onClick={() => setIsProjectModalOpen(true)} className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-md text-sm font-bold">Open Projects</button>
+               </div>
+            ) : (
+               <>
+                  {sceneType !== 'plan' && (
+                    <div className="flex gap-2 mb-4">
+                         <ModeButton label="General" icon={<SparklesIcon className="w-4 h-4" />} mode="default" activeMode={editingMode} onClick={setEditingMode} />
+                         <ModeButton label="Object" icon={<BrushIcon className="w-4 h-4" />} mode="object" activeMode={editingMode} onClick={setEditingMode} />
+                    </div>
+                  )}
+
+                  {/* Dynamic Content based on SceneType */}
+                  {sceneType === 'exterior' && (
+                    <>
+                        <CollapsibleSection title="Prompt" sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-4 h-4"/>}>
+                            <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={editingMode === 'object' ? "Describe masked area change..." : "Describe your changes..."} className="w-full bg-zinc-950 border border-zinc-700 rounded-md p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none" rows={3} />
+                        </CollapsibleSection>
+                        <CollapsibleSection title="Quick Actions" sectionKey="quickActions" isOpen={openSections.quickActions} onToggle={() => toggleSection('quickActions')} icon={<StarIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                             <div className="space-y-2">
+                                 {exteriorQuickActionList.map(action => (
+                                    <PreviewCard 
+                                        key={action.id}
+                                        label={action.label} 
+                                        description={action.desc} 
+                                        isSelected={selectedQuickAction === action.id} 
+                                        onClick={() => handleQuickActionClick(action.id)} 
+                                        icon={action.icon}
+                                    />
+                                 ))}
+                             </div>
+                        </CollapsibleSection>
+                        <CollapsibleSection title="Style" sectionKey="archStyle" isOpen={openSections.archStyle} onToggle={() => toggleSection('archStyle')} icon={<HomeModernIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                            <div className="flex flex-wrap gap-2">
+                                {architecturalStyleOptions.map(s => <OptionButton key={s.name} option={s.name} isSelected={selectedArchStyle === s.name} onClick={() => setSelectedArchStyle(prev => prev === s.name ? '' : s.name)} />)}
+                            </div>
+                        </CollapsibleSection>
+                         <CollapsibleSection title="Garden" sectionKey="gardenStyle" isOpen={openSections.gardenStyle} onToggle={() => toggleSection('gardenStyle')} icon={<FlowerIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                            <div className="flex flex-wrap gap-2">
+                                {gardenStyleOptions.map(s => <OptionButton key={s.name} option={s.name} isSelected={selectedGardenStyle === s.name} onClick={() => setSelectedGardenStyle(prev => prev === s.name ? '' : s.name)} />)}
+                            </div>
+                        </CollapsibleSection>
+                        <CollapsibleSection title="Background" sectionKey="background" isOpen={openSections.background} onToggle={() => toggleSection('background')} icon={<LandscapeIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                            <div className="flex flex-wrap gap-2">
+                                {backgrounds.map(bg => <OptionButton key={bg} option={bg} isSelected={selectedBackgrounds.includes(bg)} onClick={() => handleBackgroundToggle(bg)} />)}
+                            </div>
+                        </CollapsibleSection>
+                        <CollapsibleSection title="Foreground" sectionKey="foreground" isOpen={openSections.foreground} onToggle={() => toggleSection('foreground')} icon={<LandscapeIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                            <div className="flex flex-wrap gap-2">
+                                {foregrounds.map(fg => <OptionButton key={fg} option={fg} isSelected={selectedForegrounds.includes(fg)} onClick={() => handleForegroundToggle(fg)} />)}
+                            </div>
+                        </CollapsibleSection>
+                    </>
+                  )}
+                  
+                   {sceneType === 'interior' && (
+                    <>
+                        <CollapsibleSection title="Prompt" sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-4 h-4"/>}>
+                            <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Describe interior changes..." className="w-full bg-zinc-950 border border-zinc-700 rounded-md p-3 text-sm text-zinc-200 placeholder-zinc-600" rows={3} />
+                        </CollapsibleSection>
+                        <CollapsibleSection title="Quick Actions" sectionKey="interiorQuickActions" isOpen={openSections.interiorQuickActions} onToggle={() => toggleSection('interiorQuickActions')} icon={<StarIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                             <div className="space-y-2">
+                                 {interiorQuickActionList.map(action => (
+                                    <PreviewCard 
+                                        key={action.id}
+                                        label={action.label} 
+                                        description={action.desc} 
+                                        isSelected={selectedQuickAction === action.id} 
+                                        onClick={() => handleQuickActionClick(action.id)} 
+                                        icon={action.icon}
+                                    />
+                                 ))}
+                             </div>
+                        </CollapsibleSection>
+                        <CollapsibleSection title="Interior Style" sectionKey="interiorStyle" isOpen={openSections.interiorStyle} onToggle={() => toggleSection('interiorStyle')} icon={<HomeIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                            <div className="grid grid-cols-2 gap-2">
+                                {interiorStyleOptions.slice(0, 6).map(s => <OptionButton key={s.name} option={s.name} isSelected={selectedInteriorStyle === s.name} onClick={() => setSelectedInteriorStyle(prev => prev === s.name ? '' : s.name)} />)}
+                            </div>
+                        </CollapsibleSection>
+                         <CollapsibleSection title="Lighting" sectionKey="lighting" isOpen={openSections.lighting} onToggle={() => toggleSection('lighting')} icon={<LightbulbIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                            <div className="flex flex-wrap gap-2">
+                                {interiorLightingOptions.map(l => <OptionButton key={l} option={l} isSelected={selectedInteriorLighting === l} onClick={() => setSelectedInteriorLighting(prev => prev === l ? '' : l)} />)}
+                            </div>
+                        </CollapsibleSection>
+                        <CollapsibleSection title="View Outside" sectionKey="background" isOpen={openSections.background} onToggle={() => toggleSection('background')} icon={<LandscapeIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                            <div className="flex flex-wrap gap-2">
+                                {interiorBackgrounds.map(bg => <OptionButton key={bg} option={bg} isSelected={selectedBackgrounds.includes(bg)} onClick={() => handleBackgroundToggle(bg)} />)}
+                            </div>
+                        </CollapsibleSection>
+                         <CollapsibleSection title="Foreground" sectionKey="foreground" isOpen={openSections.foreground} onToggle={() => toggleSection('foreground')} icon={<LandscapeIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                            <div className="flex flex-wrap gap-2">
+                                {foregrounds.map(fg => <OptionButton key={fg} option={fg} isSelected={selectedForegrounds.includes(fg)} onClick={() => handleForegroundToggle(fg)} />)}
+                            </div>
+                        </CollapsibleSection>
+                    </>
+                  )}
+                  
+                  {/* Common Tools */}
+                  {editingMode === 'object' && (
+                      <CollapsibleSection title="Brush Settings" sectionKey="brushTool" isOpen={openSections.brushTool} onToggle={() => toggleSection('brushTool')} icon={<BrushIcon className="w-4 h-4"/>}>
+                          <input type="range" min="5" max="100" value={brushSize} onChange={e => setBrushSize(Number(e.target.value))} className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-red-500 mb-4"/>
+                          <div className="flex justify-between items-center">
+                              <div className="flex gap-2">{brushColors.map(c => <button key={c.name} onClick={() => setBrushColor(c.value)} className={`w-6 h-6 rounded-full ${c.css} ${brushColor === c.value ? 'ring-2 ring-white' : ''}`} />)}</div>
+                              <button onClick={() => imageDisplayRef.current?.clearMask()} className="text-xs text-red-400 underline">Clear Mask</button>
+                          </div>
+                      </CollapsibleSection>
+                  )}
+               </>
+            )}
+         </div>
+
+         {/* Footer: Generate Button */}
+         {activeImage && (
+            <div className="p-4 border-t border-zinc-800 bg-zinc-900">
+               <button
+                 onClick={handleSubmit}
+                 disabled={isLoading || (!hasEditInstruction && editingMode !== 'object')}
+                 className="w-full bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg shadow-red-900/20 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+               >
+                 {isLoading ? <Spinner /> : <SparklesIcon className="w-5 h-5" />}
+                 <span>{isLoading ? 'Generating...' : 'Generate Image'}</span>
+               </button>
+            </div>
+         )}
+      </aside>
+
+      {/* MAIN CONTENT */}
+      <main className="flex-1 flex flex-col min-w-0 relative bg-zinc-950">
+         {/* Header */}
+         <header className="h-16 flex items-center justify-between px-6 border-b border-zinc-800 bg-zinc-900/50 backdrop-blur z-10">
+             <div className="flex items-center gap-3">
+                {activeImage ? (
+                     <>
+                        <span className="px-2 py-1 rounded bg-zinc-800 text-xs font-mono text-zinc-400 border border-zinc-700">{sceneType.toUpperCase()}</span>
+                        <h2 className="text-sm font-medium text-zinc-200 truncate max-w-xs">{activeImage.file?.name}</h2>
+                     </>
+                ) : <div className="text-zinc-600 text-sm italic">No project loaded</div>}
+             </div>
+             <div className="flex items-center gap-3">
+                 <button onClick={() => setIsProjectModalOpen(true)} className="px-4 py-2 text-xs font-bold uppercase tracking-wide bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-md border border-zinc-700 transition-all flex items-center gap-2 group">
+                    <PhotoIcon className="w-4 h-4 group-hover:text-white"/> Projects
+                 </button>
+             </div>
+         </header>
+
+         {/* Workspace Canvas */}
+         <div className="flex-1 overflow-y-auto custom-scrollbar p-8 flex flex-col items-center relative bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-zinc-900 via-zinc-950 to-zinc-950">
+            <div className="w-full max-w-6xl h-full flex flex-col">
+               
+               {/* Error Banner */}
+               {error && (
+                  <div className="mb-4 bg-red-900/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg flex justify-between items-center animate-fade-in">
+                      <span className="text-sm">{error}</span>
+                      <button onClick={() => setError(null)} className="text-red-400 hover:text-white"><CloseUpIcon className="w-4 h-4"/></button>
+                  </div>
+               )}
+
+               {/* Image Display Area */}
+               <div className="flex-1 min-h-[400px] bg-zinc-900/50 rounded-xl border border-zinc-800 shadow-2xl overflow-hidden relative flex flex-col">
+                  <div className="flex-1 relative">
+                      <ImageDisplay
+                        ref={imageDisplayRef}
+                        label="Preview"
+                        imageUrl={selectedImageUrl}
+                        originalImageUrl={activeImage?.dataUrl}
+                        isLoading={isLoading}
+                        hideLabel
+                        selectedFilter={selectedFilter}
+                        brightness={brightness}
+                        contrast={contrast}
+                        saturation={saturation}
+                        sharpness={sharpness}
+                        isMaskingMode={editingMode === 'object'}
+                        brushSize={brushSize}
+                        brushColor={brushColor}
+                        onMaskChange={setIsMaskEmpty}
+                      />
+                  </div>
+                  
+                  {/* Floating Toolbar Overlay */}
+                  {activeImage && (
+                      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20">
+                           <ImageToolbar
+                                onUndo={handleUndo}
+                                onRedo={handleRedo}
+                                onReset={handleResetEdits}
+                                onUpscale={handleUpscale}
+                                onOpenSaveModal={handleOpenSaveModal}
+                                onTransform={handleTransform}
+                                canUndo={canUndo}
+                                canRedo={canRedo}
+                                canReset={canReset}
+                                canUpscaleAndSave={canUpscaleAndSave}
+                                isLoading={isLoading}
+                           />
+                      </div>
+                  )}
+               </div>
+
+               {/* Variations Grid (Bottom Panel) */}
+               {currentResults.length > 1 && (
+                  <div className="mt-6">
+                      <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                          <SparklesIcon className="w-3 h-3"/> Generated Variations
+                      </h3>
+                      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                          {currentResults.map((resultUrl, index) => (
+                              <div key={index} onClick={() => updateActiveImage(img => ({ ...img, selectedResultIndex: index }))}
+                                   className={`group relative aspect-square rounded-lg overflow-hidden cursor-pointer border-2 transition-all ${activeImage?.selectedResultIndex === index ? 'border-red-500 ring-2 ring-red-500/20' : 'border-zinc-800 hover:border-zinc-600'}`}>
+                                  <img src={resultUrl} alt="var" className="w-full h-full object-contain bg-zinc-900" />
+                                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                                  {activeImage?.selectedResultIndex === index && <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full shadow-lg shadow-red-500/50" />}
+                              </div>
+                          ))}
+                      </div>
+                  </div>
+               )}
+               
+               {/* History (Collapsible at bottom or just simple list) */}
+               {activeImage && activeImage.promptHistory.length > 0 && (
+                   <div className="mt-6 border-t border-zinc-800 pt-4">
+                        <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">History Log</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {activeImage.promptHistory.map((h, i) => (
+                                <button key={i} onClick={() => updateActiveImage(img => ({ ...img, historyIndex: i, selectedResultIndex: 0 }))}
+                                    className={`px-3 py-1 text-[10px] rounded-full border transition-colors max-w-xs truncate ${activeImage.historyIndex === i ? 'bg-zinc-700 text-white border-zinc-500' : 'bg-zinc-900 text-zinc-500 border-zinc-800 hover:border-zinc-600'}`}>
+                                    {i + 1}. {h}
+                                </button>
+                            ))}
+                        </div>
+                   </div>
+               )}
+
+            </div>
+         </div>
+      </main>
+
+      {/* Save Modal */}
+      {isSaveModalOpen && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-sm" onClick={() => setIsSaveModalOpen(false)}>
+              <div className="bg-zinc-900 rounded-xl p-6 shadow-2xl w-full max-w-sm border border-zinc-700" onClick={e => e.stopPropagation()}>
+                  <h2 className="text-lg font-bold mb-4 text-white">Download Image</h2>
+                  <div className="space-y-4">
+                      <div>
+                          <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Quality</label>
+                          <select value={saveQuality} onChange={(e) => setSaveQuality(parseFloat(e.target.value))} className="w-full bg-zinc-950 border border-zinc-700 rounded-md p-2 text-white text-sm focus:ring-red-500 focus:border-red-500">
+                            {qualityOptions.map(opt => <option key={opt.label} value={opt.value}>{opt.label}</option>)}
+                          </select>
+                      </div>
+                      <div className="flex justify-end gap-3 pt-2">
+                          <button onClick={() => setIsSaveModalOpen(false)} className="px-4 py-2 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm font-medium">Cancel</button>
+                          <button onClick={handleDownload} className="px-4 py-2 rounded-md bg-red-600 hover:bg-red-500 text-white text-sm font-bold shadow-lg shadow-red-900/20">Download</button>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      )}
     </div>
   );
 };
