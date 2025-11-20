@@ -476,6 +476,27 @@ const ImageToolbar: React.FC<{
   </div>
 );
 
+const IntensitySlider: React.FC<{ value: number; onChange: (val: number) => void }> = ({ value, onChange }) => (
+  <div className="animate-fade-in mt-3 p-3 bg-zinc-800/50 rounded-lg border border-zinc-700/50">
+    <div className="flex justify-between text-xs mb-1 text-zinc-400">
+      <span>Style Intensity</span>
+      <span>{value}%</span>
+    </div>
+    <input 
+      type="range" 
+      min="10" 
+      max="100" 
+      value={value} 
+      onChange={(e) => onChange(Number(e.target.value))}
+      className="w-full h-1 bg-zinc-600 rounded-lg appearance-none cursor-pointer accent-red-500"
+    />
+    <div className="flex justify-between text-[10px] text-zinc-500 mt-1">
+      <span>Subtle</span>
+      <span>Strong</span>
+    </div>
+  </div>
+);
+
 
 const ImageEditor: React.FC = () => {
   const [imageList, setImageList] = useState<ImageState[]>([]);
@@ -919,18 +940,27 @@ const ImageEditor: React.FC = () => {
         }
         
         if (selectedArchStyle) {
-            constructedPrompt += " " + ARCHITECTURAL_STYLE_PROMPTS[selectedArchStyle];
-            constructedHistory = "Arch Style: " + selectedArchStyle;
+            const option = architecturalStyleOptions.find(o => o.name === selectedArchStyle);
+            if (option) {
+                 constructedPrompt += ` Change the architectural style to ${selectedArchStyle}. Apply this style with an intensity of ${styleIntensity}%. ${option.description}`;
+            }
+            constructedHistory = `Arch Style: ${selectedArchStyle} (${styleIntensity}%)`;
         }
         
         if (selectedGardenStyle) {
-            constructedPrompt += " " + GARDEN_STYLE_PROMPTS[selectedGardenStyle];
-            constructedHistory = "Garden: " + selectedGardenStyle;
+            const option = gardenStyleOptions.find(o => o.name === selectedGardenStyle);
+            if (option) {
+                 constructedPrompt += ` Change the garden to ${selectedGardenStyle}. Apply this style with an intensity of ${styleIntensity}%. ${option.description}`;
+            }
+            constructedHistory = `Garden: ${selectedGardenStyle} (${styleIntensity}%)`;
         }
         
         if (selectedInteriorStyle) {
-            constructedPrompt += " " + INTERIOR_STYLE_PROMPTS[selectedInteriorStyle];
-            constructedHistory = "Interior: " + selectedInteriorStyle;
+            const option = interiorStyleOptions.find(o => o.name === selectedInteriorStyle);
+            if (option) {
+                 constructedPrompt += ` Change the interior design style to ${selectedInteriorStyle}. Apply this style with an intensity of ${styleIntensity}%. ${option.description}`;
+            }
+            constructedHistory = `Interior: ${selectedInteriorStyle} (${styleIntensity}%)`;
         }
         
         if (selectedInteriorLighting) {
@@ -1143,11 +1173,13 @@ const ImageEditor: React.FC = () => {
                             <div className="flex flex-wrap gap-2">
                                 {architecturalStyleOptions.map(s => <OptionButton key={s.name} option={s.name} isSelected={selectedArchStyle === s.name} onClick={() => setSelectedArchStyle(prev => prev === s.name ? '' : s.name)} />)}
                             </div>
+                            {selectedArchStyle && <IntensitySlider value={styleIntensity} onChange={setStyleIntensity} />}
                         </CollapsibleSection>
                          <CollapsibleSection title="Garden" sectionKey="gardenStyle" isOpen={openSections.gardenStyle} onToggle={() => toggleSection('gardenStyle')} icon={<FlowerIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             <div className="flex flex-wrap gap-2">
                                 {gardenStyleOptions.map(s => <OptionButton key={s.name} option={s.name} isSelected={selectedGardenStyle === s.name} onClick={() => setSelectedGardenStyle(prev => prev === s.name ? '' : s.name)} />)}
                             </div>
+                            {selectedGardenStyle && <IntensitySlider value={styleIntensity} onChange={setStyleIntensity} />}
                         </CollapsibleSection>
                         <CollapsibleSection title="Lighting" sectionKey="addLight" isOpen={openSections.addLight} onToggle={() => toggleSection('addLight')} icon={<LightbulbIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             <div className="space-y-4">
@@ -1237,6 +1269,7 @@ const ImageEditor: React.FC = () => {
                             <div className="grid grid-cols-2 gap-2">
                                 {interiorStyleOptions.slice(0, 6).map(s => <OptionButton key={s.name} option={s.name} isSelected={selectedInteriorStyle === s.name} onClick={() => setSelectedInteriorStyle(prev => prev === s.name ? '' : s.name)} />)}
                             </div>
+                            {selectedInteriorStyle && <IntensitySlider value={styleIntensity} onChange={setStyleIntensity} />}
                         </CollapsibleSection>
                         <CollapsibleSection title="ระบบไฟและแอร์ (Systems)" sectionKey="specialLighting" isOpen={openSections.specialLighting} onToggle={() => toggleSection('specialLighting')} icon={<DownlightIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             {/* Cove Light */}
