@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { editImage, analyzeImage, suggestCameraAngles, type AnalysisResult, cropAndResizeImage } from '../services/geminiService';
 import { saveProjects, loadProjects, clearProjects } from '../services/dbService';
@@ -94,11 +95,15 @@ const translations = {
         viewOutside: "View Outside",
         conversionMode: "Conversion Mode",
         roomConfig: "Room Configuration",
-        brushSettings: "Brush Settings"
+        brushSettings: "Brush Settings",
+        manualAdjustments: "Manual Adjustments (Offline)"
     },
     controls: {
         turnOnLights: "Turn On Lights",
         brightness: "Brightness",
+        contrast: "Contrast",
+        saturation: "Saturation",
+        sharpness: "Sharpness",
         colorTemp: "Color Temp",
         intensity: "Intensity",
         soft: "Soft",
@@ -113,7 +118,8 @@ const translations = {
         acWall: "Wall-Mounted AC",
         clearMask: "Clear Mask",
         subtle: "Subtle",
-        strong: "Strong"
+        strong: "Strong",
+        applyManual: "Apply Adjustment"
     },
     buttons: {
         generate: "Generate Image",
@@ -164,11 +170,15 @@ const translations = {
         viewOutside: "วิวนอกหน้าต่าง",
         conversionMode: "โหมดแปลงภาพ",
         roomConfig: "ตั้งค่าห้อง",
-        brushSettings: "ตั้งค่าแปรง"
+        brushSettings: "ตั้งค่าแปรง",
+        manualAdjustments: "ปรับแต่งภาพ (ไม่ต้องใช้เน็ต)"
     },
     controls: {
         turnOnLights: "เปิดไฟ",
         brightness: "ความสว่าง",
+        contrast: "ความคมชัด (Contrast)",
+        saturation: "ความสดของสี (Saturation)",
+        sharpness: "ความคม (Sharpness)",
         colorTemp: "อุณหภูมิแสง",
         intensity: "ความเข้ม",
         soft: "นุ่มนวล",
@@ -183,7 +193,8 @@ const translations = {
         acWall: "แอร์ติดผนัง",
         clearMask: "ล้างพื้นที่เลือก",
         subtle: "น้อย",
-        strong: "มาก"
+        strong: "มาก",
+        applyManual: "ยืนยันการปรับแต่ง"
     },
     buttons: {
         generate: "สร้างรูปภาพ",
@@ -220,15 +231,15 @@ const styleOptions = [
 ];
 
 const cameraAngleOptions = [
-    { name: 'Eye-Level', prompt: 'from an eye-level angle' },
-    { name: 'High Angle', prompt: 'from a high angle' },
-    { name: 'Low Angle', prompt: 'from a low angle' },
-    { name: 'Close-up', prompt: 'as a close-up shot' },
-    { name: 'Wide Shot', prompt: 'as a wide shot' },
-    { name: 'Isometric', prompt: 'in an isometric view' },
-    { name: 'Bird\'s Eye View', prompt: 'from a bird\'s eye view' },
-    { name: 'Dutch Angle', prompt: 'with a Dutch angle tilt' },
-    { name: 'Long Shot', prompt: 'as a long shot' },
+    { name: 'Eye-Level', prompt: 'Re-render the scene from a realistic eye-level angle' },
+    { name: 'High Angle', prompt: 'Re-render the scene from a high angle looking down' },
+    { name: 'Low Angle', prompt: 'Re-render the scene from a low angle looking up' },
+    { name: 'Close-up', prompt: 'Re-frame the image as a close-up shot' },
+    { name: 'Wide Shot', prompt: 'Re-frame the image as a wide-angle shot' },
+    { name: 'Isometric', prompt: 'Re-render the scene in an isometric 3D projection' },
+    { name: 'Bird\'s Eye View', prompt: 'Re-render the scene from a top-down bird\'s eye view' },
+    { name: 'Dutch Angle', prompt: 'Tilt the camera angle to create a dramatic Dutch angle' },
+    { name: 'Long Shot', prompt: 'Re-render the scene from a distance (long shot)' },
 ];
 
 const gardenStyleOptions = [
@@ -358,6 +369,7 @@ const exteriorQuickActionList = [
     { id: 'modernWoodHouseTropical', label: 'Modern Wood', desc: 'Warm wood, tropical plants.' },
     { id: 'classicMansionFormalGarden', label: 'Classic Mansion', desc: 'Formal garden, elegant.' },
     { id: 'foregroundTreeFrame', label: 'Tree Framing', desc: 'Blurred foreground leaves.' },
+    { id: 'aerialNatureView', label: 'Aerial Nature View', desc: 'High angle, atmosphere, trees.' },
 ];
 
 const interiorQuickActionList: { id: string; label: string; desc: string; icon?: React.ReactNode }[] = [
@@ -401,6 +413,8 @@ const QUICK_ACTION_PROMPTS: Record<string, string> = {
     modernWoodHouseTropical: "Transform the image into a high-quality, photorealistic architectural photograph of a modern two-story house, maintaining the original architecture and camera angle. The house should feature prominent natural wood siding and large glass windows. Set the time to late afternoon, with warm, golden sunlight creating soft, pleasant shadows. The house must be surrounded by a lush, vibrant, and well-manicured modern tropical garden with diverse plant species. The overall atmosphere should be warm, luxurious, and serene, as if for a high-end home and garden magazine. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     classicMansionFormalGarden: "Transform the image into a high-quality, photorealistic architectural photograph of a luxurious, classic-style two-story house, maintaining the original architecture and camera angle. The house should have a pristine white facade with elegant moldings and contrasting black window frames and doors. The lighting should be bright, clear daylight, creating a clean and crisp look. The surrounding landscape must be a meticulously designed formal garden, featuring symmetrical topiary, low boxwood hedges, a neat lawn, and a classic water feature or fountain. The overall mood should be one of timeless elegance and grandeur. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     foregroundTreeFrame: "Transform the image into a professional architectural photograph with a specific composition. Add soft, blurred tree branches and leaves in the immediate foreground to create a natural frame around the building (bokeh effect). The house should be perfectly sharp and in focus, creating a sense of depth as if looking through the foliage. The lighting should be natural and inviting. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
+    aerialNatureView: "Transform the image into a professional high-angle or aerial architectural photograph. Capture a wide view of the building and its surroundings, emphasizing the lush natural atmosphere. Surround the property with a dense, green forest and well-maintained grounds. The lighting should be soft, atmospheric, and natural, highlighting the connection between the architecture and nature. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
+
 
     // --- Interior Presets ---
     sketchupToPhotoreal: "Transform this SketchUp or 3D model image into a hyper-realistic, photorealistic 3D render. Focus on creating natural lighting, realistic material textures (like wood grain, fabric weaves, metal reflections), and soft shadows to make it look like a real photograph taken with a professional camera. Do NOT change the design of the room. Maintain the exact geometry and structure from the model. Do NOT change the camera angle. Completely REMOVE all black outlines, wireframes, and sketch artifacts.",
@@ -880,7 +894,10 @@ const ImageEditor: React.FC = () => {
     // Reset temporary state when active image changes
     setPrompt('');
     setNegativePrompt('');
-    // ... (other resets if needed)
+    setBrightness(100);
+    setContrast(100);
+    setSaturation(100);
+    setSharpness(100);
   }, [activeImage?.id]);
 
 
@@ -1035,6 +1052,132 @@ const ImageEditor: React.FC = () => {
   
   const handleForegroundToggle = (fg: string) => {
     setSelectedForegrounds(prev => prev.includes(fg) ? prev.filter(item => item !== fg) : [...prev, fg]);
+  };
+
+  const applyManualChanges = async () => {
+    if (!activeImage) return;
+    setIsLoading(true);
+
+    try {
+        // Create a canvas to render the filters
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+
+        // Current source
+        const sourceUrl = (activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null)
+            ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex]
+            : activeImage.dataUrl;
+
+        if (!sourceUrl || !ctx) return;
+
+        await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = sourceUrl;
+        });
+
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        // Apply filters
+        const filterString = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
+        ctx.filter = filterString;
+        ctx.drawImage(img, 0, 0);
+
+        const newDataUrl = canvas.toDataURL(activeImage.mimeType || 'image/jpeg');
+
+        updateActiveImage(img => {
+            const newHistory = img.history.slice(0, img.historyIndex + 1);
+            newHistory.push([newDataUrl]);
+            return {
+                ...img,
+                history: newHistory,
+                historyIndex: newHistory.length - 1,
+                selectedResultIndex: 0,
+                promptHistory: [...img.promptHistory.slice(0, img.historyIndex + 1), "Manual Adjustment"],
+                apiPromptHistory: [...img.apiPromptHistory.slice(0, img.historyIndex + 1), "Manual (Offline)"],
+                lastGeneratedLabels: ['Manual'],
+                generationTypeHistory: [...img.generationTypeHistory.slice(0, img.historyIndex + 1), 'edit'],
+            };
+        });
+        
+        // Reset sliders
+        setBrightness(100);
+        setContrast(100);
+        setSaturation(100);
+        setSharpness(100);
+
+    } catch (e) {
+        console.error(e);
+        setError("Failed to apply manual changes");
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  const handleTransform = async (type: 'rotateLeft' | 'rotateRight' | 'flipHorizontal' | 'flipVertical') => { 
+      if (!activeImage) return;
+      setIsLoading(true);
+  
+      try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const img = new Image();
+  
+          const sourceUrl = (activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null)
+              ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex]
+              : activeImage.dataUrl;
+  
+          if (!sourceUrl || !ctx) return;
+  
+          await new Promise((resolve, reject) => {
+              img.onload = resolve;
+              img.onerror = reject;
+              img.src = sourceUrl;
+          });
+  
+          if (type === 'rotateLeft' || type === 'rotateRight') {
+              canvas.width = img.height;
+              canvas.height = img.width;
+              ctx.translate(canvas.width / 2, canvas.height / 2);
+              ctx.rotate(type === 'rotateRight' ? Math.PI / 2 : -Math.PI / 2);
+              ctx.drawImage(img, -img.width / 2, -img.height / 2);
+          } else {
+              canvas.width = img.width;
+              canvas.height = img.height;
+              if (type === 'flipHorizontal') {
+                  ctx.translate(img.width, 0);
+                  ctx.scale(-1, 1);
+              } else if (type === 'flipVertical') {
+                  ctx.translate(0, img.height);
+                  ctx.scale(1, -1);
+              }
+              ctx.drawImage(img, 0, 0);
+          }
+  
+          const newDataUrl = canvas.toDataURL(activeImage.mimeType || 'image/jpeg');
+  
+          updateActiveImage(img => {
+              const newHistory = img.history.slice(0, img.historyIndex + 1);
+              newHistory.push([newDataUrl]);
+              return {
+                  ...img,
+                  history: newHistory,
+                  historyIndex: newHistory.length - 1,
+                  selectedResultIndex: 0,
+                  promptHistory: [...img.promptHistory.slice(0, img.historyIndex + 1), `Transform: ${type}`],
+                  apiPromptHistory: [...img.apiPromptHistory.slice(0, img.historyIndex + 1), `Transform: ${type}`],
+                  lastGeneratedLabels: ['Transform'],
+                  generationTypeHistory: [...img.generationTypeHistory.slice(0, img.historyIndex + 1), 'transform'],
+              };
+          });
+      } catch (e) {
+          console.error(e);
+          setError("Transformation failed");
+      } finally {
+          setIsLoading(false);
+      }
   };
 
   const executeGeneration = async (promptForGeneration: string, promptForHistory: string) => {
@@ -1232,9 +1375,6 @@ const ImageEditor: React.FC = () => {
           document.body.removeChild(link);
       }
   };
-  const handleTransform = (type: any) => { 
-     // Placeholder for transform logic 
-  };
 
 
   const selectedImageUrl = activeImage
@@ -1332,6 +1472,27 @@ const ImageEditor: React.FC = () => {
                          <ModeButton label={t.modes.object} icon={<BrushIcon className="w-4 h-4" />} mode="object" activeMode={editingMode} onClick={setEditingMode} />
                     </div>
                   )}
+                  
+                   {/* Common Tools (Offline) */}
+                   <CollapsibleSection title={t.sections.manualAdjustments} sectionKey="manualAdjustments" isOpen={openSections.manualAdjustments} onToggle={() => toggleSection('manualAdjustments')} icon={<AdjustmentsIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                       <div className="space-y-3">
+                           <div>
+                               <div className="flex justify-between text-xs mb-1 text-zinc-400"><span>{t.controls.brightness}</span><span>{brightness}%</span></div>
+                               <input type="range" min="50" max="150" value={brightness} onChange={(e) => setBrightness(Number(e.target.value))} className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-red-500"/>
+                           </div>
+                           <div>
+                               <div className="flex justify-between text-xs mb-1 text-zinc-400"><span>{t.controls.contrast}</span><span>{contrast}%</span></div>
+                               <input type="range" min="50" max="150" value={contrast} onChange={(e) => setContrast(Number(e.target.value))} className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-red-500"/>
+                           </div>
+                           <div>
+                               <div className="flex justify-between text-xs mb-1 text-zinc-400"><span>{t.controls.saturation}</span><span>{saturation}%</span></div>
+                               <input type="range" min="0" max="200" value={saturation} onChange={(e) => setSaturation(Number(e.target.value))} className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-red-500"/>
+                           </div>
+                           <button onClick={applyManualChanges} className="w-full mt-2 py-2 text-xs font-bold bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-600 rounded transition-colors flex items-center justify-center gap-2">
+                                <AdjustmentsIcon className="w-3 h-3" /> {t.controls.applyManual}
+                           </button>
+                       </div>
+                   </CollapsibleSection>
 
                   {/* Dynamic Content based on SceneType */}
                   {sceneType === 'exterior' && (
@@ -1359,7 +1520,11 @@ const ImageEditor: React.FC = () => {
                                         key={angle.name} 
                                         option={angle.name} 
                                         isSelected={selectedCameraAngle === angle.name} 
-                                        onClick={() => setSelectedCameraAngle(prev => prev === angle.name ? '' : angle.name)} 
+                                        onClick={() => {
+                                            const newValue = selectedCameraAngle === angle.name ? '' : angle.name;
+                                            setSelectedCameraAngle(newValue);
+                                            if (newValue) setSelectedQuickAction('');
+                                        }} 
                                     />
                                 ))}
                             </div>
