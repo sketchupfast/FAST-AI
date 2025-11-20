@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { editImage, analyzeImage, suggestCameraAngles, type AnalysisResult, cropAndResizeImage } from '../services/geminiService';
 import { saveProjects, loadProjects, clearProjects } from '../services/dbService';
@@ -48,6 +47,7 @@ import { IsometricIcon } from './icons/IsometricIcon';
 import { BirdsEyeViewIcon } from './icons/BirdsEyeViewIcon';
 import { LongShotIcon } from './icons/LongShotIcon';
 import { OverTheShoulderIcon } from './icons/OverTheShoulderIcon';
+import { XMarkIcon } from './icons/XMarkIcon';
 
 
 export interface ImageState {
@@ -64,6 +64,149 @@ export interface ImageState {
   lastGeneratedLabels: string[];
   generationTypeHistory: ('style' | 'angle' | 'edit' | 'upscale' | 'variation' | 'transform')[];
 }
+
+const translations = {
+  en: {
+    header: {
+        projects: "Projects",
+        noProject: "No project loaded",
+        saving: "Saving...",
+        saved: "Auto-saved",
+        error: "Save Error"
+    },
+    tabs: {
+        exterior: "Exterior",
+        interior: "Interior",
+        plan: "Plan"
+    },
+    sections: {
+        prompt: "Prompt",
+        quickActions: "Quick Actions",
+        cameraAngle: "Camera Angle",
+        artStyle: "Art Style",
+        archStyle: "Arch Style",
+        garden: "Garden",
+        lighting: "Lighting",
+        background: "Background",
+        foreground: "Foreground",
+        interiorStyle: "Interior Style",
+        systems: "Systems (Lighting & AC)",
+        viewOutside: "View Outside",
+        conversionMode: "Conversion Mode",
+        roomConfig: "Room Configuration",
+        brushSettings: "Brush Settings"
+    },
+    controls: {
+        turnOnLights: "Turn On Lights",
+        brightness: "Brightness",
+        colorTemp: "Color Temp",
+        intensity: "Intensity",
+        soft: "Soft",
+        vibrant: "Vibrant",
+        warm: "Warm",
+        neutral: "Neutral",
+        cool: "Cool",
+        coveLight: "Cove Light (Hidden)",
+        downlight: "Downlight (Recessed)",
+        airConditioner: "Air Conditioner",
+        ac4way: "4-Way Cassette AC",
+        acWall: "Wall-Mounted AC",
+        clearMask: "Clear Mask",
+        subtle: "Subtle",
+        strong: "Strong"
+    },
+    buttons: {
+        generate: "Generate Image",
+        generating: "Generating...",
+        openProjects: "Open Projects",
+        clearAll: "Clear All Data",
+        newProject: "New Project",
+        download: "Download",
+        reset: "Reset",
+        upscale: "Upscale"
+    },
+    placeholders: {
+        promptExterior: "Describe your changes...",
+        promptInterior: "Describe interior changes...",
+        promptPlan: "Describe specific details for the plan...",
+        promptMask: "Describe masked area change..."
+    },
+    modes: {
+        general: "General",
+        object: "Object"
+    }
+  },
+  th: {
+    header: {
+        projects: "โปรเจค",
+        noProject: "ยังไม่ได้เลือกโปรเจค",
+        saving: "กำลังบันทึก...",
+        saved: "บันทึกอัตโนมัติ",
+        error: "บันทึกไม่สำเร็จ"
+    },
+    tabs: {
+        exterior: "ภายนอก (Exterior)",
+        interior: "ภายใน (Interior)",
+        plan: "แปลน (Plan)"
+    },
+    sections: {
+        prompt: "คำสั่ง (Prompt)",
+        quickActions: "คำสั่งด่วน",
+        cameraAngle: "มุมกล้อง",
+        artStyle: "สไตล์ศิลปะ",
+        archStyle: "สไตล์สถาปัตยกรรม",
+        garden: "สวน",
+        lighting: "แสงไฟ",
+        background: "พื้นหลัง",
+        foreground: "ฉากหน้า",
+        interiorStyle: "สไตล์ภายใน",
+        systems: "ระบบไฟและแอร์",
+        viewOutside: "วิวนอกหน้าต่าง",
+        conversionMode: "โหมดแปลงภาพ",
+        roomConfig: "ตั้งค่าห้อง",
+        brushSettings: "ตั้งค่าแปรง"
+    },
+    controls: {
+        turnOnLights: "เปิดไฟ",
+        brightness: "ความสว่าง",
+        colorTemp: "อุณหภูมิแสง",
+        intensity: "ความเข้ม",
+        soft: "นุ่มนวล",
+        vibrant: "สดใส",
+        warm: "โทนอุ่น",
+        neutral: "ธรรมชาติ",
+        cool: "โทนเย็น",
+        coveLight: "ไฟหลืบ (Cove Light)",
+        downlight: "ไฟดาวน์ไลท์ (Downlight)",
+        airConditioner: "เครื่องปรับอากาศ",
+        ac4way: "แอร์ 4 ทิศทาง",
+        acWall: "แอร์ติดผนัง",
+        clearMask: "ล้างพื้นที่เลือก",
+        subtle: "น้อย",
+        strong: "มาก"
+    },
+    buttons: {
+        generate: "สร้างรูปภาพ",
+        generating: "กำลังสร้าง...",
+        openProjects: "เปิดโปรเจค",
+        clearAll: "ลบข้อมูลทั้งหมด",
+        newProject: "โปรเจคใหม่",
+        download: "ดาวน์โหลด",
+        reset: "รีเซ็ต",
+        upscale: "ขยายภาพ"
+    },
+    placeholders: {
+        promptExterior: "อธิบายสิ่งที่ต้องการแก้ไข...",
+        promptInterior: "อธิบายการตกแต่งภายใน...",
+        promptPlan: "อธิบายรายละเอียดของแปลน...",
+        promptMask: "อธิบายสิ่งที่ต้องการแก้ในพื้นที่เลือก..."
+    },
+    modes: {
+        general: "ทั่วไป",
+        object: "เฉพาะจุด"
+    }
+  }
+};
 
 const styleOptions = [
     { name: 'Cinematic' },
@@ -89,7 +232,7 @@ const cameraAngleOptions = [
 ];
 
 const gardenStyleOptions = [
-    { name: 'Thai Garden', description: 'Serene and beautiful with salas, lotus ponds, and tropical flora.' },
+    { name: 'Thai Garden', description: 'A lush, tropical rainforest garden featuring tall betel palms, dense layers of ferns, and large-leafed tropical plants along a paved walkway, creating a cool, shaded, and private resort-like atmosphere.' },
     { name: 'Japanese Garden', description: 'Reflects Zen philosophy with koi ponds, rocks, and carefully placed trees.' },
     { name: 'English Garden', description: 'A romantic atmosphere with blooming flowers and winding paths.' },
     { name: 'Tropical Garden', description: 'Lush and jungle-like with large-leafed plants and vibrant flowers.' },
@@ -124,7 +267,26 @@ const interiorStyleOptions = [
     { name: 'Modern Luxury', description: 'Combines modern simplicity with luxurious materials like marble, gold accents, and high-gloss surfaces for a sophisticated and glamorous feel.' },
 ];
 
-const backgrounds = ["No Change", "Bangkok High-rise View", "Mountain View", "Bangkok Traffic View", "Farmland View", "Housing Estate View", "Chao Phraya River View", "View from Inside to Garden", "Forest", "Public Park", "Beach", "Cityscape", "Outer Space", "IMPACT Exhibition Hall", "Luxury Shopping Mall"];
+const backgrounds = [
+  "No Change",
+  "Bangkok High-rise View",
+  "Mountain View",
+  "Bangkok Traffic View",
+  "Farmland View",
+  "Housing Estate View",
+  "Chao Phraya River View",
+  "View from Inside to Garden",
+  "Forest",
+  "Public Park",
+  "Beach",
+  "Cityscape",
+  "Outer Space",
+  "IMPACT Exhibition Hall",
+  "Luxury Shopping Mall",
+  "Forest Park with Pond",
+  "Limestone Mountain Valley"
+];
+
 const interiorBackgrounds = ["No Change", "View from Inside to Garden", "Ground Floor View (Hedge & House)", "Upper Floor View (House)", "Bangkok High-rise View", "Mountain View", "Cityscape", "Beach", "Forest", "Chao Phraya River View", "Public Park"];
 
 const foregrounds = ["Foreground Large Tree", "Foreground River", "Foreground Road", "Foreground Flowers", "Foreground Fence", "Top Corner Leaves", "Bottom Corner Bush", "Foreground Lawn", "Foreground Pathway", "Foreground Water Feature", "Foreground Low Wall"];
@@ -144,13 +306,6 @@ const interiorForegrounds = [
 const filters = ['None', 'Black & White', 'Sepia', 'Invert', 'Grayscale', 'Vintage', 'Cool Tone', 'Warm Tone', 'HDR'];
 
 const interiorLightingOptions = ['Natural Daylight', 'Warm Evening Light', 'Studio Light', 'Cinematic Light'];
-
-const qualityOptions = [
-    { label: 'High (100%)', value: 1.0 },
-    { label: 'Good (92%)', value: 0.92 },
-    { label: 'Medium (75%)', value: 0.75 },
-    { label: 'Low (50%)', value: 0.50 },
-];
 
 const planViewOptions = [
     { name: 'Eye-Level View', prompt: 'a realistic eye-level interior photo' },
@@ -182,16 +337,15 @@ const roomTypeOptions = [
 ];
 
 const exteriorQuickActionList = [
+    { id: 'sketchToPhoto', label: 'Sketch to Photo', desc: 'Convert sketch to realism.', icon: <SketchWatercolorIcon className="w-4 h-4"/> },
     { id: 'modernVillageWithProps', label: 'New Village Estate', desc: 'Lawn, shrubs, and staked trees.' },
     { id: 'grandVillageEstate', label: 'Grand Village Estate', desc: 'Hedge fence, propped trees, grand view.' },
     { id: 'poolVillaBright', label: 'Pool Villa', desc: 'Sparkling pool, sunny & vibrant.' },
     { id: 'modernTwilightHome', label: 'Modern Twilight', desc: 'Dusk setting, warm lights.' },
     { id: 'vibrantModernEstate', label: 'Sunny Day', desc: 'Bright, vibrant daylight.' },
-    { id: 'sketchToPhoto', label: 'Sketch to Photo', desc: 'Convert sketch to realism.', icon: <SketchWatercolorIcon className="w-4 h-4"/> },
     { id: 'sereneTwilightEstate', label: 'Serene Twilight', desc: 'Peaceful dusk atmosphere.' },
     { id: 'sereneHomeWithGarden', label: 'Serene Garden', desc: 'Peaceful garden setting.' },
     { id: 'modernPineEstate', label: 'Pine Forest', desc: 'Surrounded by tall pines.' },
-    { id: 'proPhotoFinish', label: 'Pro Photo', desc: 'Hyper-realistic DSLR finish.' },
     { id: 'luxuryHomeDusk', label: 'Luxury Dusk', desc: 'Wet ground reflections.' },
     { id: 'morningHousingEstate', label: 'Morning Estate', desc: 'Soft golden sunrise light.' },
     { id: 'urbanSketch', label: 'Urban Sketch', desc: 'Watercolor and ink style.' },
@@ -203,6 +357,7 @@ const exteriorQuickActionList = [
     { id: 'urbanCondoDayHighAngle', label: 'Urban Aerial', desc: 'High angle city view.' },
     { id: 'modernWoodHouseTropical', label: 'Modern Wood', desc: 'Warm wood, tropical plants.' },
     { id: 'classicMansionFormalGarden', label: 'Classic Mansion', desc: 'Formal garden, elegant.' },
+    { id: 'foregroundTreeFrame', label: 'Tree Framing', desc: 'Blurred foreground leaves.' },
 ];
 
 const interiorQuickActionList: { id: string; label: string; desc: string; icon?: React.ReactNode }[] = [
@@ -236,7 +391,7 @@ const QUICK_ACTION_PROMPTS: Record<string, string> = {
     luxuryHomeDusk: "Transform this architectural photo to have the atmosphere of a luxury modern home at dusk, shortly after a light rain. The ground and surfaces should be wet, creating beautiful reflections from the lighting. The lighting should be a mix of warm, inviting interior lights glowing from the windows and strategically placed exterior architectural up-lights. The overall mood should be sophisticated, warm, and serene, mimicking a high-end real estate photograph. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     morningHousingEstate: "Transform this architectural photo to capture the serene atmosphere of an early morning in a modern housing estate. The lighting should be soft, warm, and golden, characteristic of the hour just after sunrise, casting long, gentle shadows. The air should feel fresh and clean, with a hint of morning dew on the manicured lawns. The overall mood should be peaceful, pristine, and inviting, typical of a high-end, well-maintained residential village. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     urbanSketch: "Transform this image into a beautiful urban watercolor sketch. It should feature loose, expressive ink linework combined with soft, atmospheric watercolor washes. The style should capture the gritty yet vibrant energy of a bustling city street, similar to the work of a professional urban sketch artist. Retain the core composition but reinterpret it in this artistic, hand-drawn style. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
-    sketchToPhoto: "Transform this architectural sketch into a high-quality, photorealistic architectural photograph. Interpret the lines and shapes to create realistic materials like concrete, glass, and wood. Add natural daylight, soft shadows, and a suitable natural environment around the building to make it look like a real photo. The final image should be hyper-realistic and detailed.",
+    sketchToPhoto: "Transform this architectural sketch into a high-quality, photorealistic architectural photograph. Interpret the lines and shapes to create realistic materials like concrete, glass, and wood. Add natural daylight, soft shadows, and a suitable natural environment around the building to make it look like a real photo. The final image should be hyper-realistic and detailed. Do NOT change the design of the building. Maintain the exact geometry and structure from the sketch. Do NOT change the camera angle. Completely REMOVE all black outlines, wireframes, and sketch artifacts.",
     architecturalSketch: "Transform the image into a sophisticated architectural concept sketch. The main subject should be rendered with a blend of clean linework and artistic, semi-realistic coloring, showcasing materials like wood, concrete, and glass. Superimpose this rendering over a background that resembles a technical blueprint or a working draft, complete with faint construction lines, dimensional annotations, and handwritten notes. The final result should look like a page from an architect's sketchbook, merging a polished design with the raw, creative process. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     midjourneyArtlineSketch: "Transform the image into a stunning architectural artline sketch, in the style of a midjourney AI generation. The image should feature a blend of photorealistic rendering of the building with clean, precise art lines overlaid. The background should be a vintage or parchment-like paper with faint blueprint lines, handwritten notes, and technical annotations, giving it the feel of an architect's creative draft. The final result must be a sophisticated and artistic representation, seamlessly merging technical drawing with a photorealistic render. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     pristineShowHome: "Transform the image into a high-quality, photorealistic photograph of a modern house, as if it were brand new. Meticulously arrange the landscape to be neat and tidy, featuring a perfectly manicured lawn, a clean driveway and paths, and well-placed trees. Add a neat, green hedge fence around the property. The lighting should be bright, natural daylight, creating a clean and inviting atmosphere typical of a show home in a housing estate. Ensure the final result looks like a professional real estate photo, maintaining the original architecture. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
@@ -245,9 +400,10 @@ const QUICK_ACTION_PROMPTS: Record<string, string> = {
     urbanCondoDayHighAngle: "Transform the image into a high-quality, photorealistic architectural photograph from a high-angle or aerial perspective, maintaining the original architecture. The scene should depict a clear, bright daytime setting. The main building should be a modern condominium with a glass facade. The surrounding area should be a dense urban or suburban landscape with smaller buildings and roads. The sky should be a clear blue with a few soft clouds. The overall feel must be clean, sharp, and professional, suitable for real estate marketing. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     modernWoodHouseTropical: "Transform the image into a high-quality, photorealistic architectural photograph of a modern two-story house, maintaining the original architecture and camera angle. The house should feature prominent natural wood siding and large glass windows. Set the time to late afternoon, with warm, golden sunlight creating soft, pleasant shadows. The house must be surrounded by a lush, vibrant, and well-manicured modern tropical garden with diverse plant species. The overall atmosphere should be warm, luxurious, and serene, as if for a high-end home and garden magazine. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     classicMansionFormalGarden: "Transform the image into a high-quality, photorealistic architectural photograph of a luxurious, classic-style two-story house, maintaining the original architecture and camera angle. The house should have a pristine white facade with elegant moldings and contrasting black window frames and doors. The lighting should be bright, clear daylight, creating a clean and crisp look. The surrounding landscape must be a meticulously designed formal garden, featuring symmetrical topiary, low boxwood hedges, a neat lawn, and a classic water feature or fountain. The overall mood should be one of timeless elegance and grandeur. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
+    foregroundTreeFrame: "Transform the image into a professional architectural photograph with a specific composition. Add soft, blurred tree branches and leaves in the immediate foreground to create a natural frame around the building (bokeh effect). The house should be perfectly sharp and in focus, creating a sense of depth as if looking through the foliage. The lighting should be natural and inviting. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
 
     // --- Interior Presets ---
-    sketchupToPhotoreal: "Transform this SketchUp or 3D model image into a hyper-realistic, photorealistic 3D render. Focus on creating natural lighting, realistic material textures (like wood grain, fabric weaves, metal reflections), and soft shadows to make it look like a real photograph taken with a professional camera.",
+    sketchupToPhotoreal: "Transform this SketchUp or 3D model image into a hyper-realistic, photorealistic 3D render. Focus on creating natural lighting, realistic material textures (like wood grain, fabric weaves, metal reflections), and soft shadows to make it look like a real photograph taken with a professional camera. Do NOT change the design of the room. Maintain the exact geometry and structure from the model. Do NOT change the camera angle. Completely REMOVE all black outlines, wireframes, and sketch artifacts.",
     darkMoodyLuxuryBedroom: "Redesign this bedroom into a dark, moody, and luxurious sanctuary. Use a sophisticated color palette of deep charcoals, rich browns, and black, accented with warm, soft lighting from designer fixtures. Incorporate high-end materials like dark wood paneling, a feature wall with book-matched marble, plush velvet textiles, and subtle brass or gold details. The atmosphere should be intimate, sophisticated, and exceptionally cozy.",
     softModernSanctuary: "Transform this bedroom into a soft, modern sanctuary with a focus on comfort and serenity. The centerpiece should be a large, fully upholstered bed with a tall, curved, and backlit headboard that creates a gentle glow. Use a calming and light color palette of warm whites, soft beiges, and muted grays. Incorporate gentle curves throughout the room's furniture and decor. The lighting should be soft and layered, creating a peaceful and relaxing atmosphere.",
     geometricChicBedroom: "Redesign this bedroom with a chic and elegant modern aesthetic. The main feature should be a stunning headboard wall with a geometric pattern, such as inlaid wood or upholstered panels. Flank the bed with stylish, modern pendant lights. Use a balanced color palette of neutral tones with a single sophisticated accent color. The furniture should be clean-lined and contemporary. The overall look must be polished, high-end, and visually interesting.",
@@ -349,6 +505,27 @@ const OptionButton: React.FC<{
   );
 };
 
+const IntensitySlider: React.FC<{ value: number; onChange: (val: number) => void; t: any }> = ({ value, onChange, t }) => (
+    <div className="mt-3 p-3 bg-zinc-800/50 rounded-lg animate-fade-in border border-zinc-700/50">
+        <div className="flex justify-between text-xs mb-2 text-zinc-400">
+            <span className="font-medium text-zinc-300">{t.controls.intensity}</span>
+            <span className="font-mono text-red-400">{value}% {value === 100 && `(${t.controls.strong})`}</span>
+        </div>
+        <input 
+            type="range" 
+            min="10" 
+            max="100" 
+            value={value} 
+            onChange={(e) => onChange(Number(e.target.value))}
+            className="w-full h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-red-500 hover:accent-red-400 transition-all"
+        />
+        <div className="flex justify-between text-[10px] text-zinc-500 mt-1 px-0.5">
+            <span>{t.controls.subtle}</span>
+            <span>{t.controls.strong}</span>
+        </div>
+    </div>
+);
+
 const CollapsibleSection: React.FC<{
     title: string;
     sectionKey: string;
@@ -411,7 +588,7 @@ const ModeButton: React.FC<{
 
 const PreviewCard: React.FC<{
   label: string;
-  description: string;
+  description?: string;
   isSelected: boolean;
   onClick: () => void;
   isNested?: boolean;
@@ -420,22 +597,24 @@ const PreviewCard: React.FC<{
   <button
     type="button"
     onClick={onClick}
-    className={`p-3 text-left rounded-lg border transition-all duration-200 group flex flex-col justify-between ${
+    className={`p-3 text-left rounded-lg border transition-all duration-200 group flex flex-col ${
       isSelected 
       ? 'bg-red-900/20 border-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.15)]' 
       : 'bg-zinc-900/40 border-zinc-800 hover:border-zinc-600 hover:bg-zinc-800/60'
-    } ${isNested ? 'h-24' : 'h-28'}`}
+    } ${description ? (isNested ? 'min-h-[5rem]' : 'min-h-[6rem]') : ''} h-auto`}
   >
-    <div>
-        <div className="flex items-center gap-2">
-            {icon && <span className={isSelected ? 'text-red-400' : 'text-zinc-500'}>{icon}</span>}
-            <span className={`font-bold transition-colors text-xs uppercase tracking-wide ${isSelected ? 'text-red-400' : 'text-zinc-300'}`}>
+    <div className="w-full">
+        <div className={`flex items-center gap-2 ${description ? 'mb-1.5' : ''}`}>
+            {icon && <span className={`flex-shrink-0 ${isSelected ? 'text-red-400' : 'text-zinc-500'}`}>{icon}</span>}
+            <span className={`font-bold transition-colors text-xs uppercase tracking-wide break-words ${isSelected ? 'text-red-400' : 'text-zinc-300'}`}>
               {label}
             </span>
         </div>
-        <p className={`mt-2 text-[10px] leading-relaxed transition-colors line-clamp-3 ${isSelected ? 'text-zinc-300' : 'text-zinc-500'}`}>
+        {description && (
+        <p className={`text-[10px] leading-relaxed transition-colors ${isSelected ? 'text-zinc-300' : 'text-zinc-500'}`}>
             {description}
         </p>
+        )}
     </div>
   </button>
 );
@@ -445,14 +624,15 @@ const ImageToolbar: React.FC<{
   onRedo: () => void;
   onReset: () => void;
   onUpscale: () => void;
-  onOpenSaveModal: () => void;
+  onDownload: () => void;
   onTransform: (type: 'rotateLeft' | 'rotateRight' | 'flipHorizontal' | 'flipVertical') => void;
   canUndo: boolean;
   canRedo: boolean;
   canReset: boolean;
   canUpscaleAndSave: boolean;
   isLoading: boolean;
-}> = ({ onUndo, onRedo, onReset, onUpscale, onOpenSaveModal, onTransform, canUndo, canRedo, canReset, canUpscaleAndSave, isLoading }) => (
+  t: any;
+}> = ({ onUndo, onRedo, onReset, onUpscale, onDownload, onTransform, canUndo, canRedo, canReset, canUpscaleAndSave, isLoading, t }) => (
   <div className="flex items-center gap-2 bg-zinc-900/80 backdrop-blur-md p-1.5 rounded-full border border-zinc-700 shadow-2xl">
     {/* History */}
     <div className="flex items-center gap-1 px-2 border-r border-zinc-700">
@@ -469,30 +649,9 @@ const ImageToolbar: React.FC<{
 
     {/* Main Actions */}
     <div className="flex items-center gap-2 pl-2">
-      <button onClick={onUpscale} disabled={!canUpscaleAndSave || isLoading} className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-full transition-colors disabled:opacity-50"><UpscaleIcon className="w-3 h-3" /> Upscale</button>
-      <button onClick={onOpenSaveModal} disabled={!canUpscaleAndSave || isLoading} className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-full transition-colors disabled:opacity-50"><DownloadIcon className="w-3 h-3" /> Download</button>
-      <button onClick={onReset} disabled={!canReset || isLoading} className="p-2 text-red-500 hover:text-red-400 disabled:opacity-30 transition-colors" title="Reset All"><ResetEditsIcon className="w-4 h-4" /></button>
-    </div>
-  </div>
-);
-
-const IntensitySlider: React.FC<{ value: number; onChange: (val: number) => void }> = ({ value, onChange }) => (
-  <div className="animate-fade-in mt-3 p-3 bg-zinc-800/50 rounded-lg border border-zinc-700/50">
-    <div className="flex justify-between text-xs mb-1 text-zinc-400">
-      <span>Style Intensity</span>
-      <span>{value}%</span>
-    </div>
-    <input 
-      type="range" 
-      min="10" 
-      max="100" 
-      value={value} 
-      onChange={(e) => onChange(Number(e.target.value))}
-      className="w-full h-1 bg-zinc-600 rounded-lg appearance-none cursor-pointer accent-red-500"
-    />
-    <div className="flex justify-between text-[10px] text-zinc-500 mt-1">
-      <span>Subtle</span>
-      <span>Strong</span>
+      <button onClick={onUpscale} disabled={!canUpscaleAndSave || isLoading} className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-full transition-colors disabled:opacity-50"><UpscaleIcon className="w-3 h-3" /> {t.buttons.upscale}</button>
+      <button onClick={onDownload} disabled={!canUpscaleAndSave || isLoading} className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-full transition-colors disabled:opacity-50"><DownloadIcon className="w-3 h-3" /> {t.buttons.download}</button>
+      <button onClick={onReset} disabled={!canReset || isLoading} className="p-2 text-red-500 hover:text-red-400 disabled:opacity-30 transition-colors" title={t.buttons.reset}><ResetEditsIcon className="w-4 h-4" /></button>
     </div>
   </div>
 );
@@ -503,6 +662,12 @@ const ImageEditor: React.FC = () => {
   const [activeImageIndex, setActiveImageIndex] = useState<number | null>(null);
   const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+  
+  // Language State
+  const [language, setLanguage] = useState<'en' | 'th'>('en');
+  
+  // Auto-save Status
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
 
   const [prompt, setPrompt] = useState<string>('');
   const [negativePrompt, setNegativePrompt] = useState<string>('');
@@ -594,6 +759,8 @@ const ImageEditor: React.FC = () => {
   });
   
   const [editingMode, setEditingMode] = useState<EditingMode>('default');
+  
+  const t = translations[language];
 
   const toggleSection = (sectionName: string) => {
     setOpenSections(prev => ({ ...prev, [sectionName]: !prev[sectionName] }));
@@ -605,9 +772,6 @@ const ImageEditor: React.FC = () => {
 
   const imageDisplayRef = useRef<ImageDisplayHandle>(null);
 
-  // State for saving
-  const [isSaveModalOpen, setIsSaveModalOpen] = useState<boolean>(false);
-  const [saveQuality, setSaveQuality] = useState<number>(0.92); 
   
   // State for masking mode
   const [brushSize, setBrushSize] = useState<number>(30);
@@ -629,6 +793,12 @@ const ImageEditor: React.FC = () => {
     const loadData = async () => {
       try {
         const savedProjects = await loadProjects();
+        // Load saved language preference
+        const savedLang = localStorage.getItem('fast-ai-language');
+        if (savedLang === 'th' || savedLang === 'en') {
+            setLanguage(savedLang);
+        }
+
         if (isMounted && Array.isArray(savedProjects)) {
           const restoredProjects = savedProjects.map(p => ({ ...p, file: null }));
           const validatedProjects = restoredProjects.filter(p => p.id && p.dataUrl);
@@ -670,6 +840,7 @@ const ImageEditor: React.FC = () => {
     }
     
     const saveData = async () => {
+      setSaveStatus('saving');
       try {
         const serializableImageList = imageList.map(({ file, ...rest }) => rest);
         await saveProjects(serializableImageList);
@@ -684,14 +855,24 @@ const ImageEditor: React.FC = () => {
         if (error && error.startsWith("Could not save")) {
             setError(null);
         }
+        setSaveStatus('saved');
       } catch (e) {
         console.error("Error saving projects to IndexedDB:", e);
+        setSaveStatus('error');
         setError("Could not save your project progress. Changes might not be saved.");
       }
     };
     
-    saveData();
+    // Debounce the save slightly to avoid thrashing
+    const timeoutId = setTimeout(saveData, 500);
+    return () => clearTimeout(timeoutId);
   }, [imageList, activeImageIndex, isDataLoaded]);
+  
+  const toggleLanguage = () => {
+      const newLang = language === 'en' ? 'th' : 'en';
+      setLanguage(newLang);
+      localStorage.setItem('fast-ai-language', newLang);
+  };
 
   const activeImage = activeImageIndex !== null ? imageList[activeImageIndex] : null;
   
@@ -792,6 +973,7 @@ const ImageEditor: React.FC = () => {
     setEditingMode('default');
     // Reset specific selections to prevent crossover
     setSelectedQuickAction('');
+    setSelectedStyle('');
     setSelectedArchStyle('');
     setSelectedGardenStyle('');
     setSelectedInteriorStyle('');
@@ -875,7 +1057,11 @@ const ImageEditor: React.FC = () => {
       try {
           const sourceMimeType = sourceDataUrl.substring(5, sourceDataUrl.indexOf(';'));
           const sourceBase64 = sourceDataUrl.split(',')[1];
-          const finalPrompt = `As an expert photo editor... ${promptForGeneration}`;
+          
+          // Ensure the prompt is clean and direct.
+          // Removing "As an expert photo editor..." prefix which can confuse the model 
+          // when doing strict image-to-image editing.
+          const finalPrompt = promptForGeneration;
           
           const generatedImageBase64 = await editImage(sourceBase64, sourceMimeType, finalPrompt, maskBase64);
           
@@ -911,79 +1097,90 @@ const ImageEditor: React.FC = () => {
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    let constructedPrompt = prompt; 
+    
+    const promptParts: string[] = [];
+    if (prompt.trim()) promptParts.push(prompt.trim());
+
     let constructedHistory = prompt || "Generated Image";
     
     if (sceneType === 'plan') {
+        let planPrompt = "";
         if (planConversionMode === '2d_bw') {
-            constructedPrompt += " Transform this image into a professional, high-contrast black and white 2D architectural floor plan. Remove all colors and textures. Emphasize clear wall lines, door swings, and window symbols. The result should look like a clean CAD drawing or technical blueprint.";
+            planPrompt = "Transform this image into a professional, high-contrast black and white 2D architectural floor plan. Remove all colors and textures. Emphasize clear wall lines, door swings, and window symbols. The result should look like a clean CAD drawing or technical blueprint.";
             constructedHistory = "Plan: 2D Black & White";
         } else if (planConversionMode === '2d_real') {
-            constructedPrompt += " Transform this into a realistic colored 2D floor plan. Top-down view. Apply realistic textures to floors (e.g., wood parquet, tiles, carpet). Show furniture layout clearly with realistic top-down symbols and soft drop shadows. Keep architectural lines crisp.";
+            planPrompt = "Transform this into a realistic colored 2D floor plan. Top-down view. Apply realistic textures to floors (e.g., wood parquet, tiles, carpet). Show furniture layout clearly with realistic top-down symbols and soft drop shadows. Keep architectural lines crisp.";
             constructedHistory = "Plan: 2D Realistic";
         } else if (planConversionMode === '3d_iso') {
-            constructedPrompt += " Transform this 2D floor plan into a stunning 3D isometric cutaway render. Extrude the walls to show height. Furnish the rooms with modern furniture appropriate for the layout. Add realistic lighting and shadows to create depth. The style should be photorealistic and architectural.";
+            planPrompt = "Transform this 2D floor plan into a stunning 3D isometric cutaway render. Extrude the walls to show height. Furnish the rooms with modern furniture appropriate for the layout. Add realistic lighting and shadows to create depth. The style should be photorealistic and architectural.";
             constructedHistory = "Plan: 3D Isometric";
         } else if (planConversionMode === '3d_top') {
-            constructedPrompt += " Transform this 2D floor plan into a realistic 3D top-down view (bird's eye view). Render realistic floor materials, 3D furniture models from above, and soft ambient occlusion shadows. It should look like a photograph of a roofless model house from directly above.";
+            planPrompt = "Transform this 2D floor plan into a realistic 3D top-down view (bird's eye view). Render realistic floor materials, 3D furniture models from above, and soft ambient occlusion shadows. It should look like a photograph of a roofless model house from directly above.";
             constructedHistory = "Plan: 3D Top-Down";
         } else if (planConversionMode === 'perspective') {
             const styleText = selectedInteriorStyle ? `in a ${selectedInteriorStyle} style` : "in a modern style";
-            constructedPrompt += ` Transform this floor plan into a photorealistic eye-level interior perspective view of the ${selectedRoomType} ${styleText}. Interpret the layout from the plan to generate the room. Use photorealistic materials, natural lighting, and detailed furniture. The view should be immersive, as if standing inside the room.`;
+            planPrompt = `Transform this floor plan into a photorealistic eye-level interior perspective view of the ${selectedRoomType} ${styleText}. Interpret the layout from the plan to generate the room. Use photorealistic materials, natural lighting, and detailed furniture. The view should be immersive, as if standing inside the room.`;
             constructedHistory = `Plan: ${selectedRoomType} Perspective`;
         }
+        if (planPrompt) promptParts.push(planPrompt);
+
     } else {
-        // ... Existing Logic for Exterior/Interior ...
+        // --- Existing Logic for Exterior/Interior ---
         if (selectedQuickAction) {
-            constructedPrompt += " " + QUICK_ACTION_PROMPTS[selectedQuickAction];
+            promptParts.push(QUICK_ACTION_PROMPTS[selectedQuickAction]);
             constructedHistory = "Quick Action: " + selectedQuickAction;
         }
         
         if (selectedArchStyle) {
-            const option = architecturalStyleOptions.find(o => o.name === selectedArchStyle);
-            if (option) {
-                 constructedPrompt += ` Change the architectural style to ${selectedArchStyle}. Apply this style with an intensity of ${styleIntensity}%. ${option.description}`;
-            }
-            constructedHistory = `Arch Style: ${selectedArchStyle} (${styleIntensity}%)`;
+            promptParts.push(ARCHITECTURAL_STYLE_PROMPTS[selectedArchStyle]);
+            if (!constructedHistory.includes("Quick Action")) constructedHistory = "Arch Style: " + selectedArchStyle;
         }
         
         if (selectedGardenStyle) {
-            const option = gardenStyleOptions.find(o => o.name === selectedGardenStyle);
-            if (option) {
-                 constructedPrompt += ` Change the garden to ${selectedGardenStyle}. Apply this style with an intensity of ${styleIntensity}%. ${option.description}`;
-            }
-            constructedHistory = `Garden: ${selectedGardenStyle} (${styleIntensity}%)`;
+            promptParts.push(GARDEN_STYLE_PROMPTS[selectedGardenStyle]);
+            if (!constructedHistory.includes("Quick Action") && !constructedHistory.includes("Arch Style")) constructedHistory = "Garden: " + selectedGardenStyle;
         }
         
         if (selectedInteriorStyle) {
-            const option = interiorStyleOptions.find(o => o.name === selectedInteriorStyle);
-            if (option) {
-                 constructedPrompt += ` Change the interior design style to ${selectedInteriorStyle}. Apply this style with an intensity of ${styleIntensity}%. ${option.description}`;
-            }
-            constructedHistory = `Interior: ${selectedInteriorStyle} (${styleIntensity}%)`;
+            promptParts.push(INTERIOR_STYLE_PROMPTS[selectedInteriorStyle]);
+            if (!constructedHistory.includes("Quick Action")) constructedHistory = "Interior: " + selectedInteriorStyle;
+        }
+
+        if (selectedStyle) {
+            promptParts.push(`Change the visual art style to ${selectedStyle}.`);
+            if (!constructedHistory.includes("Quick Action")) constructedHistory = "Style: " + selectedStyle;
+        }
+
+        // Append intensity instruction if relevant
+        if (selectedArchStyle || selectedGardenStyle || selectedInteriorStyle || selectedStyle) {
+             if (styleIntensity !== 100) {
+                 promptParts.push(`Apply this style transformation with an intensity of ${styleIntensity}%.`);
+             } else {
+                 promptParts.push(`Apply this style transformation with strong intensity.`);
+             }
         }
         
         if (selectedInteriorLighting) {
-            constructedPrompt += " " + INTERIOR_LIGHTING_PROMPTS[selectedInteriorLighting];
+            promptParts.push(INTERIOR_LIGHTING_PROMPTS[selectedInteriorLighting]);
         }
 
         if (selectedBackgrounds.length > 0) {
-            const bgPrompts = selectedBackgrounds.map(bg => BACKGROUND_PROMPTS[bg] || INTERIOR_BACKGROUND_PROMPTS[bg]).join(' ');
-            constructedPrompt += " " + bgPrompts;
-            constructedHistory += ", BG: " + selectedBackgrounds.join(', ');
+            const bgPrompts = selectedBackgrounds.map(bg => BACKGROUND_PROMPTS[bg] || INTERIOR_BACKGROUND_PROMPTS[bg]).filter(Boolean).join(' ');
+            if(bgPrompts) promptParts.push(bgPrompts);
+            if (!constructedHistory.includes("Quick Action")) constructedHistory += ", BG: " + selectedBackgrounds.join(', ');
         }
         
         if (selectedForegrounds.length > 0) {
-            const fgPrompts = selectedForegrounds.map(fg => FOREGROUND_PROMPTS[fg]).join(' ');
-            constructedPrompt += " " + fgPrompts;
-            constructedHistory += ", FG: " + selectedForegrounds.join(', ');
+            const fgPrompts = selectedForegrounds.map(fg => FOREGROUND_PROMPTS[fg]).filter(Boolean).join(' ');
+            if(fgPrompts) promptParts.push(fgPrompts);
+            if (!constructedHistory.includes("Quick Action")) constructedHistory += ", FG: " + selectedForegrounds.join(', ');
         }
 
         if (sceneType === 'exterior' && selectedCameraAngle) {
              const angleOpt = cameraAngleOptions.find(o => o.name === selectedCameraAngle);
              if (angleOpt?.prompt) {
-                 constructedPrompt += ` ${angleOpt.prompt}.`;
-                 constructedHistory += `, Angle: ${selectedCameraAngle}`;
+                 promptParts.push(`${angleOpt.prompt}.`);
+                 if (!constructedHistory.includes("Quick Action")) constructedHistory += `, Angle: ${selectedCameraAngle}`;
              }
         }
 
@@ -991,30 +1188,31 @@ const ImageEditor: React.FC = () => {
              const brightnessTerm = lightingBrightness > 75 ? "very bright and vibrant" : lightingBrightness > 40 ? "balanced and welcoming" : "soft and atmospheric";
              const colorTerm = lightingTemperature > 75 ? "cool daylight white" : lightingTemperature > 40 ? "neutral white" : "warm golden";
              
-             constructedPrompt += ` Turn on the building's interior and exterior lights. The lighting intensity should be ${brightnessTerm}. The light color temperature should be ${colorTerm}.`;
-             constructedHistory += `, Lights: On`;
+             promptParts.push(`Turn on the building's interior and exterior lights. The lighting intensity should be ${brightnessTerm}. The light color temperature should be ${colorTerm}.`);
+             if (!constructedHistory.includes("Quick Action")) constructedHistory += `, Lights: On`;
         }
 
         if (sceneType === 'interior') {
              if (isCoveLightActive) {
-                 constructedPrompt += ` Install hidden cove lighting (indirect lighting) along the ceiling edges or wall recesses. The light color should be ${coveLightColor} white with a brightness intensity of ${coveLightBrightness}%.`;
+                 promptParts.push(`Install hidden cove lighting (indirect lighting) along the ceiling edges or wall recesses. The light color should be ${coveLightColor} white with a brightness intensity of ${coveLightBrightness}%.`);
                  constructedHistory += `, Cove Light: On`;
              }
              if (isDownlightActive) {
-                 constructedPrompt += ` Install recessed ceiling downlights arranged in a grid or logical pattern. The light color should be ${downlightColor} white with a brightness intensity of ${downlightBrightness}%.`;
+                 promptParts.push(`Install recessed ceiling downlights arranged in a grid or logical pattern. The light color should be ${downlightColor} white with a brightness intensity of ${downlightBrightness}%.`);
                  constructedHistory += `, Downlight: On`;
              }
              if (addFourWayAC) {
-                 constructedPrompt += ` Install a 4-way cassette type air conditioner embedded in the center of the ceiling.`;
+                 promptParts.push(`Install a 4-way cassette type air conditioner embedded in the center of the ceiling.`);
                  constructedHistory += `, 4-Way AC: On`;
              }
              if (addWallTypeAC) {
-                 constructedPrompt += ` Install a modern wall-mounted air conditioner unit on the upper part of the wall.`;
+                 promptParts.push(`Install a modern wall-mounted air conditioner unit on the upper part of the wall.`);
                  constructedHistory += `, Wall AC: On`;
              }
         }
     }
 
+    const constructedPrompt = promptParts.join(' ');
     executeGeneration(constructedPrompt, constructedHistory);
   };
   
@@ -1022,7 +1220,6 @@ const ImageEditor: React.FC = () => {
   const handleRedo = () => { if (activeImage && activeImage.historyIndex < activeImage.history.length - 1) updateActiveImage(img => ({ ...img, historyIndex: img.historyIndex + 1, selectedResultIndex: 0 })); };
   const handleResetEdits = () => { if (window.confirm("Reset?")) updateActiveImage(img => ({ ...img, history: [], historyIndex: -1, selectedResultIndex: null, promptHistory: [] })); };
   const handleUpscale = () => executeGeneration("Upscale 2x...", "Upscaled");
-  const handleOpenSaveModal = () => setIsSaveModalOpen(true);
   const handleDownload = () => { 
       if (!activeImage) return;
       const link = document.createElement('a');
@@ -1034,7 +1231,6 @@ const ImageEditor: React.FC = () => {
           link.click();
           document.body.removeChild(link);
       }
-      setIsSaveModalOpen(false); 
   };
   const handleTransform = (type: any) => { 
      // Placeholder for transform logic 
@@ -1062,14 +1258,14 @@ const ImageEditor: React.FC = () => {
          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setIsProjectModalOpen(false)}>
             <div className="bg-zinc-900 rounded-xl border border-zinc-700 shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
                 <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-900">
-                    <h2 className="text-lg font-bold text-white">My Projects</h2>
-                    <button onClick={() => setIsProjectModalOpen(false)} className="text-zinc-400 hover:text-white"><CloseUpIcon className="w-5 h-5"/></button>
+                    <h2 className="text-lg font-bold text-white">{t.header.projects}</h2>
+                    <button onClick={() => setIsProjectModalOpen(false)} className="text-zinc-400 hover:text-white"><XMarkIcon className="w-5 h-5"/></button>
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-zinc-950/50">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <label className="cursor-pointer flex flex-col items-center justify-center p-6 border-2 border-dashed border-zinc-700 rounded-lg hover:border-red-500 hover:bg-zinc-800/50 transition-colors group">
                              <PhotoIcon className="w-8 h-8 text-zinc-500 group-hover:text-red-500 mb-2"/>
-                             <span className="text-sm font-medium text-zinc-400 group-hover:text-zinc-200">New Project</span>
+                             <span className="text-sm font-medium text-zinc-400 group-hover:text-zinc-200">{t.buttons.newProject}</span>
                              <input type="file" accept="image/*" multiple onChange={handleImageChange} className="hidden" />
                         </label>
                         {imageList.map((img, index) => (
@@ -1088,7 +1284,7 @@ const ImageEditor: React.FC = () => {
                     </div>
                 </div>
                 <div className="p-4 border-t border-zinc-800 bg-zinc-900 flex justify-between">
-                    <button onClick={handleClearAllProjects} className="text-xs text-red-400 hover:text-red-300 underline">Clear All Data</button>
+                    <button onClick={handleClearAllProjects} className="text-xs text-red-400 hover:text-red-300 underline">{t.buttons.clearAll}</button>
                     <div className="text-xs text-zinc-600">Stored locally in your browser</div>
                 </div>
             </div>
@@ -1105,16 +1301,16 @@ const ImageEditor: React.FC = () => {
          {/* Scene Tabs */}
          {activeImage && (
            <div className="flex border-b border-zinc-800 bg-zinc-900">
-             <button onClick={() => handleSceneTypeSelect('exterior')} className={`flex-1 py-4 text-xs font-bold uppercase tracking-wider transition-colors relative ${sceneType === 'exterior' ? 'text-white bg-zinc-800/50' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/30'}`}>
-                Exterior
+             <button onClick={() => handleSceneTypeSelect('exterior')} className={`flex-1 py-4 text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors relative ${sceneType === 'exterior' ? 'text-white bg-zinc-800/50' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/30'}`}>
+                {t.tabs.exterior}
                 {sceneType === 'exterior' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-500"></div>}
              </button>
-             <button onClick={() => handleSceneTypeSelect('interior')} className={`flex-1 py-4 text-xs font-bold uppercase tracking-wider transition-colors relative ${sceneType === 'interior' ? 'text-white bg-zinc-800/50' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/30'}`}>
-                Interior
+             <button onClick={() => handleSceneTypeSelect('interior')} className={`flex-1 py-4 text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors relative ${sceneType === 'interior' ? 'text-white bg-zinc-800/50' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/30'}`}>
+                {t.tabs.interior}
                 {sceneType === 'interior' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-500"></div>}
              </button>
-             <button onClick={() => handleSceneTypeSelect('plan')} className={`flex-1 py-4 text-xs font-bold uppercase tracking-wider transition-colors relative ${sceneType === 'plan' ? 'text-white bg-zinc-800/50' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/30'}`}>
-                Plan
+             <button onClick={() => handleSceneTypeSelect('plan')} className={`flex-1 py-4 text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors relative ${sceneType === 'plan' ? 'text-white bg-zinc-800/50' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/30'}`}>
+                {t.tabs.plan}
                 {sceneType === 'plan' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-500"></div>}
              </button>
            </div>
@@ -1125,31 +1321,30 @@ const ImageEditor: React.FC = () => {
             {!activeImage ? (
                <div className="flex flex-col items-center justify-center h-full text-zinc-500 space-y-4">
                   <PhotoIcon className="w-12 h-12 opacity-20"/>
-                  <p className="text-sm">Select a project to start</p>
-                  <button onClick={() => setIsProjectModalOpen(true)} className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-md text-sm font-bold">Open Projects</button>
+                  <p className="text-sm">{t.header.noProject}</p>
+                  <button onClick={() => setIsProjectModalOpen(true)} className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-md text-sm font-bold">{t.buttons.openProjects}</button>
                </div>
             ) : (
                <>
                   {sceneType !== 'plan' && (
                     <div className="flex gap-2 mb-4">
-                         <ModeButton label="General" icon={<SparklesIcon className="w-4 h-4" />} mode="default" activeMode={editingMode} onClick={setEditingMode} />
-                         <ModeButton label="Object" icon={<BrushIcon className="w-4 h-4" />} mode="object" activeMode={editingMode} onClick={setEditingMode} />
+                         <ModeButton label={t.modes.general} icon={<SparklesIcon className="w-4 h-4" />} mode="default" activeMode={editingMode} onClick={setEditingMode} />
+                         <ModeButton label={t.modes.object} icon={<BrushIcon className="w-4 h-4" />} mode="object" activeMode={editingMode} onClick={setEditingMode} />
                     </div>
                   )}
 
                   {/* Dynamic Content based on SceneType */}
                   {sceneType === 'exterior' && (
                     <>
-                        <CollapsibleSection title="Prompt" sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-4 h-4"/>}>
-                            <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={editingMode === 'object' ? "Describe masked area change..." : "Describe your changes..."} className="w-full bg-zinc-950 border border-zinc-700 rounded-md p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none" rows={3} />
+                        <CollapsibleSection title={t.sections.prompt} sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-4 h-4"/>}>
+                            <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={editingMode === 'object' ? t.placeholders.promptMask : t.placeholders.promptExterior} className="w-full bg-zinc-950 border border-zinc-700 rounded-md p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none" rows={3} />
                         </CollapsibleSection>
-                        <CollapsibleSection title="Quick Actions" sectionKey="quickActions" isOpen={openSections.quickActions} onToggle={() => toggleSection('quickActions')} icon={<StarIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                        <CollapsibleSection title={t.sections.quickActions} sectionKey="quickActions" isOpen={openSections.quickActions} onToggle={() => toggleSection('quickActions')} icon={<StarIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                              <div className="space-y-2">
                                  {exteriorQuickActionList.map(action => (
                                     <PreviewCard 
                                         key={action.id}
                                         label={action.label} 
-                                        description={action.desc} 
                                         isSelected={selectedQuickAction === action.id} 
                                         onClick={() => handleQuickActionClick(action.id)} 
                                         icon={action.icon}
@@ -1157,7 +1352,7 @@ const ImageEditor: React.FC = () => {
                                  ))}
                              </div>
                         </CollapsibleSection>
-                        <CollapsibleSection title="Camera Angle" sectionKey="cameraAngle" isOpen={openSections.cameraAngle} onToggle={() => toggleSection('cameraAngle')} icon={<CameraAngleIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                        <CollapsibleSection title={t.sections.cameraAngle} sectionKey="cameraAngle" isOpen={openSections.cameraAngle} onToggle={() => toggleSection('cameraAngle')} icon={<CameraAngleIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             <div className="grid grid-cols-2 gap-2">
                                 {cameraAngleOptions.map(angle => (
                                     <OptionButton 
@@ -1169,22 +1364,28 @@ const ImageEditor: React.FC = () => {
                                 ))}
                             </div>
                         </CollapsibleSection>
-                        <CollapsibleSection title="Style" sectionKey="archStyle" isOpen={openSections.archStyle} onToggle={() => toggleSection('archStyle')} icon={<HomeModernIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                        <CollapsibleSection title={t.sections.artStyle} sectionKey="artStyle" isOpen={openSections.artStyle} onToggle={() => toggleSection('artStyle')} icon={<SparklesIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                            <div className="flex flex-wrap gap-2">
+                                {styleOptions.map(s => <OptionButton key={s.name} option={s.name} isSelected={selectedStyle === s.name} onClick={() => setSelectedStyle(prev => prev === s.name ? '' : s.name)} />)}
+                            </div>
+                            {selectedStyle && <IntensitySlider value={styleIntensity} onChange={setStyleIntensity} t={t} />}
+                        </CollapsibleSection>
+                        <CollapsibleSection title={t.sections.archStyle} sectionKey="archStyle" isOpen={openSections.archStyle} onToggle={() => toggleSection('archStyle')} icon={<HomeModernIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             <div className="flex flex-wrap gap-2">
                                 {architecturalStyleOptions.map(s => <OptionButton key={s.name} option={s.name} isSelected={selectedArchStyle === s.name} onClick={() => setSelectedArchStyle(prev => prev === s.name ? '' : s.name)} />)}
                             </div>
-                            {selectedArchStyle && <IntensitySlider value={styleIntensity} onChange={setStyleIntensity} />}
+                            {selectedArchStyle && <IntensitySlider value={styleIntensity} onChange={setStyleIntensity} t={t} />}
                         </CollapsibleSection>
-                         <CollapsibleSection title="Garden" sectionKey="gardenStyle" isOpen={openSections.gardenStyle} onToggle={() => toggleSection('gardenStyle')} icon={<FlowerIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                         <CollapsibleSection title={t.sections.garden} sectionKey="gardenStyle" isOpen={openSections.gardenStyle} onToggle={() => toggleSection('gardenStyle')} icon={<FlowerIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             <div className="flex flex-wrap gap-2">
                                 {gardenStyleOptions.map(s => <OptionButton key={s.name} option={s.name} isSelected={selectedGardenStyle === s.name} onClick={() => setSelectedGardenStyle(prev => prev === s.name ? '' : s.name)} />)}
                             </div>
-                            {selectedGardenStyle && <IntensitySlider value={styleIntensity} onChange={setStyleIntensity} />}
+                            {selectedGardenStyle && <IntensitySlider value={styleIntensity} onChange={setStyleIntensity} t={t} />}
                         </CollapsibleSection>
-                        <CollapsibleSection title="Lighting" sectionKey="addLight" isOpen={openSections.addLight} onToggle={() => toggleSection('addLight')} icon={<LightbulbIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                        <CollapsibleSection title={t.sections.lighting} sectionKey="addLight" isOpen={openSections.addLight} onToggle={() => toggleSection('addLight')} icon={<LightbulbIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm font-medium text-zinc-300">Turn On Lights</span>
+                                    <span className="text-sm font-medium text-zinc-300">{t.controls.turnOnLights}</span>
                                     <button 
                                         onClick={() => setIsAddLightActive(!isAddLightActive)}
                                         className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 ease-in-out ${isAddLightActive ? 'bg-red-600' : 'bg-zinc-700'}`}
@@ -1197,7 +1398,7 @@ const ImageEditor: React.FC = () => {
                                     <div className="space-y-3 animate-fade-in p-3 bg-zinc-800/50 rounded-lg border border-zinc-700/50">
                                         <div>
                                             <div className="flex justify-between text-xs mb-1 text-zinc-400">
-                                                <span>Brightness</span>
+                                                <span>{t.controls.brightness}</span>
                                                 <span>{lightingBrightness}%</span>
                                             </div>
                                             <input 
@@ -1209,15 +1410,15 @@ const ImageEditor: React.FC = () => {
                                                 className="w-full h-1 bg-zinc-600 rounded-lg appearance-none cursor-pointer accent-red-500"
                                             />
                                              <div className="flex justify-between text-[10px] text-zinc-500 mt-1">
-                                                <span>Soft</span>
-                                                <span>Vibrant</span>
+                                                <span>{t.controls.soft}</span>
+                                                <span>{t.controls.vibrant}</span>
                                             </div>
                                         </div>
                                         <div>
                                             <div className="flex justify-between text-xs mb-1 text-zinc-400">
-                                                <span>Color Temp</span>
+                                                <span>{t.controls.colorTemp}</span>
                                                 <span style={{ color: lightingTemperature < 50 ? '#fbbf24' : '#f8fafc' }}>
-                                                    {lightingTemperature < 30 ? 'Warm' : lightingTemperature > 70 ? 'Cool' : 'Neutral'}
+                                                    {lightingTemperature < 30 ? t.controls.warm : lightingTemperature > 70 ? t.controls.cool : t.controls.neutral}
                                                 </span>
                                             </div>
                                             <input 
@@ -1233,12 +1434,12 @@ const ImageEditor: React.FC = () => {
                                 )}
                             </div>
                         </CollapsibleSection>
-                        <CollapsibleSection title="Background" sectionKey="background" isOpen={openSections.background} onToggle={() => toggleSection('background')} icon={<LandscapeIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                        <CollapsibleSection title={t.sections.background} sectionKey="background" isOpen={openSections.background} onToggle={() => toggleSection('background')} icon={<LandscapeIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             <div className="flex flex-wrap gap-2">
                                 {backgrounds.map(bg => <OptionButton key={bg} option={bg} isSelected={selectedBackgrounds.includes(bg)} onClick={() => handleBackgroundToggle(bg)} />)}
                             </div>
                         </CollapsibleSection>
-                        <CollapsibleSection title="Foreground" sectionKey="foreground" isOpen={openSections.foreground} onToggle={() => toggleSection('foreground')} icon={<LandscapeIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                        <CollapsibleSection title={t.sections.foreground} sectionKey="foreground" isOpen={openSections.foreground} onToggle={() => toggleSection('foreground')} icon={<LandscapeIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             <div className="flex flex-wrap gap-2">
                                 {foregrounds.map(fg => <OptionButton key={fg} option={fg} isSelected={selectedForegrounds.includes(fg)} onClick={() => handleForegroundToggle(fg)} />)}
                             </div>
@@ -1248,16 +1449,15 @@ const ImageEditor: React.FC = () => {
                   
                    {sceneType === 'interior' && (
                     <>
-                        <CollapsibleSection title="Prompt" sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-4 h-4"/>}>
-                            <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Describe interior changes..." className="w-full bg-zinc-950 border border-zinc-700 rounded-md p-3 text-sm text-zinc-200 placeholder-zinc-600" rows={3} />
+                        <CollapsibleSection title={t.sections.prompt} sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-4 h-4"/>}>
+                            <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={t.placeholders.promptInterior} className="w-full bg-zinc-950 border border-zinc-700 rounded-md p-3 text-sm text-zinc-200 placeholder-zinc-600" rows={3} />
                         </CollapsibleSection>
-                        <CollapsibleSection title="Quick Actions" sectionKey="interiorQuickActions" isOpen={openSections.interiorQuickActions} onToggle={() => toggleSection('interiorQuickActions')} icon={<StarIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                        <CollapsibleSection title={t.sections.quickActions} sectionKey="interiorQuickActions" isOpen={openSections.interiorQuickActions} onToggle={() => toggleSection('interiorQuickActions')} icon={<StarIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                              <div className="space-y-2">
                                  {interiorQuickActionList.map(action => (
                                     <PreviewCard 
                                         key={action.id}
                                         label={action.label} 
-                                        description={action.desc} 
                                         isSelected={selectedQuickAction === action.id} 
                                         onClick={() => handleQuickActionClick(action.id)} 
                                         icon={action.icon}
@@ -1265,17 +1465,23 @@ const ImageEditor: React.FC = () => {
                                  ))}
                              </div>
                         </CollapsibleSection>
-                        <CollapsibleSection title="Interior Style" sectionKey="interiorStyle" isOpen={openSections.interiorStyle} onToggle={() => toggleSection('interiorStyle')} icon={<HomeIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                        <CollapsibleSection title={t.sections.artStyle} sectionKey="artStyle" isOpen={openSections.artStyle} onToggle={() => toggleSection('artStyle')} icon={<SparklesIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                            <div className="flex flex-wrap gap-2">
+                                {styleOptions.map(s => <OptionButton key={s.name} option={s.name} isSelected={selectedStyle === s.name} onClick={() => setSelectedStyle(prev => prev === s.name ? '' : s.name)} />)}
+                            </div>
+                            {selectedStyle && <IntensitySlider value={styleIntensity} onChange={setStyleIntensity} t={t} />}
+                        </CollapsibleSection>
+                        <CollapsibleSection title={t.sections.interiorStyle} sectionKey="interiorStyle" isOpen={openSections.interiorStyle} onToggle={() => toggleSection('interiorStyle')} icon={<HomeIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             <div className="grid grid-cols-2 gap-2">
                                 {interiorStyleOptions.slice(0, 6).map(s => <OptionButton key={s.name} option={s.name} isSelected={selectedInteriorStyle === s.name} onClick={() => setSelectedInteriorStyle(prev => prev === s.name ? '' : s.name)} />)}
                             </div>
-                            {selectedInteriorStyle && <IntensitySlider value={styleIntensity} onChange={setStyleIntensity} />}
+                            {selectedInteriorStyle && <IntensitySlider value={styleIntensity} onChange={setStyleIntensity} t={t} />}
                         </CollapsibleSection>
-                        <CollapsibleSection title="ระบบไฟและแอร์ (Systems)" sectionKey="specialLighting" isOpen={openSections.specialLighting} onToggle={() => toggleSection('specialLighting')} icon={<DownlightIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                        <CollapsibleSection title={t.sections.systems} sectionKey="specialLighting" isOpen={openSections.specialLighting} onToggle={() => toggleSection('specialLighting')} icon={<DownlightIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             {/* Cove Light */}
                             <div className="mb-4 border-b border-zinc-700/50 pb-4">
                                 <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm font-medium text-zinc-300">ไฟหลืบ (Cove Light)</span>
+                                    <span className="text-sm font-medium text-zinc-300">{t.controls.coveLight}</span>
                                     <button 
                                         onClick={() => setIsCoveLightActive(!isCoveLightActive)}
                                         className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 ease-in-out ${isCoveLightActive ? 'bg-red-600' : 'bg-zinc-700'}`}
@@ -1286,7 +1492,7 @@ const ImageEditor: React.FC = () => {
                                 {isCoveLightActive && (
                                     <div className="space-y-2 pl-2 border-l-2 border-zinc-700/50 animate-fade-in">
                                         <div className="flex justify-between text-xs mb-1 text-zinc-400">
-                                            <span>Brightness</span>
+                                            <span>{t.controls.brightness}</span>
                                             <span>{coveLightBrightness}%</span>
                                         </div>
                                         <input 
@@ -1306,7 +1512,7 @@ const ImageEditor: React.FC = () => {
                             {/* Downlight */}
                             <div className="mb-4 border-b border-zinc-700/50 pb-4">
                                 <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm font-medium text-zinc-300">ไฟดาวน์ไลท์ (Downlight)</span>
+                                    <span className="text-sm font-medium text-zinc-300">{t.controls.downlight}</span>
                                     <button 
                                         onClick={() => setIsDownlightActive(!isDownlightActive)}
                                         className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 ease-in-out ${isDownlightActive ? 'bg-red-600' : 'bg-zinc-700'}`}
@@ -1317,7 +1523,7 @@ const ImageEditor: React.FC = () => {
                                 {isDownlightActive && (
                                     <div className="space-y-2 pl-2 border-l-2 border-zinc-700/50 animate-fade-in">
                                         <div className="flex justify-between text-xs mb-1 text-zinc-400">
-                                            <span>Brightness</span>
+                                            <span>{t.controls.brightness}</span>
                                             <span>{downlightBrightness}%</span>
                                         </div>
                                         <input 
@@ -1336,24 +1542,24 @@ const ImageEditor: React.FC = () => {
                             
                             {/* AC */}
                             <div>
-                                <span className="text-sm font-medium text-zinc-300 block mb-2">เครื่องปรับอากาศ (Air Conditioner)</span>
+                                <span className="text-sm font-medium text-zinc-300 block mb-2">{t.controls.airConditioner}</span>
                                 <div className="grid grid-cols-2 gap-2">
-                                    <OptionButton option="แอร์ 4 ทิศทาง" isSelected={addFourWayAC} onClick={() => setAddFourWayAC(!addFourWayAC)} />
-                                    <OptionButton option="แอร์ติดผนัง" isSelected={addWallTypeAC} onClick={() => setAddWallTypeAC(!addWallTypeAC)} />
+                                    <OptionButton option={t.controls.ac4way} isSelected={addFourWayAC} onClick={() => setAddFourWayAC(!addFourWayAC)} />
+                                    <OptionButton option={t.controls.acWall} isSelected={addWallTypeAC} onClick={() => setAddWallTypeAC(!addWallTypeAC)} />
                                 </div>
                             </div>
                         </CollapsibleSection>
-                         <CollapsibleSection title="Lighting" sectionKey="lighting" isOpen={openSections.lighting} onToggle={() => toggleSection('lighting')} icon={<LightbulbIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                         <CollapsibleSection title={t.sections.lighting} sectionKey="lighting" isOpen={openSections.lighting} onToggle={() => toggleSection('lighting')} icon={<LightbulbIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             <div className="flex flex-wrap gap-2">
                                 {interiorLightingOptions.map(l => <OptionButton key={l} option={l} isSelected={selectedInteriorLighting === l} onClick={() => setSelectedInteriorLighting(prev => prev === l ? '' : l)} />)}
                             </div>
                         </CollapsibleSection>
-                        <CollapsibleSection title="View Outside" sectionKey="background" isOpen={openSections.background} onToggle={() => toggleSection('background')} icon={<LandscapeIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                        <CollapsibleSection title={t.sections.viewOutside} sectionKey="background" isOpen={openSections.background} onToggle={() => toggleSection('background')} icon={<LandscapeIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             <div className="flex flex-wrap gap-2">
                                 {interiorBackgrounds.map(bg => <OptionButton key={bg} option={bg} isSelected={selectedBackgrounds.includes(bg)} onClick={() => handleBackgroundToggle(bg)} />)}
                             </div>
                         </CollapsibleSection>
-                         <CollapsibleSection title="Foreground" sectionKey="foreground" isOpen={openSections.foreground} onToggle={() => toggleSection('foreground')} icon={<LandscapeIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                         <CollapsibleSection title={t.sections.foreground} sectionKey="foreground" isOpen={openSections.foreground} onToggle={() => toggleSection('foreground')} icon={<LandscapeIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             <div className="flex flex-wrap gap-2">
                                 {interiorForegrounds.map(fg => <OptionButton key={fg} option={fg} isSelected={selectedForegrounds.includes(fg)} onClick={() => handleForegroundToggle(fg)} />)}
                             </div>
@@ -1363,12 +1569,12 @@ const ImageEditor: React.FC = () => {
                   
                   {sceneType === 'plan' && (
                     <>
-                        <CollapsibleSection title="Prompt" sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-4 h-4"/>}>
-                            <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Describe specific details for the plan..." className="w-full bg-zinc-950 border border-zinc-700 rounded-md p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none" rows={3} />
+                        <CollapsibleSection title={t.sections.prompt} sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-4 h-4"/>}>
+                            <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={t.placeholders.promptPlan} className="w-full bg-zinc-950 border border-zinc-700 rounded-md p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none" rows={3} />
                         </CollapsibleSection>
 
                         {/* Plan Transformation Mode */}
-                        <CollapsibleSection title="Conversion Mode" sectionKey="planConversion" isOpen={openSections.planConversion} onToggle={() => toggleSection('planConversion')} icon={<PlanIcon className="w-4 h-4"/>}>
+                        <CollapsibleSection title={t.sections.conversionMode} sectionKey="planConversion" isOpen={openSections.planConversion} onToggle={() => toggleSection('planConversion')} icon={<PlanIcon className="w-4 h-4"/>}>
                             <div className="space-y-2">
                                 {planConversionModes.map(mode => (
                                     <PreviewCard
@@ -1385,7 +1591,7 @@ const ImageEditor: React.FC = () => {
 
                         {/* Additional Config for Perspective Mode */}
                         {planConversionMode === 'perspective' && (
-                            <CollapsibleSection title="Room Configuration" sectionKey="perspectiveConfig" isOpen={openSections.perspectiveConfig} onToggle={() => toggleSection('perspectiveConfig')} icon={<HomeIcon className="w-4 h-4"/>}>
+                            <CollapsibleSection title={t.sections.roomConfig} sectionKey="perspectiveConfig" isOpen={openSections.perspectiveConfig} onToggle={() => toggleSection('perspectiveConfig')} icon={<HomeIcon className="w-4 h-4"/>}>
                                 <div className="space-y-4">
                                     <div>
                                         <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Room Type</label>
@@ -1421,11 +1627,11 @@ const ImageEditor: React.FC = () => {
                   
                   {/* Common Tools */}
                   {editingMode === 'object' && (
-                      <CollapsibleSection title="Brush Settings" sectionKey="brushTool" isOpen={openSections.brushTool} onToggle={() => toggleSection('brushTool')} icon={<BrushIcon className="w-4 h-4"/>}>
+                      <CollapsibleSection title={t.sections.brushSettings} sectionKey="brushTool" isOpen={openSections.brushTool} onToggle={() => toggleSection('brushTool')} icon={<BrushIcon className="w-4 h-4"/>}>
                           <input type="range" min="5" max="100" value={brushSize} onChange={e => setBrushSize(Number(e.target.value))} className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-red-500 mb-4"/>
                           <div className="flex justify-between items-center">
                               <div className="flex gap-2">{brushColors.map(c => <button key={c.name} onClick={() => setBrushColor(c.value)} className={`w-6 h-6 rounded-full ${c.css} ${brushColor === c.value ? 'ring-2 ring-white' : ''}`} />)}</div>
-                              <button onClick={() => imageDisplayRef.current?.clearMask()} className="text-xs text-red-400 underline">Clear Mask</button>
+                              <button onClick={() => imageDisplayRef.current?.clearMask()} className="text-xs text-red-400 underline">{t.controls.clearMask}</button>
                           </div>
                       </CollapsibleSection>
                   )}
@@ -1442,7 +1648,7 @@ const ImageEditor: React.FC = () => {
                  className="w-full bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg shadow-red-900/20 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                >
                  {isLoading ? <Spinner /> : <SparklesIcon className="w-5 h-5" />}
-                 <span>{isLoading ? 'Generating...' : 'Generate Image'}</span>
+                 <span>{isLoading ? t.buttons.generating : t.buttons.generate}</span>
                </button>
             </div>
          )}
@@ -1458,11 +1664,19 @@ const ImageEditor: React.FC = () => {
                         <span className="px-2 py-1 rounded bg-zinc-800 text-xs font-mono text-zinc-400 border border-zinc-700">{sceneType.toUpperCase()}</span>
                         <h2 className="text-sm font-medium text-zinc-200 truncate max-w-xs">{activeImage.file?.name}</h2>
                      </>
-                ) : <div className="text-zinc-600 text-sm italic">No project loaded</div>}
+                ) : <div className="text-zinc-600 text-sm italic">{t.header.noProject}</div>}
              </div>
-             <div className="flex items-center gap-3">
+             <div className="flex items-center gap-4">
+                <div className="text-xs font-medium flex items-center gap-2">
+                    {saveStatus === 'saving' && <span className="text-yellow-500 animate-pulse">{t.header.saving}</span>}
+                    {saveStatus === 'saved' && <span className="text-green-500">{t.header.saved}</span>}
+                    {saveStatus === 'error' && <span className="text-red-500">{t.header.error}</span>}
+                </div>
+                <button onClick={toggleLanguage} className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded border border-zinc-700">
+                    {language === 'en' ? 'TH' : 'EN'}
+                </button>
                  <button onClick={() => setIsProjectModalOpen(true)} className="px-4 py-2 text-xs font-bold uppercase tracking-wide bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-md border border-zinc-700 transition-all flex items-center gap-2 group">
-                    <PhotoIcon className="w-4 h-4 group-hover:text-white"/> Projects
+                    <PhotoIcon className="w-4 h-4 group-hover:text-white"/> {t.buttons.openProjects}
                  </button>
              </div>
          </header>
@@ -1475,7 +1689,7 @@ const ImageEditor: React.FC = () => {
                {error && (
                   <div className="mb-4 bg-red-900/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg flex justify-between items-center animate-fade-in">
                       <span className="text-sm">{error}</span>
-                      <button onClick={() => setError(null)} className="text-red-400 hover:text-white"><CloseUpIcon className="w-4 h-4"/></button>
+                      <button onClick={() => setError(null)} className="text-red-400 hover:text-white"><XMarkIcon className="w-4 h-4"/></button>
                   </div>
                )}
 
@@ -1509,13 +1723,14 @@ const ImageEditor: React.FC = () => {
                                 onRedo={handleRedo}
                                 onReset={handleResetEdits}
                                 onUpscale={handleUpscale}
-                                onOpenSaveModal={handleOpenSaveModal}
+                                onDownload={handleDownload}
                                 onTransform={handleTransform}
                                 canUndo={canUndo}
                                 canRedo={canRedo}
                                 canReset={canReset}
                                 canUpscaleAndSave={canUpscaleAndSave}
                                 isLoading={isLoading}
+                                t={t}
                            />
                       </div>
                   )}
@@ -1558,27 +1773,6 @@ const ImageEditor: React.FC = () => {
             </div>
          </div>
       </main>
-
-      {/* Save Modal */}
-      {isSaveModalOpen && (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-sm" onClick={() => setIsSaveModalOpen(false)}>
-              <div className="bg-zinc-900 rounded-xl p-6 shadow-2xl w-full max-w-sm border border-zinc-700" onClick={e => e.stopPropagation()}>
-                  <h2 className="text-lg font-bold mb-4 text-white">Download Image</h2>
-                  <div className="space-y-4">
-                      <div>
-                          <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Quality</label>
-                          <select value={saveQuality} onChange={(e) => setSaveQuality(parseFloat(e.target.value))} className="w-full bg-zinc-950 border border-zinc-700 rounded-md p-2 text-white text-sm focus:ring-red-500 focus:border-red-500">
-                            {qualityOptions.map(opt => <option key={opt.label} value={opt.value}>{opt.label}</option>)}
-                          </select>
-                      </div>
-                      <div className="flex justify-end gap-3 pt-2">
-                          <button onClick={() => setIsSaveModalOpen(false)} className="px-4 py-2 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm font-medium">Cancel</button>
-                          <button onClick={handleDownload} className="px-4 py-2 rounded-md bg-red-600 hover:bg-red-500 text-white text-sm font-bold shadow-lg shadow-red-900/20">Download</button>
-                      </div>
-                  </div>
-              </div>
-          </div>
-      )}
     </div>
   );
 };
