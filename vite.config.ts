@@ -5,9 +5,9 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   define: {
-    // Define process.env as an empty object so accessing process.env.API_KEY returns undefined
-    // without crashing the app in the browser.
-    'process.env': {}
+    // Safely replace process.env.API_KEY with undefined for browser environments
+    // We do not overwrite the entire process.env object to avoid breaking React (which needs process.env.NODE_ENV)
+    'process.env.API_KEY': JSON.stringify(undefined)
   },
   build: {
     // Disable sourcemaps in production to prevent users from viewing the original source code
