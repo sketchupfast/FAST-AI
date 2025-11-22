@@ -130,8 +130,8 @@ const translations = {
         download: "Download",
         reset: "Reset",
         upscale: "Upscale",
-        download2k: "Download 2K",
-        download4k: "Download 4K"
+        download2k: "Upscale 2K",
+        download4k: "Upscale 4K"
     },
     placeholders: {
         promptExterior: "Describe your changes...",
@@ -208,8 +208,8 @@ const translations = {
         download: "ดาวน์โหลด",
         reset: "รีเซ็ต",
         upscale: "ขยายภาพ",
-        download2k: "ดาวน์โหลด 2K",
-        download4k: "ดาวน์โหลด 4K"
+        download2k: "ขยายภาพ 2K",
+        download4k: "ขยายภาพ 4K"
     },
     placeholders: {
         promptExterior: "อธิบายสิ่งที่ต้องการแก้ไข...",
@@ -711,7 +711,7 @@ const ImageToolbar: React.FC<{
         disabled={!canUpscaleAndSave || isLoading} 
         className="flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-full transition-colors disabled:opacity-50 min-w-[100px] justify-center"
       >
-        {generatingSize === '2K' ? <Spinner className="w-3 h-3 text-white" /> : <DownloadIcon className="w-3 h-3" />} 
+        {generatingSize === '2K' ? <Spinner className="w-3 h-3 text-white" /> : <SparklesIcon className="w-3 h-3" />} 
         {generatingSize === '2K' ? t.buttons.generating : t.buttons.download2k}
       </button>
       
@@ -720,7 +720,7 @@ const ImageToolbar: React.FC<{
         disabled={!canUpscaleAndSave || isLoading} 
         className="flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-full transition-colors disabled:opacity-50 min-w-[100px] justify-center"
       >
-         {generatingSize === '4K' ? <Spinner className="w-3 h-3 text-white" /> : <DownloadIcon className="w-3 h-3" />} 
+         {generatingSize === '4K' ? <Spinner className="w-3 h-3 text-white" /> : <SparklesIcon className="w-3 h-3" />} 
          {generatingSize === '4K' ? t.buttons.generating : t.buttons.download4k}
       </button>
       
@@ -1543,7 +1543,7 @@ const ImageEditor: React.FC = () => {
   const handleHighResGenerate = async (size: '2K' | '4K') => {
       setGeneratingHighResSize(size);
       const prompt = `Upscale this image to ${size} resolution. Enhance details, sharpness, and clarity suitable for large-format displays. Maintain the original composition and colors. Do not change the aspect ratio.`; // Added explicit aspect ratio instruction
-      await executeGeneration(prompt, `Upscaled (${size})`, size, true);
+      await executeGeneration(prompt, `Upscaled (${size})`, size, false); // Disabled auto-download, just generate
       setGeneratingHighResSize(null);
   };
 
