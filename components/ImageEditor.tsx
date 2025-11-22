@@ -327,18 +327,8 @@ const interiorForegrounds = [
     "Magazine/Books"
 ];
 
-const filters = ['None', 'Black & White', 'Sepia', 'Invert', 'Grayscale', 'Vintage', 'Cool Tone', 'Warm Tone', 'HDR'];
-
 const interiorLightingOptions = ['Natural Daylight', 'Warm Evening Light', 'Studio Light', 'Cinematic Light'];
 
-const planViewOptions = [
-    { name: 'Eye-Level View', prompt: 'a realistic eye-level interior photo' },
-    { name: 'Isometric View', prompt: 'a 3D isometric cutaway view' },
-    { name: 'Top-Down View', prompt: 'a 3D top-down view' },
-    { name: 'Wide-Angle View', prompt: 'a realistic wide-angle interior photo' },
-];
-
-// --- Plan Constants ---
 const planConversionModes = [
     { id: '2d_bw', label: '2D Black & White (CAD)', desc: 'Professional B&W technical drawing.' },
     { id: '2d_real', label: '2D Realistic (Color)', desc: 'Colored textures and furniture.' },
@@ -431,7 +421,6 @@ const QUICK_ACTION_PROMPTS: Record<string, string> = {
     modernTwilightHome: "Transform the image into a high-quality, photorealistic architectural photograph of a modern home. Set the time to dusk, with a soft twilight sky. Turn on warm, inviting interior lights that are visible through the windows, creating a cozy and welcoming glow. Surround the house with a modern, manicured landscape, including a neat green lawn, contemporary shrubs, and a healthy feature tree. The foreground should include a clean paved walkway and sidewalk. The final image must be hyper-realistic, mimicking a professional real estate photograph, maintaining the original camera angle and architecture. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     vibrantModernEstate: "Transform the image into a high-quality, hyper-realistic architectural photograph, maintaining the original architecture and camera angle. The scene should depict a perfect, sunny day. The sky must be a clear, vibrant blue with a few soft, wispy white clouds. The lighting should be bright, natural daylight, casting realistic but not overly harsh shadows, creating a clean and welcoming atmosphere. Surround the house with lush, healthy, and vibrant green trees and a meticulously manicured landscape. The final image should look like a professional real estate photo, full of life and color. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     modernPineEstate: "Transform the image into a high-quality, photorealistic architectural photograph, maintaining the original architecture and camera angle. Set the scene against a clear, soft sky. In the background, add a dense forest of tall pine trees. The house should have warm, inviting interior lights turned on, visible through the windows. The foreground should feature a modern, manicured landscape with neat green shrubs and a few decorative trees. The overall atmosphere should be clean, serene, and professional, suitable for a high-end real estate portfolio. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
-    proPhotoFinish: "Transform the image into a high-quality, photorealistic architectural photograph, as if it was captured with a professional DSLR camera. Enhance all materials and textures to be hyper-realistic (e.g., realistic wood grain, concrete texture, reflections on glass). The lighting should be soft, natural daylight, creating believable shadows and a sense of realism. It is absolutely crucial that the final image is indistinguishable from a real photograph and has no outlines, cartoonish features, or any sketch-like lines whatsoever. The final image should be 8k resolution and hyper-detailed. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     luxuryHomeDusk: "Transform this architectural photo to have the atmosphere of a luxury modern home at dusk, shortly after a light rain. The ground and surfaces should be wet, creating beautiful reflections from the lighting. The lighting should be a mix of warm, inviting interior lights glowing from the windows and strategically placed exterior architectural up-lights. The overall mood should be sophisticated, warm, and serene, mimicking a high-end real estate photograph. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     morningHousingEstate: "Transform this architectural photo to capture the serene atmosphere of an early morning in a modern housing estate. The lighting should be soft, warm, and golden, characteristic of the hour just after sunrise, casting long, gentle shadows. The air should feel fresh and clean, with a hint of morning dew on the manicured lawns. The overall mood should be peaceful, pristine, and inviting, typical of a high-end, well-maintained residential village. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     urbanSketch: "Transform this image into a beautiful urban watercolor sketch. It should feature loose, expressive ink linework combined with soft, atmospheric watercolor washes. The style should capture the gritty yet vibrant energy of a bustling city street, similar to the work of a professional urban sketch artist. Retain the core composition but reinterpret it in this artistic, hand-drawn style. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
@@ -464,7 +453,6 @@ const QUICK_ACTION_PROMPTS: Record<string, string> = {
     brightModernClassicLivingRoom: "Redesign this into a bright, luxurious, and open-plan living and dining space with a modern classic aesthetic. Create a feature wall using large slabs of light-colored marble. Incorporate built-in, backlit shelving to display decorative items. Use a sophisticated color palette of whites, creams, and grays, accented with polished gold details in the furniture and lighting. The space must feel grand, luminous, and impeccably designed.",
     parisianChicLivingRoom: "Transform this interior into an elegant Parisian-style living room. The architecture should feature high ceilings, intricate neoclassical wall paneling (boiserie), and a large, arched window that floods the space with natural light. Furnish the room with a mix of chic, modern furniture and classic pieces to create a timeless look. The color palette should be light and sophisticated. The overall atmosphere must feel effortlessly elegant and chic.",
     
-    // New Interior Room Types Presets
     modernLuxuryKitchen: "Transform the image into a photorealistic, high-end modern luxury kitchen. Feature a large marble kitchen island, sleek handleless cabinetry, and built-in premium appliances. The lighting should be a mix of natural light and warm under-cabinet LED strips. The atmosphere is clean, sophisticated, and expensive.",
     luxurySpaBathroom: "Transform the image into a photorealistic, spa-like luxury bathroom. Include a freestanding soaking tub, a rain shower with glass enclosure, and natural stone tiles (marble or slate). Add ambient lighting and perhaps some greenery/plants for a relaxing, zen atmosphere.",
     modernHomeOffice: "Transform the image into a photorealistic modern home office. Feature a sleek wooden desk, an ergonomic chair, and built-in shelving with organized books and decor. The lighting should be bright and conducive to work, with a view of the outdoors if possible. The style is professional yet comfortable.",
@@ -509,7 +497,6 @@ const INTERIOR_BACKGROUND_PROMPTS = interiorBackgrounds.reduce((acc, bg) => {
 }, {} as Record<string, string>);
 
 const FOREGROUND_PROMPTS: Record<string, string> = {
-  // Exterior
   "Foreground Large Tree": "Add a large tree in the foreground.",
   "Foreground River": "Add a river in the foreground.",
   "Foreground Road": "Add a road in the foreground.",
@@ -522,7 +509,6 @@ const FOREGROUND_PROMPTS: Record<string, string> = {
   "Foreground Water Feature": "Add a water feature in the foreground.",
   "Foreground Low Wall": "Add a low wall in the foreground.",
   
-  // Interior
   "Blurred Coffee Table": "Add a blurred coffee table surface in the immediate foreground to create depth of field.",
   "Indoor Plant": "Add a large, healthy indoor potted plant in the foreground corner.",
   "Sofa Edge": "Add the edge of a stylish sofa in the immediate foreground to frame the view.",
@@ -536,7 +522,6 @@ const FOREGROUND_PROMPTS: Record<string, string> = {
 };
 
 
-// --- Helper Components ---
 const OptionButton: React.FC<{
   option: string,
   isSelected: boolean,
@@ -730,8 +715,6 @@ const ImageToolbar: React.FC<{
   </div>
 );
 
-// Helper function to safely download base64 as a file using Blob manually constructed from bytes.
-// This uses Uint8Array directly to avoid stack overflow and reduce memory usage with large arrays.
 const downloadBase64AsFile = (base64Data: string, filename: string, mimeType: string = 'image/jpeg') => {
     try {
         const byteCharacters = atob(base64Data);
@@ -748,7 +731,6 @@ const downloadBase64AsFile = (base64Data: string, filename: string, mimeType: st
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        // Revoke after a small delay to ensure the download starts
         setTimeout(() => URL.revokeObjectURL(url), 100);
     } catch (e) {
         console.error("Download failed:", e);
@@ -762,10 +744,7 @@ const ImageEditor: React.FC = () => {
   const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   
-  // Language State
   const [language, setLanguage] = useState<'en' | 'th'>('en');
-  
-  // Auto-save Status
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
 
   const [prompt, setPrompt] = useState<string>('');
@@ -794,27 +773,21 @@ const ImageEditor: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [generatingHighResSize, setGeneratingHighResSize] = useState<'2K' | '4K' | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [sceneType, setSceneType] = useState<SceneType>('exterior'); // Default to exterior
+  const [sceneType, setSceneType] = useState<SceneType>('exterior');
   
-  // Plan Mode States
   const [planConversionMode, setPlanConversionMode] = useState<string>('2d_bw');
   const [selectedRoomType, setSelectedRoomType] = useState<string>('Living Room');
-  // Interior Room Type State
   const [selectedInteriorRoomType, setSelectedInteriorRoomType] = useState<string>('');
-  // Moodboard State
   const [referenceImage, setReferenceImage] = useState<{ base64: string; mimeType: string; dataUrl: string } | null>(null);
   
-  // Color adjustment states
   const [brightness, setBrightness] = useState<number>(100);
   const [contrast, setContrast] = useState<number>(100);
   const [saturation, setSaturation] = useState<number>(100);
   const [sharpness, setSharpness] = useState<number>(100);
   
-  // Vegetation state
   const [treeAge, setTreeAge] = useState<number>(50);
   const [season, setSeason] = useState<number>(50);
 
-  // Special interior lighting state
   const [isCoveLightActive, setIsCoveLightActive] = useState<boolean>(false);
   const [coveLightBrightness, setCoveLightBrightness] = useState<number>(70);
   const [coveLightColor, setCoveLightColor] = useState<string>('Warm'); 
@@ -830,7 +803,6 @@ const ImageEditor: React.FC = () => {
   const [addFourWayAC, setAddFourWayAC] = useState<boolean>(false);
   const [addWallTypeAC, setAddWallTypeAC] = useState<boolean>(false);
 
-  // UI state
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     prompt: true,
     quickActions: true,
@@ -868,16 +840,25 @@ const ImageEditor: React.FC = () => {
   
   const t = translations[language];
   
-  // API Key Check
   const [hasApiKey, setHasApiKey] = useState<boolean>(false);
+  const [userApiKey, setUserApiKey] = useState<string>('');
 
   useEffect(() => {
       const checkKey = async () => {
+          // Check if we are in AI Studio environment
           if ((window as any).aistudio) {
                const has = await (window as any).aistudio.hasSelectedApiKey();
                setHasApiKey(has);
           } else {
-              setHasApiKey(true); // Fallback for dev outside environment
+              // In production/web, check local storage for previously entered key
+              const storedKey = localStorage.getItem('fast-ai-user-key');
+              if (storedKey) {
+                  setUserApiKey(storedKey);
+                  setHasApiKey(true);
+              } else {
+                  // If in production and no key, wait for user input
+                  setHasApiKey(false);
+              }
           }
       }
       checkKey();
@@ -893,6 +874,13 @@ const ImageEditor: React.FC = () => {
           }
       }
   };
+  
+  const handleUserApiKeySubmit = () => {
+      if (userApiKey.trim()) {
+          localStorage.setItem('fast-ai-user-key', userApiKey.trim());
+          setHasApiKey(true);
+      }
+  };
 
   const toggleSection = (sectionName: string) => {
     setOpenSections(prev => ({ ...prev, [sectionName]: !prev[sectionName] }));
@@ -905,7 +893,6 @@ const ImageEditor: React.FC = () => {
   const imageDisplayRef = useRef<ImageDisplayHandle>(null);
 
   
-  // State for masking mode
   const [brushSize, setBrushSize] = useState<number>(30);
   const [brushColor, setBrushColor] = useState<string>(brushColors[0].value);
   const [isMaskEmpty, setIsMaskEmpty] = useState<boolean>(true);
@@ -919,13 +906,11 @@ const ImageEditor: React.FC = () => {
     };
   }, []);
 
-  // Load state from IndexedDB on component mount
   useEffect(() => {
     let isMounted = true;
     const loadData = async () => {
       try {
         const savedProjects = await loadProjects();
-        // Load saved language preference
         const savedLang = localStorage.getItem('fast-ai-language');
         if (savedLang === 'th' || savedLang === 'en') {
             setLanguage(savedLang);
@@ -965,10 +950,9 @@ const ImageEditor: React.FC = () => {
     };
   }, []);
 
-  // Save state to IndexedDB whenever it changes
   useEffect(() => {
     if (!isDataLoaded) {
-      return; // Don't save until initial data has been loaded
+      return;
     }
     
     const saveData = async () => {
@@ -983,7 +967,6 @@ const ImageEditor: React.FC = () => {
           localStorage.removeItem('fast-ai-active-project-index');
         }
         
-        // If the current error is a storage error, clear it after a successful save.
         if (error && error.startsWith("Could not save")) {
             setError(null);
         }
@@ -995,7 +978,6 @@ const ImageEditor: React.FC = () => {
       }
     };
     
-    // Debounce the save slightly to avoid thrashing
     const timeoutId = setTimeout(saveData, 500);
     return () => clearTimeout(timeoutId);
   }, [imageList, activeImageIndex, isDataLoaded]);
@@ -1009,7 +991,6 @@ const ImageEditor: React.FC = () => {
   const activeImage = activeImageIndex !== null ? imageList[activeImageIndex] : null;
   
   useEffect(() => {
-    // Reset temporary state when active image changes
     setPrompt('');
     setNegativePrompt('');
     setBrightness(100);
@@ -1065,7 +1046,7 @@ const ImageEditor: React.FC = () => {
               if (activeImageIndex === null) {
                   setActiveImageIndex(currentListSize);
               }
-              setIsProjectModalOpen(false); // Close modal after upload
+              setIsProjectModalOpen(false);
           }
       } catch (err) {
           if (mountedRef.current) {
@@ -1120,7 +1101,6 @@ const ImageEditor: React.FC = () => {
   const handleSceneTypeSelect = (type: SceneType) => {
     setSceneType(type);
     setEditingMode('default');
-    // Reset specific selections to prevent crossover
     setSelectedQuickAction('');
     setSelectedStyle('');
     setSelectedArchStyle('');
@@ -1128,7 +1108,7 @@ const ImageEditor: React.FC = () => {
     setSelectedInteriorStyle('');
     setSelectedInteriorLighting('');
     setSelectedInteriorRoomType('');
-    setReferenceImage(null); // Reset moodboard
+    setReferenceImage(null);
     setSelectedBackgrounds([]);
     setSelectedForegrounds([]);
     setSelectedCameraAngle('');
@@ -1150,7 +1130,7 @@ const ImageEditor: React.FC = () => {
   };
   
    const hasTextPrompt = prompt.trim() !== '';
-   const isPlanModeReady = sceneType === 'plan'; // Always ready as it has defaults
+   const isPlanModeReady = sceneType === 'plan';
    const isEditingWithMask = editingMode === 'object' && !isMaskEmpty;
    
    const hasEditInstruction = isEditingWithMask ? hasTextPrompt : (
@@ -1195,12 +1175,10 @@ const ImageEditor: React.FC = () => {
     setIsLoading(true);
 
     try {
-        // Create a canvas to render the filters
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         const img = new Image();
 
-        // Current source
         const sourceUrl = (activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null)
             ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex]
             : activeImage.dataUrl;
@@ -1216,7 +1194,6 @@ const ImageEditor: React.FC = () => {
         canvas.width = img.width;
         canvas.height = img.height;
 
-        // Apply filters
         const filterString = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
         ctx.filter = filterString;
         ctx.drawImage(img, 0, 0);
@@ -1238,7 +1215,6 @@ const ImageEditor: React.FC = () => {
             };
         });
         
-        // Reset sliders
         setBrightness(100);
         setContrast(100);
         setSaturation(100);
@@ -1339,17 +1315,15 @@ const ImageEditor: React.FC = () => {
           
           const finalPrompt = promptForGeneration;
           
-          // Use reference image only for normal generations (not upscaling) and if one is selected
           const refImg = (!size && referenceImage) ? referenceImage : null;
 
-          const { data: generatedImageBase64, mimeType: generatedMimeType } = await editImage(sourceBase64, sourceMimeType, finalPrompt, maskBase64, size, refImg);
+          // Pass userApiKey if available (for production environments)
+          const { data: generatedImageBase64, mimeType: generatedMimeType } = await editImage(sourceBase64, sourceMimeType, finalPrompt, maskBase64, size, refImg, userApiKey);
           
           if (!mountedRef.current) return;
           
-          // Use safer download method for potentially large files (2K/4K)
           if (autoDownload) {
              try {
-                // Use dynamic mimeType for download filename
                 const extension = generatedMimeType === 'image/png' ? 'png' : 'jpg';
                 downloadBase64AsFile(generatedImageBase64, `generated-${size}-${Date.now()}.${extension}`, generatedMimeType);
              } catch (downloadErr) {
@@ -1357,7 +1331,6 @@ const ImageEditor: React.FC = () => {
                 setError("Image generated, but download failed. You can try downloading from the history.");
              }
              
-             // Also update history with base64 for display
              const newResult = `data:${generatedMimeType};base64,${generatedImageBase64}`;
              updateActiveImage(img => {
                   const newHistory = img.history.slice(0, img.historyIndex + 1);
@@ -1392,7 +1365,6 @@ const ImageEditor: React.FC = () => {
               });
           }
 
-          // Reset basic fields
           setPrompt('');
           setSelectedQuickAction('');
           if (imageDisplayRef.current) imageDisplayRef.current.clearMask();
@@ -1434,7 +1406,6 @@ const ImageEditor: React.FC = () => {
         if (planPrompt) promptParts.push(planPrompt);
 
     } else {
-        // --- Existing Logic for Exterior/Interior ---
         if (selectedQuickAction) {
             promptParts.push(QUICK_ACTION_PROMPTS[selectedQuickAction]);
             constructedHistory = "Quick Action: " + selectedQuickAction;
@@ -1465,7 +1436,6 @@ const ImageEditor: React.FC = () => {
             if (!constructedHistory.includes("Quick Action")) constructedHistory = "Style: " + selectedStyle;
         }
 
-        // Append intensity instruction if relevant
         if (selectedArchStyle || selectedGardenStyle || selectedInteriorStyle || selectedStyle) {
              if (styleIntensity !== 100) {
                  promptParts.push(`Apply this style transformation with an intensity of ${styleIntensity}%.`);
@@ -1524,7 +1494,6 @@ const ImageEditor: React.FC = () => {
                  constructedHistory += `, Wall AC: On`;
              }
              
-             // Moodboard reference
              if (referenceImage) {
                  promptParts.push("Use the provided reference image as a strict guide for the mood, color palette, and materials. Adopt the style and atmosphere from the reference image.");
                  constructedHistory += `, Moodboard: Attached`;
@@ -1542,8 +1511,8 @@ const ImageEditor: React.FC = () => {
   
   const handleHighResGenerate = async (size: '2K' | '4K') => {
       setGeneratingHighResSize(size);
-      const prompt = `Upscale this image to ${size} resolution. Enhance details, sharpness, and clarity suitable for large-format displays. Maintain the original composition and colors. Do not change the aspect ratio.`; // Added explicit aspect ratio instruction
-      await executeGeneration(prompt, `Upscaled (${size})`, size, false); // Disabled auto-download, just generate
+      const prompt = `Upscale this image to ${size} resolution. Enhance details, sharpness, and clarity suitable for large-format displays. Maintain the original composition and colors. Do not change the aspect ratio.`;
+      await executeGeneration(prompt, `Upscaled (${size})`, size, false);
       setGeneratingHighResSize(null);
   };
 
@@ -1561,7 +1530,6 @@ const ImageEditor: React.FC = () => {
                  downloadBase64AsFile(base64Data, `edited-image-${Date.now()}.${extension}`, mimeType);
              } catch (e) {
                  console.error("Standard download failed:", e);
-                 // Fallback to direct link method just in case
                  const link = document.createElement('a');
                  link.href = url;
                  link.download = `edited-image-${Date.now()}.jpg`;
@@ -1596,6 +1564,9 @@ const ImageEditor: React.FC = () => {
   if (!isDataLoaded) return <div className="flex items-center justify-center h-screen bg-zinc-950"><Spinner /></div>;
 
   if (!hasApiKey) {
+    // Check if we are in AI Studio or generic web
+    const isAIStudio = (window as any).aistudio !== undefined;
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950 text-white">
             <div className="text-center space-y-6 max-w-md p-8 bg-zinc-900 rounded-2xl border border-zinc-800 shadow-2xl">
@@ -1607,15 +1578,36 @@ const ImageEditor: React.FC = () => {
                 </h1>
                 <p className="text-zinc-400 leading-relaxed">
                    {language === 'th' 
-                    ? 'เพื่อประสบการณ์การใช้งานที่ดีที่สุดด้วย Gemini 3 Pro กรุณาเลือก API Key ของคุณ' 
-                    : 'To experience the power of Gemini 3 Pro, please select your API Key.'}
+                    ? 'เพื่อประสบการณ์การใช้งานที่ดีที่สุดด้วย Gemini 3 Pro กรุณาระบุ API Key ของคุณ' 
+                    : 'To experience the power of Gemini 3 Pro, please provide your API Key.'}
                 </p>
-                <button 
-                    onClick={handleApiKeySelect}
-                    className="w-full py-3 px-6 bg-white text-zinc-950 font-bold rounded-lg hover:bg-zinc-200 transition-all transform active:scale-95"
-                >
-                    {language === 'th' ? 'เลือก API Key' : 'Select API Key'}
-                </button>
+                
+                {isAIStudio ? (
+                    <button 
+                        onClick={handleApiKeySelect}
+                        className="w-full py-3 px-6 bg-white text-zinc-950 font-bold rounded-lg hover:bg-zinc-200 transition-all transform active:scale-95"
+                    >
+                        {language === 'th' ? 'เลือก API Key (Google Account)' : 'Select API Key (Google Account)'}
+                    </button>
+                ) : (
+                    <div className="space-y-2">
+                         <input 
+                            type="password" 
+                            placeholder="Enter Gemini API Key" 
+                            value={userApiKey}
+                            onChange={(e) => setUserApiKey(e.target.value)}
+                            className="w-full p-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                         />
+                         <button 
+                            onClick={handleUserApiKeySubmit}
+                            disabled={!userApiKey.trim()}
+                            className="w-full py-3 px-6 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-500 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {language === 'th' ? 'ยืนยัน API Key' : 'Submit API Key'}
+                        </button>
+                    </div>
+                )}
+
                 <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noreferrer" className="block text-xs text-zinc-600 hover:text-zinc-400 underline">
                     {language === 'th' ? 'ข้อมูลเกี่ยวกับ Billing' : 'Billing Information'}
                 </a>

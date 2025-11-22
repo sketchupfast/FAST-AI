@@ -1,11 +1,26 @@
 import { GoogleGenAI, Modality, Type, GenerateContentResponse } from "@google/genai";
 
-// Helper to get a fresh client instance with the current API key
-const getAiClient = () => {
-  return new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+// Helper to get a fresh client instance. 
+// If a custom apiKey is provided (from UI input), use it.
+// Otherwise, fall back to process.env.API_KEY (for dev environment).
+const getAiClient = (customApiKey?: string) => {
+  // Prioritize the custom key provided by the user in the UI
+  if (customApiKey) {
+      return new GoogleGenAI({ apiKey: customApiKey });
+  }
+  
+  // Fallback to process.env for development environment
+  const envKey = process.env.API_KEY as string;
+  if (envKey) {
+      return new GoogleGenAI({ apiKey: envKey });
+  }
+
+  // If neither exists, we can't proceed, but we'll let the specific function handle the error
+  // or return a client that might fail if called.
+  throw new Error("API Key is missing. Please provide a valid Gemini API Key.");
 };
 
-const MAX_IMAGE_DIMENSION = 2048; // Increased to 2048 to support better quality input for upscaling
+const MAX_IMAGE_DIMENSION = 2048;
 
 export interface AnalysisResult {
   architecturalStyle: string;
@@ -14,13 +29,6 @@ export interface AnalysisResult {
   improvementSuggestions: string[];
 }
 
-/**
- * Resizes an image if it's larger than the specified dimensions.
- * Converts the image to JPEG for better compression.
- * @param base64Data The base64 string of the image.
- * @param mimeType The original MIME type of the image.
- * @returns A promise that resolves to the new base64 string, MIME type, and dimensions.
- */
 const resizeImage = (
   base64Data: string,
   mimeType: string,
@@ -31,13 +39,11 @@ const resizeImage = (
     img.onload = () => {
       let { width, height } = img;
       
-      // If the image is already small enough, no need to resize.
       if (width <= MAX_IMAGE_DIMENSION && height <= MAX_IMAGE_DIMENSION) {
         resolve({ resizedBase64: base64Data, resizedMimeType: mimeType, width, height });
         return;
       }
       
-      // Calculate new dimensions
       if (width > height) {
         if (width > MAX_IMAGE_DIMENSION) {
           height = Math.round(height * (MAX_IMAGE_DIMENSION / width));
@@ -61,7 +67,6 @@ const resizeImage = (
       
       ctx.drawImage(img, 0, 0, width, height);
       
-      // Always output as JPEG for efficient file size.
       const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.92);
       
       resolve({
@@ -78,12 +83,6 @@ const resizeImage = (
   });
 };
 
-/**
- * Resizes and crops an image on the client-side to fit target dimensions.
- * @param dataUrl The data URL of the source image.
- * @param targetSize A string representing the target size, e.g., "1920x1080".
- * @returns A promise that resolves to the new data URL of the cropped and resized image.
- */
 export const cropAndResizeImage = (
   dataUrl: string,
   targetSize: string,
@@ -103,13 +102,10 @@ export const cropAndResizeImage = (
 
       let sx = 0, sy = 0, sWidth = sourceWidth, sHeight = sourceHeight;
 
-      // Determine cropping dimensions (center crop) to match the target aspect ratio
       if (sourceRatio > targetRatio) {
-        // Source image is wider than target aspect ratio, so crop the sides
         sWidth = sourceHeight * targetRatio;
         sx = (sourceWidth - sWidth) / 2;
       } else if (sourceRatio < targetRatio) {
-        // Source image is taller than target aspect ratio, so crop the top and bottom
         sHeight = sourceWidth / targetRatio;
         sy = (sourceHeight - sHeight) / 2;
       }
@@ -122,10 +118,8 @@ export const cropAndResizeImage = (
         return reject(new Error('Could not get canvas context for resizing.'));
       }
 
-      // Draw the cropped portion of the source image onto the canvas, resizing it to the target dimensions
       ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, targetWidth, targetHeight);
 
-      // Using JPEG for potentially better file size, with high quality
       resolve(canvas.toDataURL('image/jpeg', 0.95));
     };
     img.onerror = () => {
@@ -142,9 +136,10 @@ export const editImage = async (
   prompt: string,
   maskBase64?: string | null,
   outputSize?: '1K' | '2K' | '4K',
-  referenceImage?: { base64: string; mimeType: string } | null
+  referenceImage?: { base64: string; mimeType: string } | null,
+  apiKey?: string 
 ): Promise<{ data: string; mimeType: string }> => {
-  const ai = getAiClient();
+  const ai = getAiClient(apiKey);
   try {
     const { resizedBase64, resizedMimeType, width, height } = await resizeImage(
       base64ImageData,
@@ -179,12 +174,11 @@ export const editImage = async (
       parts.push({
         inlineData: {
           data: maskBase64,
-          mimeType: 'image/png', // Masks are sent as PNG
+          mimeType: 'image/png',
         },
       });
     }
 
-    // Check prompt for resolution keywords if outputSize is not explicitly set
     const lowerPrompt = prompt.toLowerCase();
     const isHighRes = lowerPrompt.includes('4k') || lowerPrompt.includes('upscale') || lowerPrompt.includes('high resolution');
 
@@ -192,11 +186,9 @@ export const editImage = async (
         responseModalities: [Modality.IMAGE],
     };
 
-    // Calculate aspect ratio to prevent default 1:1 cropping
     const ratio = width / height;
     let targetAspectRatio = "1:1";
     
-    // Map to supported Gemini aspect ratios
     const supportedRatios = {
         "1:1": 1,
         "3:4": 3/4,
@@ -227,14 +219,13 @@ export const editImage = async (
     }
 
     const response: GenerateContentResponse = await ai.models.generateContent({
-      model: 'gemini-3-pro-image-preview', // Upgraded to Gemini 3 Pro
+      model: 'gemini-3-pro-image-preview',
       contents: {
         parts: parts,
       },
       config: config,
     });
     
-    // Check for safety blocks or empty responses BEFORE trying to access candidates
     if (!response.candidates || response.candidates.length === 0) {
         if (response.promptFeedback && response.promptFeedback.blockReason) {
             throw new Error(`Your request was blocked for safety reasons: ${response.promptFeedback.blockReason}. Please modify your prompt or image.`);
@@ -242,15 +233,12 @@ export const editImage = async (
         throw new Error("The AI did not generate a response. Please try again with a different prompt.");
     }
     
-    // Now it's safe to access candidates, but we must also check the content of the candidate
     const candidate = response.candidates[0];
     if (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
-        // This case can happen if the generation is blocked for safety reasons on the candidate level
         if (candidate.finishReason && candidate.finishReason !== 'STOP') {
             const reason = candidate.finishReason;
-            // Provide a more helpful error for the NO_IMAGE finish reason
             if (reason === 'NO_IMAGE') {
-                 throw new Error('The AI could not generate an image from this command. Please try a more explicit image editing command (e.g., "change the background to a beach").');
+                 throw new Error('The AI could not generate an image from this command. Please try a more explicit image editing command.');
             }
             if (reason === 'OTHER') {
                  throw new Error('The AI could not generate an image (Status: OTHER). This often happens with vague prompts or safety filters. Please try rephrasing.');
@@ -269,7 +257,6 @@ export const editImage = async (
       }
     }
     
-    // This should ideally not be reached if the API call is successful and contains an image.
     throw new Error("No image data found in the API response.");
 
   } catch (error) {
@@ -277,7 +264,6 @@ export const editImage = async (
 
     let errorMessage = error instanceof Error ? error.message : String(error);
 
-    // Better handling for objects that look like errors but aren't instances of Error
     if (!(error instanceof Error) && typeof error === 'object' && error !== null) {
          if ('message' in error) {
              errorMessage = String((error as any).message);
@@ -290,32 +276,27 @@ export const editImage = async (
          }
     }
 
-    // Handle rate limiting errors (429)
     if (errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
         throw new Error("You have exceeded your API quota. Please check your billing plan or try again later.");
     }
     
-    // Handle generic network or server errors (500, xhr)
     if (errorMessage.includes('xhr error') || errorMessage.includes('500') || errorMessage.includes('Rpc failed')) {
-      throw new Error("A network error occurred (likely due to image size or connection). Please try again or use a smaller image.");
+      throw new Error("A network error occurred. Please check your internet connection or API key.");
     }
 
-    // If it's one of our specific, user-friendly errors from the try block, rethrow it
     if (error instanceof Error && (
         error.message.startsWith('Your request was blocked') ||
-        error.message.startsWith('The AI did not generate a response') ||
+        error.message.startsWith('The AI did not generate') ||
         error.message.startsWith('No image data found') ||
         error.message.startsWith('Failed to load image') ||
         error.message.startsWith('Generation was stopped') ||
-        error.message.startsWith('The result generated by the AI is empty') ||
-        error.message.startsWith('The AI could not generate an image from this command') ||
-        error.message.startsWith('The AI could not generate an image (Status: OTHER)') ||
-        error.message.startsWith('A network error occurred')
+        error.message.startsWith('The result generated') ||
+        error.message.startsWith('The AI could not generate') ||
+        error.message.startsWith('A network error')
     )) {
         throw error;
     }
     
-    // Provide a user-friendly generic error message for other cases
     throw new Error("Image generation failed. The AI may not be able to fulfill this request. Please try a different prompt or image.");
   }
 };
@@ -323,8 +304,9 @@ export const editImage = async (
 export const analyzeImage = async (
   base64ImageData: string,
   mimeType: string,
+  apiKey?: string
 ): Promise<AnalysisResult> => {
-  const ai = getAiClient();
+  const ai = getAiClient(apiKey);
   try {
     const { resizedBase64, resizedMimeType } = await resizeImage(
       base64ImageData,
@@ -345,7 +327,7 @@ export const analyzeImage = async (
     };
 
     const response: GenerateContentResponse = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview', // Upgraded to Gemini 3 Pro
+      model: 'gemini-3-pro-preview',
       contents: {
         parts: [
           {
@@ -378,31 +360,16 @@ export const analyzeImage = async (
 
   } catch (error) {
     console.error("Error calling Gemini API for analysis:", error);
-    
-    let errorMessage = error instanceof Error ? error.message : String(error);
-     if (!(error instanceof Error) && typeof error === 'object' && error !== null) {
-         if ('message' in error) {
-             errorMessage = String((error as any).message);
-         }
-    }
-
-    if (errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
-        throw new Error("You have exceeded your API quota. Please check your billing plan or try again later.");
-    }
-    
-    if (errorMessage.includes('xhr error') || errorMessage.includes('500') || errorMessage.includes('Rpc failed')) {
-      throw new Error("A connection error occurred. Please try again.");
-    }
-    
-    throw new Error("Image analysis failed. The AI may not be able to process this image. Please try another image.");
+    throw new Error("Image analysis failed.");
   }
 };
 
 export const suggestCameraAngles = async (
   base64ImageData: string,
   mimeType: string,
+  apiKey?: string
 ): Promise<string[]> => {
-  const ai = getAiClient();
+  const ai = getAiClient(apiKey);
   try {
     const { resizedBase64, resizedMimeType } = await resizeImage(
       base64ImageData,
@@ -417,7 +384,7 @@ export const suggestCameraAngles = async (
     };
 
     const response: GenerateContentResponse = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview', // Upgraded to Gemini 3 Pro
+      model: 'gemini-3-pro-preview',
       contents: {
         parts: [
           {
@@ -442,29 +409,10 @@ export const suggestCameraAngles = async (
     const jsonStr = text.trim().startsWith('```json') ? text.trim().replace(/^```json\n|```$/g, '') : text.trim();
     const parsedResult = JSON.parse(jsonStr) as string[];
 
-    if (!Array.isArray(parsedResult) || parsedResult.some(item => typeof item !== 'string')) {
-      throw new Error("AI returned an invalid format for camera angle suggestions.");
-    }
-
     return parsedResult;
 
   } catch (error) {
     console.error("Error calling Gemini API for angle suggestions:", error);
-    let errorMessage = error instanceof Error ? error.message : String(error);
-     if (!(error instanceof Error) && typeof error === 'object' && error !== null) {
-         if ('message' in error) {
-             errorMessage = String((error as any).message);
-         }
-    }
-
-    if (errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
-        throw new Error("You have exceeded your API quota. Please check your billing plan or try again later.");
-    }
-    
-    if (errorMessage.includes('xhr error') || errorMessage.includes('500') || errorMessage.includes('Rpc failed')) {
-      throw new Error("A connection error occurred. Please try again.");
-    }
-    
-    throw new Error("Failed to get suggestions. The AI may not be able to process this image. Please try another image.");
+    throw new Error("Failed to get suggestions.");
   }
 };
