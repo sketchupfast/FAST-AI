@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { editImage, analyzeImage, suggestCameraAngles, type AnalysisResult, cropAndResizeImage } from '../services/geminiService';
 import { saveProjects, loadProjects, clearProjects } from '../services/dbService';
@@ -32,7 +33,6 @@ import Spinner from './Spinner';
 import { PhotoIcon } from './icons/PhotoIcon';
 import { CropIcon } from './icons/CropIcon';
 import { DownlightIcon } from './icons/DownlightIcon';
-import { GithubIcon } from './icons/GithubIcon';
 import { SketchWatercolorIcon } from './icons/SketchWatercolorIcon';
 import { ArchitecturalSketchIcon } from './icons/ArchitecturalSketchIcon';
 import { CameraAngleIcon } from './icons/CameraAngleIcon';
@@ -47,6 +47,7 @@ import { BirdsEyeViewIcon } from './icons/BirdsEyeViewIcon';
 import { LongShotIcon } from './icons/LongShotIcon';
 import { OverTheShoulderIcon } from './icons/OverTheShoulderIcon';
 import { XMarkIcon } from './icons/XMarkIcon';
+import { ShareIcon } from './icons/ShareIcon';
 
 
 export interface ImageState {
@@ -128,9 +129,6 @@ const translations = {
         newProject: "New Project",
         download: "Download",
         reset: "Reset",
-        upscale: "Upscale",
-        download2k: "Upscale 2K",
-        download4k: "Upscale 4K"
     },
     placeholders: {
         promptExterior: "Describe your changes...",
@@ -206,9 +204,6 @@ const translations = {
         newProject: "โปรเจคใหม่",
         download: "ดาวน์โหลด",
         reset: "รีเซ็ต",
-        upscale: "ขยายภาพ",
-        download2k: "ขยายภาพ 2K",
-        download4k: "ขยายภาพ 4K"
     },
     placeholders: {
         promptExterior: "อธิบายสิ่งที่ต้องการแก้ไข...",
@@ -453,6 +448,7 @@ const QUICK_ACTION_PROMPTS: Record<string, string> = {
     brightModernClassicLivingRoom: "Redesign this into a bright, luxurious, and open-plan living and dining space with a modern classic aesthetic. Create a feature wall using large slabs of light-colored marble. Incorporate built-in, backlit shelving to display decorative items. Use a sophisticated color palette of whites, creams, and grays, accented with polished gold details in the furniture and lighting. The space must feel grand, luminous, and impeccably designed.",
     parisianChicLivingRoom: "Transform this interior into an elegant Parisian-style living room. The architecture should feature high ceilings, intricate neoclassical wall paneling (boiserie), and a large, arched window that floods the space with natural light. Furnish the room with a mix of chic, modern furniture and classic pieces to create a timeless look. The color palette should be light and sophisticated. The overall atmosphere must feel effortlessly elegant and chic.",
     
+    // New Interior Room Types Presets
     modernLuxuryKitchen: "Transform the image into a photorealistic, high-end modern luxury kitchen. Feature a large marble kitchen island, sleek handleless cabinetry, and built-in premium appliances. The lighting should be a mix of natural light and warm under-cabinet LED strips. The atmosphere is clean, sophisticated, and expensive.",
     luxurySpaBathroom: "Transform the image into a photorealistic, spa-like luxury bathroom. Include a freestanding soaking tub, a rain shower with glass enclosure, and natural stone tiles (marble or slate). Add ambient lighting and perhaps some greenery/plants for a relaxing, zen atmosphere.",
     modernHomeOffice: "Transform the image into a photorealistic modern home office. Feature a sleek wooden desk, an ergonomic chair, and built-in shelving with organized books and decor. The lighting should be bright and conducive to work, with a view of the outdoors if possible. The style is professional yet comfortable.",
@@ -497,6 +493,7 @@ const INTERIOR_BACKGROUND_PROMPTS = interiorBackgrounds.reduce((acc, bg) => {
 }, {} as Record<string, string>);
 
 const FOREGROUND_PROMPTS: Record<string, string> = {
+  // Exterior
   "Foreground Large Tree": "Add a large tree in the foreground.",
   "Foreground River": "Add a river in the foreground.",
   "Foreground Road": "Add a road in the foreground.",
@@ -509,6 +506,7 @@ const FOREGROUND_PROMPTS: Record<string, string> = {
   "Foreground Water Feature": "Add a water feature in the foreground.",
   "Foreground Low Wall": "Add a low wall in the foreground.",
   
+  // Interior
   "Blurred Coffee Table": "Add a blurred coffee table surface in the immediate foreground to create depth of field.",
   "Indoor Plant": "Add a large, healthy indoor potted plant in the foreground corner.",
   "Sofa Edge": "Add the edge of a stylish sofa in the immediate foreground to frame the view.",
@@ -520,7 +518,6 @@ const FOREGROUND_PROMPTS: Record<string, string> = {
   "Dining Table Edge": "Add the edge of a dining table with place settings in the foreground.",
   "Magazine/Books": "Add a stack of design magazines or books on a surface in the foreground."
 };
-
 
 const OptionButton: React.FC<{
   option: string,
@@ -663,17 +660,16 @@ const ImageToolbar: React.FC<{
   onUndo: () => void;
   onRedo: () => void;
   onReset: () => void;
-  onGenerateHighRes: (size: '2K' | '4K') => void;
   onDownload: () => void;
+  onShare: () => void;
   onTransform: (type: 'rotateLeft' | 'rotateRight' | 'flipHorizontal' | 'flipVertical') => void;
   canUndo: boolean;
   canRedo: boolean;
   canReset: boolean;
   canUpscaleAndSave: boolean;
   isLoading: boolean;
-  generatingSize: '2K' | '4K' | null;
   t: any;
-}> = ({ onUndo, onRedo, onReset, onGenerateHighRes, onDownload, onTransform, canUndo, canRedo, canReset, canUpscaleAndSave, isLoading, generatingSize, t }) => (
+}> = ({ onUndo, onRedo, onReset, onDownload, onShare, onTransform, canUndo, canRedo, canReset, canUpscaleAndSave, isLoading, t }) => (
   <div className="flex items-center gap-2 bg-zinc-900/80 backdrop-blur-md p-1.5 rounded-full border border-zinc-700 shadow-2xl">
     {/* History */}
     <div className="flex items-center gap-1 px-2 border-r border-zinc-700">
@@ -690,39 +686,22 @@ const ImageToolbar: React.FC<{
 
     {/* Main Actions */}
     <div className="flex items-center gap-2 pl-2">
-      <button 
-        onClick={() => onGenerateHighRes('2K')} 
-        disabled={!canUpscaleAndSave || isLoading} 
-        className="flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-full transition-colors disabled:opacity-50 min-w-[100px] justify-center"
-      >
-        {generatingSize === '2K' ? <Spinner className="w-3 h-3 text-white" /> : <SparklesIcon className="w-3 h-3" />} 
-        {generatingSize === '2K' ? t.buttons.generating : t.buttons.download2k}
-      </button>
-      
-      <button 
-        onClick={() => onGenerateHighRes('4K')} 
-        disabled={!canUpscaleAndSave || isLoading} 
-        className="flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-full transition-colors disabled:opacity-50 min-w-[100px] justify-center"
-      >
-         {generatingSize === '4K' ? <Spinner className="w-3 h-3 text-white" /> : <SparklesIcon className="w-3 h-3" />} 
-         {generatingSize === '4K' ? t.buttons.generating : t.buttons.download4k}
-      </button>
-      
-      <div className="w-px h-4 bg-zinc-700 mx-1"></div>
+      <button onClick={onShare} disabled={!canUpscaleAndSave || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors" title="Share"><ShareIcon className="w-4 h-4" /></button>
       <button onClick={onDownload} disabled={!canUpscaleAndSave || isLoading} className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-full transition-colors disabled:opacity-50"><DownloadIcon className="w-3 h-3" /> {t.buttons.download}</button>
       <button onClick={onReset} disabled={!canReset || isLoading} className="p-2 text-red-500 hover:text-red-400 disabled:opacity-30 transition-colors" title={t.buttons.reset}><ResetEditsIcon className="w-4 h-4" /></button>
     </div>
   </div>
 );
 
+// Helper function to safely download base64 as a file using Blob manually constructed from bytes.
 const downloadBase64AsFile = (base64Data: string, filename: string, mimeType: string = 'image/jpeg') => {
     try {
         const byteCharacters = atob(base64Data);
-        const byteArray = new Uint8Array(byteCharacters.length);
+        const byteNumbers = new Uint8Array(byteCharacters.length);
         for (let i = 0; i < byteCharacters.length; i++) {
-            byteArray[i] = byteCharacters.charCodeAt(i);
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
         }
-        const blob = new Blob([byteArray], {type: mimeType});
+        const blob = new Blob([byteNumbers], {type: mimeType});
         
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -744,7 +723,10 @@ const ImageEditor: React.FC = () => {
   const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   
+  // Language State
   const [language, setLanguage] = useState<'en' | 'th'>('en');
+  
+  // Auto-save Status
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
 
   const [prompt, setPrompt] = useState<string>('');
@@ -771,23 +753,28 @@ const ImageEditor: React.FC = () => {
   const [sketchIntensity, setSketchIntensity] = useState<number>(100);
   const [outputSize, setOutputSize] = useState<string>('Original');
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [generatingHighResSize, setGeneratingHighResSize] = useState<'2K' | '4K' | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [sceneType, setSceneType] = useState<SceneType>('exterior');
+  const [sceneType, setSceneType] = useState<SceneType>('exterior'); // Default to exterior
   
+  // Plan Mode States
   const [planConversionMode, setPlanConversionMode] = useState<string>('2d_bw');
   const [selectedRoomType, setSelectedRoomType] = useState<string>('Living Room');
+  // Interior Room Type State
   const [selectedInteriorRoomType, setSelectedInteriorRoomType] = useState<string>('');
+  // Moodboard State
   const [referenceImage, setReferenceImage] = useState<{ base64: string; mimeType: string; dataUrl: string } | null>(null);
   
+  // Color adjustment states
   const [brightness, setBrightness] = useState<number>(100);
   const [contrast, setContrast] = useState<number>(100);
   const [saturation, setSaturation] = useState<number>(100);
   const [sharpness, setSharpness] = useState<number>(100);
   
+  // Vegetation state
   const [treeAge, setTreeAge] = useState<number>(50);
   const [season, setSeason] = useState<number>(50);
 
+  // Special interior lighting state
   const [isCoveLightActive, setIsCoveLightActive] = useState<boolean>(false);
   const [coveLightBrightness, setCoveLightBrightness] = useState<number>(70);
   const [coveLightColor, setCoveLightColor] = useState<string>('Warm'); 
@@ -803,6 +790,7 @@ const ImageEditor: React.FC = () => {
   const [addFourWayAC, setAddFourWayAC] = useState<boolean>(false);
   const [addWallTypeAC, setAddWallTypeAC] = useState<boolean>(false);
 
+  // UI state
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     prompt: true,
     quickActions: true,
@@ -840,23 +828,24 @@ const ImageEditor: React.FC = () => {
   
   const t = translations[language];
   
+  // API Key Check
   const [hasApiKey, setHasApiKey] = useState<boolean>(false);
   const [userApiKey, setUserApiKey] = useState<string>('');
+  const [tempKey, setTempKey] = useState('');
 
   useEffect(() => {
       const checkKey = async () => {
-          // Check if we are in AI Studio environment
           if ((window as any).aistudio) {
                const has = await (window as any).aistudio.hasSelectedApiKey();
                setHasApiKey(has);
           } else {
-              // In production/web, check local storage for previously entered key
               const storedKey = localStorage.getItem('fast-ai-user-key');
               if (storedKey) {
                   setUserApiKey(storedKey);
                   setHasApiKey(true);
               } else {
-                  // If in production and no key, wait for user input
+                  // If no stored key and no aistudio, assume we need a key unless process.env is set (dev)
+                  // However, for published apps, process.env might be empty.
                   setHasApiKey(false);
               }
           }
@@ -874,10 +863,12 @@ const ImageEditor: React.FC = () => {
           }
       }
   };
-  
-  const handleUserApiKeySubmit = () => {
-      if (userApiKey.trim()) {
-          localStorage.setItem('fast-ai-user-key', userApiKey.trim());
+
+  const handleManualKeySubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (tempKey.trim().length > 0) {
+          localStorage.setItem('fast-ai-user-key', tempKey);
+          setUserApiKey(tempKey);
           setHasApiKey(true);
       }
   };
@@ -893,6 +884,7 @@ const ImageEditor: React.FC = () => {
   const imageDisplayRef = useRef<ImageDisplayHandle>(null);
 
   
+  // State for masking mode
   const [brushSize, setBrushSize] = useState<number>(30);
   const [brushColor, setBrushColor] = useState<string>(brushColors[0].value);
   const [isMaskEmpty, setIsMaskEmpty] = useState<boolean>(true);
@@ -906,11 +898,13 @@ const ImageEditor: React.FC = () => {
     };
   }, []);
 
+  // Load state from IndexedDB on component mount
   useEffect(() => {
     let isMounted = true;
     const loadData = async () => {
       try {
         const savedProjects = await loadProjects();
+        // Load saved language preference
         const savedLang = localStorage.getItem('fast-ai-language');
         if (savedLang === 'th' || savedLang === 'en') {
             setLanguage(savedLang);
@@ -950,9 +944,10 @@ const ImageEditor: React.FC = () => {
     };
   }, []);
 
+  // Save state to IndexedDB whenever it changes
   useEffect(() => {
     if (!isDataLoaded) {
-      return;
+      return; // Don't save until initial data has been loaded
     }
     
     const saveData = async () => {
@@ -1046,7 +1041,7 @@ const ImageEditor: React.FC = () => {
               if (activeImageIndex === null) {
                   setActiveImageIndex(currentListSize);
               }
-              setIsProjectModalOpen(false);
+              setIsProjectModalOpen(false); 
           }
       } catch (err) {
           if (mountedRef.current) {
@@ -1108,7 +1103,7 @@ const ImageEditor: React.FC = () => {
     setSelectedInteriorStyle('');
     setSelectedInteriorLighting('');
     setSelectedInteriorRoomType('');
-    setReferenceImage(null);
+    setReferenceImage(null); 
     setSelectedBackgrounds([]);
     setSelectedForegrounds([]);
     setSelectedCameraAngle('');
@@ -1317,15 +1312,16 @@ const ImageEditor: React.FC = () => {
           
           const refImg = (!size && referenceImage) ? referenceImage : null;
 
-          // Pass userApiKey if available (for production environments)
-          const { data: generatedImageBase64, mimeType: generatedMimeType } = await editImage(sourceBase64, sourceMimeType, finalPrompt, maskBase64, size, refImg, userApiKey);
-          
+          // Pass userApiKey to editImage
+          const result = await editImage(sourceBase64, sourceMimeType, finalPrompt, maskBase64, size, refImg, userApiKey);
+          const generatedImageBase64 = result.data;
+          const generatedMimeType = result.mimeType;
+
           if (!mountedRef.current) return;
           
           if (autoDownload) {
              try {
-                const extension = generatedMimeType === 'image/png' ? 'png' : 'jpg';
-                downloadBase64AsFile(generatedImageBase64, `generated-${size}-${Date.now()}.${extension}`, generatedMimeType);
+                downloadBase64AsFile(generatedImageBase64, `generated-${size}-${Date.now()}.${generatedMimeType.split('/')[1]}`, generatedMimeType);
              } catch (downloadErr) {
                 console.error("Auto-download failed, but image was generated.", downloadErr);
                 setError("Image generated, but download failed. You can try downloading from the history.");
@@ -1509,13 +1505,6 @@ const ImageEditor: React.FC = () => {
   const handleRedo = () => { if (activeImage && activeImage.historyIndex < activeImage.history.length - 1) updateActiveImage(img => ({ ...img, historyIndex: img.historyIndex + 1, selectedResultIndex: 0 })); };
   const handleResetEdits = () => { if (window.confirm("Reset?")) updateActiveImage(img => ({ ...img, history: [], historyIndex: -1, selectedResultIndex: null, promptHistory: [] })); };
   
-  const handleHighResGenerate = async (size: '2K' | '4K') => {
-      setGeneratingHighResSize(size);
-      const prompt = `Upscale this image to ${size} resolution. Enhance details, sharpness, and clarity suitable for large-format displays. Maintain the original composition and colors. Do not change the aspect ratio.`;
-      await executeGeneration(prompt, `Upscaled (${size})`, size, false);
-      setGeneratingHighResSize(null);
-  };
-
   const handleDownload = async () => { 
       if (!activeImage) return;
       
@@ -1526,8 +1515,7 @@ const ImageEditor: React.FC = () => {
              try {
                  const base64Data = url.split(',')[1];
                  const mimeType = url.substring(5, url.indexOf(';'));
-                 const extension = mimeType.split('/')[1] || 'jpg';
-                 downloadBase64AsFile(base64Data, `edited-image-${Date.now()}.${extension}`, mimeType);
+                 downloadBase64AsFile(base64Data, `edited-image-${Date.now()}.${mimeType.split('/')[1]}`, mimeType);
              } catch (e) {
                  console.error("Standard download failed:", e);
                  const link = document.createElement('a');
@@ -1547,6 +1535,35 @@ const ImageEditor: React.FC = () => {
         }
       }
   };
+  
+  const handleShare = async () => {
+      if (!activeImage) return;
+      const url = activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex] : activeImage.dataUrl;
+      
+      if (url && navigator.share) {
+          try {
+              const base64Data = url.split(',')[1];
+              const mimeType = url.substring(5, url.indexOf(';'));
+              const byteCharacters = atob(base64Data);
+              const byteNumbers = new Uint8Array(byteCharacters.length);
+              for (let i = 0; i < byteCharacters.length; i++) {
+                  byteNumbers[i] = byteCharacters.charCodeAt(i);
+              }
+              const blob = new Blob([byteNumbers], {type: mimeType});
+              const file = new File([blob], `image.${mimeType.split('/')[1]}`, { type: mimeType });
+
+              await navigator.share({
+                  files: [file],
+                  title: 'My Design',
+                  text: 'Check out this image created with FAST AI Image Editor!'
+              });
+          } catch (e) {
+              console.error("Sharing failed", e);
+          }
+      } else {
+          alert("Web Share API not supported in this browser");
+      }
+  };
 
 
   const selectedImageUrl = activeImage
@@ -1564,9 +1581,6 @@ const ImageEditor: React.FC = () => {
   if (!isDataLoaded) return <div className="flex items-center justify-center h-screen bg-zinc-950"><Spinner /></div>;
 
   if (!hasApiKey) {
-    // Check if we are in AI Studio or generic web
-    const isAIStudio = (window as any).aistudio !== undefined;
-
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950 text-white">
             <div className="text-center space-y-6 max-w-md p-8 bg-zinc-900 rounded-2xl border border-zinc-800 shadow-2xl">
@@ -1574,42 +1588,47 @@ const ImageEditor: React.FC = () => {
                     <SparklesIcon className="w-8 h-8 text-white" />
                 </div>
                 <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
-                    Upgrade to Gemini 3
+                    Setup Gemini 3
                 </h1>
                 <p className="text-zinc-400 leading-relaxed">
                    {language === 'th' 
-                    ? 'เพื่อประสบการณ์การใช้งานที่ดีที่สุดด้วย Gemini 3 Pro กรุณาระบุ API Key ของคุณ' 
-                    : 'To experience the power of Gemini 3 Pro, please provide your API Key.'}
+                    ? 'กรุณาเชื่อมต่อ API Key ของคุณเพื่อเริ่มต้นใช้งาน' 
+                    : 'Please connect your API Key to start using the app.'}
                 </p>
                 
-                {isAIStudio ? (
+                {/* Auto-selection button if supported */}
+                {(window as any).aistudio ? (
                     <button 
                         onClick={handleApiKeySelect}
                         className="w-full py-3 px-6 bg-white text-zinc-950 font-bold rounded-lg hover:bg-zinc-200 transition-all transform active:scale-95"
                     >
-                        {language === 'th' ? 'เลือก API Key (Google Account)' : 'Select API Key (Google Account)'}
+                        {language === 'th' ? 'เลือก API Key (Auto)' : 'Select API Key (Auto)'}
                     </button>
                 ) : (
-                    <div className="space-y-2">
-                         <input 
+                    /* Manual Input Form for Production */
+                    <form onSubmit={handleManualKeySubmit} className="space-y-3">
+                        <input 
                             type="password" 
-                            placeholder="Enter Gemini API Key" 
-                            value={userApiKey}
-                            onChange={(e) => setUserApiKey(e.target.value)}
-                            className="w-full p-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-                         />
-                         <button 
-                            onClick={handleUserApiKeySubmit}
-                            disabled={!userApiKey.trim()}
-                            className="w-full py-3 px-6 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-500 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                            value={tempKey}
+                            onChange={(e) => setTempKey(e.target.value)}
+                            placeholder="Paste your Gemini API Key here"
+                            className="w-full p-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                        <button 
+                            type="submit"
+                            disabled={!tempKey.trim()}
+                            className="w-full py-3 px-6 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {language === 'th' ? 'ยืนยัน API Key' : 'Submit API Key'}
+                            {language === 'th' ? 'เริ่มใช้งาน' : 'Start Using'}
                         </button>
-                    </div>
+                        <p className="text-xs text-zinc-500 mt-2">
+                            Key is stored locally in your browser.
+                        </p>
+                    </form>
                 )}
-
+                
                 <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noreferrer" className="block text-xs text-zinc-600 hover:text-zinc-400 underline">
-                    {language === 'th' ? 'ข้อมูลเกี่ยวกับ Billing' : 'Billing Information'}
+                    {language === 'th' ? 'ข้อมูลเกี่ยวกับ Billing & Key' : 'Get an API Key'}
                 </a>
             </div>
         </div>
@@ -2152,15 +2171,14 @@ const ImageEditor: React.FC = () => {
                                 onUndo={handleUndo}
                                 onRedo={handleRedo}
                                 onReset={handleResetEdits}
-                                onGenerateHighRes={handleHighResGenerate}
                                 onDownload={handleDownload}
+                                onShare={handleShare}
                                 onTransform={handleTransform}
                                 canUndo={canUndo}
                                 canRedo={canRedo}
                                 canReset={canReset}
                                 canUpscaleAndSave={canUpscaleAndSave}
                                 isLoading={isLoading}
-                                generatingSize={generatingHighResSize}
                                 t={t}
                            />
                       </div>
@@ -2186,7 +2204,7 @@ const ImageEditor: React.FC = () => {
                   </div>
                )}
                
-               {/* History (Collapsible at bottom or just simple list) */}
+               {/* History */}
                {activeImage && activeImage.promptHistory.length > 0 && (
                    <div className="mt-6 border-t border-zinc-800 pt-4">
                         <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">History Log</h3>

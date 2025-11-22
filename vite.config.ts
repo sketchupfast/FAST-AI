@@ -1,23 +1,19 @@
-import path from 'path';
-import { defineConfig, loadEnv } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 
-export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, '.', '');
-    return {
-      server: {
-        port: 3000,
-        host: '0.0.0.0',
-      },
-      plugins: [react()],
-      define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
-      },
-      resolve: {
-        alias: {
-          '@': path.resolve(__dirname, '.'),
-        }
-      }
-    };
-});
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  define: {
+    // Define process.env as an empty object so accessing process.env.API_KEY returns undefined
+    // without crashing the app in the browser.
+    'process.env': {}
+  },
+  build: {
+    // Disable sourcemaps in production to prevent users from viewing the original source code
+    sourcemap: false,
+    // Ensure code is minified
+    minify: true,
+    outDir: 'dist'
+  }
+})
