@@ -48,6 +48,8 @@ import { LongShotIcon } from './icons/LongShotIcon';
 import { OverTheShoulderIcon } from './icons/OverTheShoulderIcon';
 import { XMarkIcon } from './icons/XMarkIcon';
 import { ShareIcon } from './icons/ShareIcon';
+import { UpscaleIcon } from './icons/UpscaleIcon';
+import { ArrowPathIcon } from './icons/ArrowPathIcon';
 
 
 export interface ImageState {
@@ -129,6 +131,8 @@ const translations = {
         newProject: "New Project",
         download: "Download",
         reset: "Reset",
+        upscale4k: "Upscale 4K",
+        regenerate: "Re-generate"
     },
     placeholders: {
         promptExterior: "Describe your changes...",
@@ -204,6 +208,8 @@ const translations = {
         newProject: "โปรเจคใหม่",
         download: "ดาวน์โหลด",
         reset: "รีเซ็ต",
+        upscale4k: "ขยายภาพ 4K",
+        regenerate: "สร้างซ้ำ (เดิม)"
     },
     placeholders: {
         promptExterior: "อธิบายสิ่งที่ต้องการแก้ไข...",
@@ -360,6 +366,7 @@ const roomTypeOptions = [
 const exteriorQuickActionList = [
     { id: 'sketchToPhoto', label: 'Sketch to Photo', desc: 'Convert sketch to realism.', icon: <SketchWatercolorIcon className="w-4 h-4"/> },
     { id: 'modernVillageWithProps', label: 'New Village Estate', desc: 'Mixed large & staked trees.' },
+    { id: 'modernVillageIsolated', label: 'New Village (Secluded)', desc: 'No background houses.' },
     { id: 'grandVillageEstate', label: 'Grand Village Estate', desc: 'Hedge fence, propped trees, grand view.' },
     { id: 'poolVillaBright', label: 'Pool Villa', desc: 'Sparkling pool, sunny & vibrant.' },
     { id: 'modernTwilightHome', label: 'Modern Twilight', desc: 'Dusk setting, warm lights.' },
@@ -409,6 +416,7 @@ type SceneType = 'exterior' | 'interior' | 'plan';
 
 const QUICK_ACTION_PROMPTS: Record<string, string> = {
     modernVillageWithProps: "Transform the image into a high-quality, photorealistic architectural photograph capturing the atmosphere of a well-maintained, modern housing estate. The landscape should feature a lush, perfectly manicured green lawn and neat rows of shrubbery. Crucially, include a mix of large, mature trees to create a shady, established feel, alongside newly planted trees with visible wooden support stakes (tree props), typical of a new village development. The lighting should be bright and natural, enhancing the fresh and inviting community feel. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
+    modernVillageIsolated: "Transform the image into a high-quality, photorealistic architectural photograph capturing the atmosphere of a well-maintained, modern housing estate. The landscape should feature a lush, perfectly manicured green lawn and neat rows of shrubbery. Crucially, include a mix of large, mature trees to create a shady, established feel, alongside newly planted trees with visible wooden support stakes (tree props). **CRITICAL INSTRUCTION:** Remove any neighboring houses, buildings, or structures from the background. The background must be replaced with a clear sky or distant natural vegetation to make the house look secluded and private. The lighting should be bright and natural. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it.",
     grandVillageEstate: "Transform the image into a high-quality, photorealistic architectural photograph of a grand and luxurious village estate. The landscape features a perfectly manicured lawn and a neat green hedge fence outlining the property. Crucially, include large, newly planted trees with visible wooden support stakes (tree props). The scene is framed by beautiful, mature trees in the background and foreground, creating a lush 'tree view'. The lighting is bright and natural, emphasizing the spacious and upscale nature of the estate. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     poolVillaBright: "Transform the image into a stunning, high-quality photorealistic architectural photograph of a modern Pool Villa. The key feature must be a beautiful, crystal-clear blue swimming pool, integrated seamlessly into the landscape (foreground or adjacent to the house). The atmosphere should be incredibly bright, sunny, and vibrant, evoking a perfect holiday feeling. The sky is clear blue. Surround the pool with a clean deck, stylish lounge chairs, and lush, green tropical plants. The lighting should be natural and cheerful. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     sereneTwilightEstate: "Transform the image into a high-quality, photorealistic architectural photograph, maintaining the original architecture and camera angle. The scene is set at dusk, with a beautiful twilight sky. Turn on warm, inviting interior lights that are visible through the large glass windows. The landscape must feature a meticulously manicured green lawn. Crucially, frame the house with a large deciduous tree on the left and a tall pine tree on the right. The overall atmosphere should be serene, modern, and luxurious. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
@@ -662,14 +670,17 @@ const ImageToolbar: React.FC<{
   onReset: () => void;
   onDownload: () => void;
   onShare: () => void;
+  onUpscale: () => void;
+  onRegenerate: () => void;
   onTransform: (type: 'rotateLeft' | 'rotateRight' | 'flipHorizontal' | 'flipVertical') => void;
   canUndo: boolean;
   canRedo: boolean;
   canReset: boolean;
   canUpscaleAndSave: boolean;
+  canRegenerate: boolean;
   isLoading: boolean;
   t: any;
-}> = ({ onUndo, onRedo, onReset, onDownload, onShare, onTransform, canUndo, canRedo, canReset, canUpscaleAndSave, isLoading, t }) => (
+}> = ({ onUndo, onRedo, onReset, onDownload, onShare, onUpscale, onRegenerate, onTransform, canUndo, canRedo, canReset, canUpscaleAndSave, canRegenerate, isLoading, t }) => (
   <div className="flex items-center gap-2 bg-zinc-900/80 backdrop-blur-md p-1.5 rounded-full border border-zinc-700 shadow-2xl">
     {/* History */}
     <div className="flex items-center gap-1 px-2 border-r border-zinc-700">
@@ -686,6 +697,15 @@ const ImageToolbar: React.FC<{
 
     {/* Main Actions */}
     <div className="flex items-center gap-2 pl-2">
+      <button onClick={onRegenerate} disabled={!canRegenerate || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors" title={t.buttons.regenerate}>
+          <ArrowPathIcon className="w-4 h-4" />
+      </button>
+      <div className="w-px h-4 bg-zinc-700 mx-1"></div>
+      <button onClick={onUpscale} disabled={!canUpscaleAndSave || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors flex items-center gap-1" title={t.buttons.upscale4k}>
+          <UpscaleIcon className="w-4 h-4" />
+          <span className="text-[10px] font-bold uppercase hidden sm:inline">{t.buttons.upscale4k}</span>
+      </button>
+      <div className="w-px h-4 bg-zinc-700 mx-1"></div>
       <button onClick={onShare} disabled={!canUpscaleAndSave || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors" title="Share"><ShareIcon className="w-4 h-4" /></button>
       <button onClick={onDownload} disabled={!canUpscaleAndSave || isLoading} className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-full transition-colors disabled:opacity-50"><DownloadIcon className="w-3 h-3" /> {t.buttons.download}</button>
       <button onClick={onReset} disabled={!canReset || isLoading} className="p-2 text-red-500 hover:text-red-400 disabled:opacity-30 transition-colors" title={t.buttons.reset}><ResetEditsIcon className="w-4 h-4" /></button>
@@ -1372,6 +1392,25 @@ const ImageEditor: React.FC = () => {
       }
   };
   
+  const handleUpscale = () => {
+    executeGeneration(
+      "Upscale this image to 4K resolution. Enhance details, clarity, and sharpness for large format display. Do not change the composition or aspect ratio.",
+      "Upscale 4K",
+      '4K',
+      false // User can check result first then download
+    );
+  };
+  
+  const handleRegenerate = () => {
+      if (!activeImage || activeImage.apiPromptHistory.length === 0) return;
+      const lastPrompt = activeImage.apiPromptHistory[activeImage.apiPromptHistory.length - 1];
+      if (lastPrompt && lastPrompt !== "Manual (Offline)" && !lastPrompt.startsWith("Transform:")) {
+          executeGeneration(lastPrompt, `Regenerated: ${activeImage.promptHistory[activeImage.promptHistory.length - 1]}`);
+      } else {
+          setError("Cannot regenerate this action.");
+      }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -1577,6 +1616,7 @@ const ImageEditor: React.FC = () => {
   const canRedo = activeImage ? activeImage.historyIndex < activeImage.history.length - 1 : false;
   const canReset = activeImage ? activeImage.history.length > 0 : false;
   const canUpscaleAndSave = !!selectedImageUrl;
+  const canRegenerate = activeImage ? activeImage.apiPromptHistory.length > 0 : false;
 
   if (!isDataLoaded) return <div className="flex items-center justify-center h-screen bg-zinc-950"><Spinner /></div>;
 
@@ -2173,11 +2213,14 @@ const ImageEditor: React.FC = () => {
                                 onReset={handleResetEdits}
                                 onDownload={handleDownload}
                                 onShare={handleShare}
+                                onUpscale={handleUpscale}
+                                onRegenerate={handleRegenerate}
                                 onTransform={handleTransform}
                                 canUndo={canUndo}
                                 canRedo={canRedo}
                                 canReset={canReset}
                                 canUpscaleAndSave={canUpscaleAndSave}
+                                canRegenerate={canRegenerate}
                                 isLoading={isLoading}
                                 t={t}
                            />
