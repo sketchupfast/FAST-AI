@@ -731,12 +731,18 @@ const ImageToolbar: React.FC<{
   </div>
 );
 
-// Helper function to safely download base64 as a file using Blob and URL.createObjectURL
-// This avoids issues with browser limits on data URIs and atob with large strings.
-const downloadBase64AsFile = async (base64Data: string, filename: string, mimeType: string = 'image/jpeg') => {
+// Helper function to safely download base64 as a file using Blob manually constructed from bytes.
+// This is more robust for large files than using fetch on data URIs, which can fail in some browser environments due to length limits.
+const downloadBase64AsFile = (base64Data: string, filename: string, mimeType: string = 'image/jpeg') => {
     try {
-        const res = await fetch(`data:${mimeType};base64,${base64Data}`);
-        const blob = await res.blob();
+        const byteCharacters = atob(base64Data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], {type: mimeType});
+        
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -744,10 +750,11 @@ const downloadBase64AsFile = async (base64Data: string, filename: string, mimeTy
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        // Revoke after a small delay to ensure the download starts
+        setTimeout(() => URL.revokeObjectURL(url), 100);
     } catch (e) {
         console.error("Download failed:", e);
-        throw new Error("Failed to download image. The file might be too large or there was a browser error.");
+        throw new Error("Failed to download image. It might be too large.");
     }
 };
 
@@ -1344,7 +1351,7 @@ const ImageEditor: React.FC = () => {
           // Use safer download method for potentially large files (2K/4K)
           if (autoDownload) {
              try {
-                await downloadBase64AsFile(generatedImageBase64, `generated-${size}-${Date.now()}.jpg`);
+                downloadBase64AsFile(generatedImageBase64, `generated-${size}-${Date.now()}.jpg`);
              } catch (downloadErr) {
                 console.error("Auto-download failed, but image was generated.", downloadErr);
                 setError("Image generated, but download failed. You can try downloading from the history.");
@@ -1546,13 +1553,11 @@ const ImageEditor: React.FC = () => {
       const url = activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex] : activeImage.dataUrl;
       
       if (url) {
-        // If it is base64, use the safer download helper
         if (url.startsWith('data:')) {
              try {
-                 // Extract base64 part
                  const base64Data = url.split(',')[1];
                  const mimeType = url.substring(5, url.indexOf(';'));
-                 await downloadBase64AsFile(base64Data, `edited-image-${Date.now()}.jpg`, mimeType);
+                 downloadBase64AsFile(base64Data, `edited-image-${Date.now()}.jpg`, mimeType);
              } catch (e) {
                  console.error("Standard download failed:", e);
                  // Fallback to direct link method just in case
