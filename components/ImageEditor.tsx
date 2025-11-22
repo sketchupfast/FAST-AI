@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { editImage, analyzeImage, suggestCameraAngles, type AnalysisResult, cropAndResizeImage } from '../services/geminiService';
 import { saveProjects, loadProjects, clearProjects } from '../services/dbService';
@@ -396,6 +397,7 @@ const exteriorQuickActionList = [
     { id: 'foregroundTreeFrame', label: 'Tree Framing', desc: 'Blurred foreground leaves.' },
     { id: 'aerialNatureView', label: 'Aerial Nature View', desc: 'High angle, atmosphere, trees.' },
     { id: 'tropicalStreamGarden', label: 'Tropical Stream', desc: 'Stream, rocks, lush trees.' },
+    { id: 'tropicalPathwayGarden', label: 'Tropical Pathway', desc: 'Dense resort-style path.' },
     { id: 'thaiRiversideRetreat', label: 'Thai Riverside', desc: 'Coconut trees, Plumeria, river view.' },
 ];
 
@@ -446,6 +448,7 @@ const QUICK_ACTION_PROMPTS: Record<string, string> = {
     foregroundTreeFrame: "Transform the image into a professional architectural photograph with a specific composition. Add soft, blurred tree branches and leaves in the immediate foreground to create a natural frame around the building (bokeh effect). The house should be perfectly sharp and in focus, creating a sense of depth as if looking through the foliage. The lighting should be natural and inviting. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     aerialNatureView: "Transform the image into a professional high-angle or aerial architectural photograph. Capture a wide view of the building and its surroundings, emphasizing the lush natural atmosphere. Surround the property with a dense, green forest and well-maintained grounds. The lighting should be soft, atmospheric, and natural, highlighting the connection between the architecture and nature. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     tropicalStreamGarden: "Transform the landscape into a high-quality, photorealistic Tropical Stream Garden. The scene should feature a crystal-clear, shallow stream flowing naturally over smooth river stones and boulders. Include large, flat concrete stepping stones crossing the water, and a wooden deck or terrace in the foreground. The garden is densely populated with lush tropical plants, ferns, and large, sprawling shade trees creating a cool, dappled light effect. The atmosphere is serene, refreshing, and resembles a luxury rainforest resort.",
+    tropicalPathwayGarden: "Transform the garden into a Tropical Pathway Garden. Create a dense, resort-style pathway winding through lush tropical plants, ferns, and large-leafed vegetation. The atmosphere should be cool, shaded, and private, evoking the feeling of a luxury nature resort walkway.",
     thaiRiversideRetreat: "Transform the image into a high-quality, photorealistic architectural photograph of a Thai riverside home. The setting is right on the edge of a wide, calm river. The landscape features tall Coconut palm trees swaying in the breeze in the background. The home's garden is landscaped with native Thai trees, specifically featuring beautiful Plumeria (Frangipani) trees with white flowers. In the water along the riverbank, add natural clumps of reeds, tall grasses, or aquatic plants to create a soft, organic shoreline. The overall atmosphere is peaceful, tropical, and luxurious.",
 
 
@@ -1318,36 +1321,65 @@ const ImageEditor: React.FC = () => {
           const generatedImageBase64 = await editImage(sourceBase64, sourceMimeType, finalPrompt, maskBase64, size, refImg);
           
           if (!mountedRef.current) return;
-          const newResult = `data:image/jpeg;base64,${generatedImageBase64}`;
-          
-          updateActiveImage(img => {
-              const newHistory = img.history.slice(0, img.historyIndex + 1);
-              newHistory.push([newResult]);
-              return {
-                  ...img,
-                  history: newHistory,
-                  historyIndex: newHistory.length - 1,
-                  selectedResultIndex: 0,
-                  promptHistory: [...img.promptHistory.slice(0, img.historyIndex + 1), promptForHistory],
-                  apiPromptHistory: [...img.apiPromptHistory.slice(0, img.historyIndex + 1), promptForGeneration],
-                  lastGeneratedLabels: ['Edited'],
-                  generationTypeHistory: [...img.generationTypeHistory.slice(0, img.historyIndex + 1), 'edit'],
-              };
-          });
+          // Handle Blob response for downloads to avoid browser limits
+          if (autoDownload) {
+             // The service now returns base64, we need to convert to blob for download link
+             const byteCharacters = atob(generatedImageBase64);
+             const byteNumbers = new Array(byteCharacters.length);
+             for (let i = 0; i < byteCharacters.length; i++) {
+                 byteNumbers[i] = byteCharacters.charCodeAt(i);
+             }
+             const byteArray = new Uint8Array(byteNumbers);
+             const blob = new Blob([byteArray], { type: 'image/jpeg' });
+             const blobUrl = URL.createObjectURL(blob);
+
+             const link = document.createElement('a');
+             link.href = blobUrl;
+             link.download = `generated-${size}-${Date.now()}.jpg`;
+             document.body.appendChild(link);
+             link.click();
+             document.body.removeChild(link);
+             URL.revokeObjectURL(blobUrl);
+             
+             // Also update history with base64 for display
+             const newResult = `data:image/jpeg;base64,${generatedImageBase64}`;
+             updateActiveImage(img => {
+                  const newHistory = img.history.slice(0, img.historyIndex + 1);
+                  newHistory.push([newResult]);
+                  return {
+                      ...img,
+                      history: newHistory,
+                      historyIndex: newHistory.length - 1,
+                      selectedResultIndex: 0,
+                      promptHistory: [...img.promptHistory.slice(0, img.historyIndex + 1), promptForHistory],
+                      apiPromptHistory: [...img.apiPromptHistory.slice(0, img.historyIndex + 1), promptForGeneration],
+                      lastGeneratedLabels: ['Edited'],
+                      generationTypeHistory: [...img.generationTypeHistory.slice(0, img.historyIndex + 1), 'edit'],
+                  };
+              });
+
+          } else {
+              const newResult = `data:image/jpeg;base64,${generatedImageBase64}`;
+              updateActiveImage(img => {
+                  const newHistory = img.history.slice(0, img.historyIndex + 1);
+                  newHistory.push([newResult]);
+                  return {
+                      ...img,
+                      history: newHistory,
+                      historyIndex: newHistory.length - 1,
+                      selectedResultIndex: 0,
+                      promptHistory: [...img.promptHistory.slice(0, img.historyIndex + 1), promptForHistory],
+                      apiPromptHistory: [...img.apiPromptHistory.slice(0, img.historyIndex + 1), promptForGeneration],
+                      lastGeneratedLabels: ['Edited'],
+                      generationTypeHistory: [...img.generationTypeHistory.slice(0, img.historyIndex + 1), 'edit'],
+                  };
+              });
+          }
 
           // Reset basic fields
           setPrompt('');
           setSelectedQuickAction('');
           if (imageDisplayRef.current) imageDisplayRef.current.clearMask();
-
-          if (autoDownload) {
-              const link = document.createElement('a');
-              link.href = newResult;
-              link.download = `generated-${size}-${Date.now()}.jpg`;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-          }
 
       } catch (err) {
           setError(err instanceof Error ? err.message : "Error.");
@@ -1501,14 +1533,46 @@ const ImageEditor: React.FC = () => {
 
   const handleDownload = () => { 
       if (!activeImage) return;
-      const link = document.createElement('a');
+      
       const url = activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex] : activeImage.dataUrl;
-      if(url) {
-          link.href = url;
-          link.download = `edited-image-${Date.now()}.jpg`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+      
+      if (url) {
+        // Check if it is base64 to use the blob method (safer for large images)
+        if (url.startsWith('data:')) {
+             try {
+                 const byteCharacters = atob(url.split(',')[1]);
+                 const byteNumbers = new Array(byteCharacters.length);
+                 for (let i = 0; i < byteCharacters.length; i++) {
+                     byteNumbers[i] = byteCharacters.charCodeAt(i);
+                 }
+                 const byteArray = new Uint8Array(byteNumbers);
+                 const blob = new Blob([byteArray], { type: url.substring(5, url.indexOf(';')) });
+                 const blobUrl = URL.createObjectURL(blob);
+    
+                 const link = document.createElement('a');
+                 link.href = blobUrl;
+                 link.download = `edited-image-${Date.now()}.jpg`;
+                 document.body.appendChild(link);
+                 link.click();
+                 document.body.removeChild(link);
+                 URL.revokeObjectURL(blobUrl);
+             } catch (e) {
+                 // Fallback to direct link
+                 const link = document.createElement('a');
+                 link.href = url;
+                 link.download = `edited-image-${Date.now()}.jpg`;
+                 document.body.appendChild(link);
+                 link.click();
+                 document.body.removeChild(link);
+             }
+        } else {
+             const link = document.createElement('a');
+             link.href = url;
+             link.download = `edited-image-${Date.now()}.jpg`;
+             document.body.appendChild(link);
+             link.click();
+             document.body.removeChild(link);
+        }
       }
   };
 
