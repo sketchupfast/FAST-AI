@@ -731,6 +731,25 @@ const ImageToolbar: React.FC<{
   </div>
 );
 
+// Helper function to safely download base64 as a file using Blob and URL.createObjectURL
+// This avoids issues with browser limits on data URIs and atob with large strings.
+const downloadBase64AsFile = async (base64Data: string, filename: string, mimeType: string = 'image/jpeg') => {
+    try {
+        const res = await fetch(`data:${mimeType};base64,${base64Data}`);
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    } catch (e) {
+        console.error("Download failed:", e);
+        throw new Error("Failed to download image. The file might be too large or there was a browser error.");
+    }
+};
 
 const ImageEditor: React.FC = () => {
   const [imageList, setImageList] = useState<ImageState[]>([]);
@@ -1321,25 +1340,15 @@ const ImageEditor: React.FC = () => {
           const generatedImageBase64 = await editImage(sourceBase64, sourceMimeType, finalPrompt, maskBase64, size, refImg);
           
           if (!mountedRef.current) return;
-          // Handle Blob response for downloads to avoid browser limits
+          
+          // Use safer download method for potentially large files (2K/4K)
           if (autoDownload) {
-             // The service now returns base64, we need to convert to blob for download link
-             const byteCharacters = atob(generatedImageBase64);
-             const byteNumbers = new Array(byteCharacters.length);
-             for (let i = 0; i < byteCharacters.length; i++) {
-                 byteNumbers[i] = byteCharacters.charCodeAt(i);
+             try {
+                await downloadBase64AsFile(generatedImageBase64, `generated-${size}-${Date.now()}.jpg`);
+             } catch (downloadErr) {
+                console.error("Auto-download failed, but image was generated.", downloadErr);
+                setError("Image generated, but download failed. You can try downloading from the history.");
              }
-             const byteArray = new Uint8Array(byteNumbers);
-             const blob = new Blob([byteArray], { type: 'image/jpeg' });
-             const blobUrl = URL.createObjectURL(blob);
-
-             const link = document.createElement('a');
-             link.href = blobUrl;
-             link.download = `generated-${size}-${Date.now()}.jpg`;
-             document.body.appendChild(link);
-             link.click();
-             document.body.removeChild(link);
-             URL.revokeObjectURL(blobUrl);
              
              // Also update history with base64 for display
              const newResult = `data:image/jpeg;base64,${generatedImageBase64}`;
@@ -1531,33 +1540,22 @@ const ImageEditor: React.FC = () => {
       setGeneratingHighResSize(null);
   };
 
-  const handleDownload = () => { 
+  const handleDownload = async () => { 
       if (!activeImage) return;
       
       const url = activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex] : activeImage.dataUrl;
       
       if (url) {
-        // Check if it is base64 to use the blob method (safer for large images)
+        // If it is base64, use the safer download helper
         if (url.startsWith('data:')) {
              try {
-                 const byteCharacters = atob(url.split(',')[1]);
-                 const byteNumbers = new Array(byteCharacters.length);
-                 for (let i = 0; i < byteCharacters.length; i++) {
-                     byteNumbers[i] = byteCharacters.charCodeAt(i);
-                 }
-                 const byteArray = new Uint8Array(byteNumbers);
-                 const blob = new Blob([byteArray], { type: url.substring(5, url.indexOf(';')) });
-                 const blobUrl = URL.createObjectURL(blob);
-    
-                 const link = document.createElement('a');
-                 link.href = blobUrl;
-                 link.download = `edited-image-${Date.now()}.jpg`;
-                 document.body.appendChild(link);
-                 link.click();
-                 document.body.removeChild(link);
-                 URL.revokeObjectURL(blobUrl);
+                 // Extract base64 part
+                 const base64Data = url.split(',')[1];
+                 const mimeType = url.substring(5, url.indexOf(';'));
+                 await downloadBase64AsFile(base64Data, `edited-image-${Date.now()}.jpg`, mimeType);
              } catch (e) {
-                 // Fallback to direct link
+                 console.error("Standard download failed:", e);
+                 // Fallback to direct link method just in case
                  const link = document.createElement('a');
                  link.href = url;
                  link.download = `edited-image-${Date.now()}.jpg`;
