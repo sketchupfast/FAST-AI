@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { editImage, analyzeImage, suggestCameraAngles, type AnalysisResult, cropAndResizeImage } from '../services/geminiService';
 import { saveProjects, loadProjects, clearProjects } from '../services/dbService';
@@ -732,15 +731,14 @@ const ImageToolbar: React.FC<{
 );
 
 // Helper function to safely download base64 as a file using Blob manually constructed from bytes.
-// This is more robust for large files than using fetch on data URIs, which can fail in some browser environments due to length limits.
+// This uses Uint8Array directly to avoid stack overflow and reduce memory usage with large arrays.
 const downloadBase64AsFile = (base64Data: string, filename: string, mimeType: string = 'image/jpeg') => {
     try {
         const byteCharacters = atob(base64Data);
-        const byteNumbers = new Array(byteCharacters.length);
+        const byteArray = new Uint8Array(byteCharacters.length);
         for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
+            byteArray[i] = byteCharacters.charCodeAt(i);
         }
-        const byteArray = new Uint8Array(byteNumbers);
         const blob = new Blob([byteArray], {type: mimeType});
         
         const url = URL.createObjectURL(blob);
@@ -1344,21 +1342,23 @@ const ImageEditor: React.FC = () => {
           // Use reference image only for normal generations (not upscaling) and if one is selected
           const refImg = (!size && referenceImage) ? referenceImage : null;
 
-          const generatedImageBase64 = await editImage(sourceBase64, sourceMimeType, finalPrompt, maskBase64, size, refImg);
+          const { data: generatedImageBase64, mimeType: generatedMimeType } = await editImage(sourceBase64, sourceMimeType, finalPrompt, maskBase64, size, refImg);
           
           if (!mountedRef.current) return;
           
           // Use safer download method for potentially large files (2K/4K)
           if (autoDownload) {
              try {
-                downloadBase64AsFile(generatedImageBase64, `generated-${size}-${Date.now()}.jpg`);
+                // Use dynamic mimeType for download filename
+                const extension = generatedMimeType === 'image/png' ? 'png' : 'jpg';
+                downloadBase64AsFile(generatedImageBase64, `generated-${size}-${Date.now()}.${extension}`, generatedMimeType);
              } catch (downloadErr) {
                 console.error("Auto-download failed, but image was generated.", downloadErr);
                 setError("Image generated, but download failed. You can try downloading from the history.");
              }
              
              // Also update history with base64 for display
-             const newResult = `data:image/jpeg;base64,${generatedImageBase64}`;
+             const newResult = `data:${generatedMimeType};base64,${generatedImageBase64}`;
              updateActiveImage(img => {
                   const newHistory = img.history.slice(0, img.historyIndex + 1);
                   newHistory.push([newResult]);
@@ -1375,7 +1375,7 @@ const ImageEditor: React.FC = () => {
               });
 
           } else {
-              const newResult = `data:image/jpeg;base64,${generatedImageBase64}`;
+              const newResult = `data:${generatedMimeType};base64,${generatedImageBase64}`;
               updateActiveImage(img => {
                   const newHistory = img.history.slice(0, img.historyIndex + 1);
                   newHistory.push([newResult]);
@@ -1557,7 +1557,8 @@ const ImageEditor: React.FC = () => {
              try {
                  const base64Data = url.split(',')[1];
                  const mimeType = url.substring(5, url.indexOf(';'));
-                 downloadBase64AsFile(base64Data, `edited-image-${Date.now()}.jpg`, mimeType);
+                 const extension = mimeType.split('/')[1] || 'jpg';
+                 downloadBase64AsFile(base64Data, `edited-image-${Date.now()}.${extension}`, mimeType);
              } catch (e) {
                  console.error("Standard download failed:", e);
                  // Fallback to direct link method just in case

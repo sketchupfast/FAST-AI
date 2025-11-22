@@ -143,7 +143,7 @@ export const editImage = async (
   maskBase64?: string | null,
   outputSize?: '1K' | '2K' | '4K',
   referenceImage?: { base64: string; mimeType: string } | null
-): Promise<string> => {
+): Promise<{ data: string; mimeType: string }> => {
   const ai = getAiClient();
   try {
     const { resizedBase64, resizedMimeType, width, height } = await resizeImage(
@@ -262,7 +262,10 @@ export const editImage = async (
 
     for (const part of candidate.content.parts) {
       if (part.inlineData) {
-        return part.inlineData.data;
+        return {
+            data: part.inlineData.data,
+            mimeType: part.inlineData.mimeType || 'image/jpeg'
+        };
       }
     }
     
