@@ -6,7 +6,6 @@ import ImageDisplay, { type ImageDisplayHandle } from './ImageDisplay';
 import { UndoIcon } from './icons/UndoIcon';
 import { RedoIcon } from './icons/RedoIcon';
 import { DownloadIcon } from './icons/DownloadIcon';
-import { UpscaleIcon } from './icons/UpscaleIcon';
 import { CameraIcon } from './icons/CameraIcon';
 import { LightbulbIcon } from './icons/LightbulbIcon';
 import { ResetEditsIcon } from './icons/ResetEditsIcon';
@@ -129,7 +128,9 @@ const translations = {
         newProject: "New Project",
         download: "Download",
         reset: "Reset",
-        upscale: "Upscale"
+        upscale: "Upscale",
+        download2k: "Download 2K",
+        download4k: "Download 4K"
     },
     placeholders: {
         promptExterior: "Describe your changes...",
@@ -204,7 +205,9 @@ const translations = {
         newProject: "โปรเจคใหม่",
         download: "ดาวน์โหลด",
         reset: "รีเซ็ต",
-        upscale: "ขยายภาพ"
+        upscale: "ขยายภาพ",
+        download2k: "ดาวน์โหลด 2K",
+        download4k: "ดาวน์โหลด 4K"
     },
     placeholders: {
         promptExterior: "อธิบายสิ่งที่ต้องการแก้ไข...",
@@ -637,7 +640,7 @@ const ImageToolbar: React.FC<{
   onUndo: () => void;
   onRedo: () => void;
   onReset: () => void;
-  onUpscale: () => void;
+  onGenerateHighRes: (size: '2K' | '4K') => void;
   onDownload: () => void;
   onTransform: (type: 'rotateLeft' | 'rotateRight' | 'flipHorizontal' | 'flipVertical') => void;
   canUndo: boolean;
@@ -645,8 +648,9 @@ const ImageToolbar: React.FC<{
   canReset: boolean;
   canUpscaleAndSave: boolean;
   isLoading: boolean;
+  generatingSize: '2K' | '4K' | null;
   t: any;
-}> = ({ onUndo, onRedo, onReset, onUpscale, onDownload, onTransform, canUndo, canRedo, canReset, canUpscaleAndSave, isLoading, t }) => (
+}> = ({ onUndo, onRedo, onReset, onGenerateHighRes, onDownload, onTransform, canUndo, canRedo, canReset, canUpscaleAndSave, isLoading, generatingSize, t }) => (
   <div className="flex items-center gap-2 bg-zinc-900/80 backdrop-blur-md p-1.5 rounded-full border border-zinc-700 shadow-2xl">
     {/* History */}
     <div className="flex items-center gap-1 px-2 border-r border-zinc-700">
@@ -663,7 +667,25 @@ const ImageToolbar: React.FC<{
 
     {/* Main Actions */}
     <div className="flex items-center gap-2 pl-2">
-      <button onClick={onUpscale} disabled={!canUpscaleAndSave || isLoading} className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-full transition-colors disabled:opacity-50"><UpscaleIcon className="w-3 h-3" /> {t.buttons.upscale}</button>
+      <button 
+        onClick={() => onGenerateHighRes('2K')} 
+        disabled={!canUpscaleAndSave || isLoading} 
+        className="flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-full transition-colors disabled:opacity-50 min-w-[100px] justify-center"
+      >
+        {generatingSize === '2K' ? <Spinner className="w-3 h-3 text-white" /> : <DownloadIcon className="w-3 h-3" />} 
+        {generatingSize === '2K' ? t.buttons.generating : t.buttons.download2k}
+      </button>
+      
+      <button 
+        onClick={() => onGenerateHighRes('4K')} 
+        disabled={!canUpscaleAndSave || isLoading} 
+        className="flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-full transition-colors disabled:opacity-50 min-w-[100px] justify-center"
+      >
+         {generatingSize === '4K' ? <Spinner className="w-3 h-3 text-white" /> : <DownloadIcon className="w-3 h-3" />} 
+         {generatingSize === '4K' ? t.buttons.generating : t.buttons.download4k}
+      </button>
+      
+      <div className="w-px h-4 bg-zinc-700 mx-1"></div>
       <button onClick={onDownload} disabled={!canUpscaleAndSave || isLoading} className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-full transition-colors disabled:opacity-50"><DownloadIcon className="w-3 h-3" /> {t.buttons.download}</button>
       <button onClick={onReset} disabled={!canReset || isLoading} className="p-2 text-red-500 hover:text-red-400 disabled:opacity-30 transition-colors" title={t.buttons.reset}><ResetEditsIcon className="w-4 h-4" /></button>
     </div>
@@ -707,6 +729,7 @@ const ImageEditor: React.FC = () => {
   const [sketchIntensity, setSketchIntensity] = useState<number>(100);
   const [outputSize, setOutputSize] = useState<string>('Original');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [generatingHighResSize, setGeneratingHighResSize] = useState<'2K' | '4K' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [sceneType, setSceneType] = useState<SceneType>('exterior'); // Default to exterior
   
@@ -775,6 +798,32 @@ const ImageEditor: React.FC = () => {
   const [editingMode, setEditingMode] = useState<EditingMode>('default');
   
   const t = translations[language];
+  
+  // API Key Check
+  const [hasApiKey, setHasApiKey] = useState<boolean>(false);
+
+  useEffect(() => {
+      const checkKey = async () => {
+          if ((window as any).aistudio) {
+               const has = await (window as any).aistudio.hasSelectedApiKey();
+               setHasApiKey(has);
+          } else {
+              setHasApiKey(true); // Fallback for dev outside environment
+          }
+      }
+      checkKey();
+  }, []);
+
+  const handleApiKeySelect = async () => {
+      if((window as any).aistudio) {
+          try {
+              await (window as any).aistudio.openSelectKey();
+              setHasApiKey(true);
+          } catch(e) {
+              console.error("Key selection failed", e);
+          }
+      }
+  };
 
   const toggleSection = (sectionName: string) => {
     setOpenSections(prev => ({ ...prev, [sectionName]: !prev[sectionName] }));
@@ -1180,7 +1229,7 @@ const ImageEditor: React.FC = () => {
       }
   };
 
-  const executeGeneration = async (promptForGeneration: string, promptForHistory: string) => {
+  const executeGeneration = async (promptForGeneration: string, promptForHistory: string, size?: '1K' | '2K' | '4K', autoDownload = false) => {
       if (!activeImage) return;
       let maskBase64: string | null = null;
       if (editingMode === 'object') {
@@ -1206,7 +1255,7 @@ const ImageEditor: React.FC = () => {
           // when doing strict image-to-image editing.
           const finalPrompt = promptForGeneration;
           
-          const generatedImageBase64 = await editImage(sourceBase64, sourceMimeType, finalPrompt, maskBase64);
+          const generatedImageBase64 = await editImage(sourceBase64, sourceMimeType, finalPrompt, maskBase64, size);
           
           if (!mountedRef.current) return;
           const newResult = `data:image/jpeg;base64,${generatedImageBase64}`;
@@ -1230,6 +1279,15 @@ const ImageEditor: React.FC = () => {
           setPrompt('');
           setSelectedQuickAction('');
           if (imageDisplayRef.current) imageDisplayRef.current.clearMask();
+
+          if (autoDownload) {
+              const link = document.createElement('a');
+              link.href = newResult;
+              link.download = `generated-${size}-${Date.now()}.jpg`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+          }
 
       } catch (err) {
           setError(err instanceof Error ? err.message : "Error.");
@@ -1362,7 +1420,14 @@ const ImageEditor: React.FC = () => {
   const handleUndo = () => { if (activeImage && activeImage.historyIndex > -1) updateActiveImage(img => ({ ...img, historyIndex: img.historyIndex - 1, selectedResultIndex: 0 })); };
   const handleRedo = () => { if (activeImage && activeImage.historyIndex < activeImage.history.length - 1) updateActiveImage(img => ({ ...img, historyIndex: img.historyIndex + 1, selectedResultIndex: 0 })); };
   const handleResetEdits = () => { if (window.confirm("Reset?")) updateActiveImage(img => ({ ...img, history: [], historyIndex: -1, selectedResultIndex: null, promptHistory: [] })); };
-  const handleUpscale = () => executeGeneration("Upscale 2x...", "Upscaled");
+  
+  const handleHighResGenerate = async (size: '2K' | '4K') => {
+      setGeneratingHighResSize(size);
+      const prompt = `Upscale this image to ${size} resolution. Enhance details, sharpness, and clarity suitable for large-format displays. Maintain the original composition and colors.`;
+      await executeGeneration(prompt, `Upscaled (${size})`, size, true);
+      setGeneratingHighResSize(null);
+  };
+
   const handleDownload = () => { 
       if (!activeImage) return;
       const link = document.createElement('a');
@@ -1390,6 +1455,35 @@ const ImageEditor: React.FC = () => {
   const canUpscaleAndSave = !!selectedImageUrl;
 
   if (!isDataLoaded) return <div className="flex items-center justify-center h-screen bg-zinc-950"><Spinner /></div>;
+
+  if (!hasApiKey) {
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950 text-white">
+            <div className="text-center space-y-6 max-w-md p-8 bg-zinc-900 rounded-2xl border border-zinc-800 shadow-2xl">
+                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                    <SparklesIcon className="w-8 h-8 text-white" />
+                </div>
+                <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+                    Upgrade to Gemini 3
+                </h1>
+                <p className="text-zinc-400 leading-relaxed">
+                   {language === 'th' 
+                    ? 'เพื่อประสบการณ์การใช้งานที่ดีที่สุดด้วย Gemini 3 Pro กรุณาเลือก API Key ของคุณ' 
+                    : 'To experience the power of Gemini 3 Pro, please select your API Key.'}
+                </p>
+                <button 
+                    onClick={handleApiKeySelect}
+                    className="w-full py-3 px-6 bg-white text-zinc-950 font-bold rounded-lg hover:bg-zinc-200 transition-all transform active:scale-95"
+                >
+                    {language === 'th' ? 'เลือก API Key' : 'Select API Key'}
+                </button>
+                <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noreferrer" className="block text-xs text-zinc-600 hover:text-zinc-400 underline">
+                    {language === 'th' ? 'ข้อมูลเกี่ยวกับ Billing' : 'Billing Information'}
+                </a>
+            </div>
+        </div>
+    );
+  }
 
   return (
     <div className="flex h-screen w-full bg-zinc-950 text-zinc-300 overflow-hidden font-sans">
@@ -1887,7 +1981,7 @@ const ImageEditor: React.FC = () => {
                                 onUndo={handleUndo}
                                 onRedo={handleRedo}
                                 onReset={handleResetEdits}
-                                onUpscale={handleUpscale}
+                                onGenerateHighRes={handleHighResGenerate}
                                 onDownload={handleDownload}
                                 onTransform={handleTransform}
                                 canUndo={canUndo}
@@ -1895,6 +1989,7 @@ const ImageEditor: React.FC = () => {
                                 canReset={canReset}
                                 canUpscaleAndSave={canUpscaleAndSave}
                                 isLoading={isLoading}
+                                generatingSize={generatingHighResSize}
                                 t={t}
                            />
                       </div>

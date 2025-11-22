@@ -1,10 +1,11 @@
 import { GoogleGenAI, Modality, Type, GenerateContentResponse } from "@google/genai";
 
-// It's recommended to initialize the GoogleGenAI client once
-// and reuse it throughout your application.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+// Helper to get a fresh client instance with the current API key
+const getAiClient = () => {
+  return new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+};
 
-const MAX_IMAGE_DIMENSION = 1536; // Max width or height for the largest side. Reduced to prevent payload size errors.
+const MAX_IMAGE_DIMENSION = 2048; // Increased to 2048 to support better quality input for upscaling
 
 export interface AnalysisResult {
   architecturalStyle: string;
@@ -12,49 +13,6 @@ export interface AnalysisResult {
   lightingConditions: string;
   improvementSuggestions: string[];
 }
-
-const RETRY_COUNT = 3; // Total attempts
-const RETRY_DELAY = 1000; // 1 second initial delay
-
-/**
- * A wrapper to retry a function that returns a Promise in case of transient errors.
- * @param fn The asynchronous function to execute.
- * @returns A promise that resolves with the result of the function.
- */
-async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
-  let lastError: Error | undefined;
-  for (let i = 0; i < RETRY_COUNT; i++) {
-    try {
-      return await fn();
-    } catch (error) {
-      lastError = error as Error;
-      // Handle potential non-Error objects
-      const errorMessage = lastError instanceof Error ? lastError.message.toLowerCase() : String(lastError).toLowerCase();
-      
-      // Don't retry on specific client-side or quota errors that are unlikely to succeed on retry.
-      if (
-        errorMessage.includes('blocked') ||
-        errorMessage.includes('429') || // Rate limit
-        errorMessage.includes('resource_exhausted') ||
-        errorMessage.includes('quota') ||
-        errorMessage.includes('400') || // Bad Request (likely a prompt issue, no point retrying)
-        errorMessage.includes('valid') // e.g. "Request contains an invalid argument"
-      ) {
-        console.error('Non-retriable error:', errorMessage);
-        throw lastError;
-      }
-      
-      console.warn(`Attempt ${i + 1} failed. Retrying in ${RETRY_DELAY * (i + 1)}ms...`);
-      // Wait before retrying for server/network errors
-      if (i < RETRY_COUNT - 1) {
-        await new Promise(res => setTimeout(res, RETRY_DELAY * (i + 1))); // Simple linear backoff
-      }
-    }
-  }
-  console.error("All retry attempts failed.");
-  throw lastError;
-}
-
 
 /**
  * Resizes an image if it's larger than the specified dimensions.
@@ -180,15 +138,17 @@ export const editImage = async (
   base64ImageData: string,
   mimeType: string,
   prompt: string,
-  maskBase64?: string | null
+  maskBase64?: string | null,
+  outputSize?: '1K' | '2K' | '4K'
 ): Promise<string> => {
+  const ai = getAiClient();
   try {
     const { resizedBase64, resizedMimeType } = await resizeImage(
       base64ImageData,
       mimeType,
     );
 
-    const parts = [
+    const parts: any[] = [
       {
         inlineData: {
           data: resizedBase64,
@@ -209,15 +169,27 @@ export const editImage = async (
       });
     }
 
-    const response: GenerateContentResponse = await withRetry(() => ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
+    // Check prompt for resolution keywords if outputSize is not explicitly set
+    const lowerPrompt = prompt.toLowerCase();
+    const isHighRes = lowerPrompt.includes('4k') || lowerPrompt.includes('upscale') || lowerPrompt.includes('high resolution');
+
+    const config: any = {
+        responseModalities: [Modality.IMAGE],
+    };
+
+    if (outputSize) {
+        config.imageConfig = { imageSize: outputSize };
+    } else if (isHighRes) {
+        config.imageConfig = { imageSize: '4K' };
+    }
+
+    const response: GenerateContentResponse = await ai.models.generateContent({
+      model: 'gemini-3-pro-image-preview', // Upgraded to Gemini 3 Pro
       contents: {
         parts: parts,
       },
-      config: {
-        responseModalities: [Modality.IMAGE],
-      },
-    }));
+      config: config,
+    });
     
     // Check for safety blocks or empty responses BEFORE trying to access candidates
     if (!response.candidates || response.candidates.length === 0) {
@@ -278,7 +250,6 @@ export const editImage = async (
     }
     
     // Handle generic network or server errors (500, xhr)
-    // 'Rpc failed due to xhr error' is typical for payload size issues or network timeouts
     if (errorMessage.includes('xhr error') || errorMessage.includes('500') || errorMessage.includes('Rpc failed')) {
       throw new Error("A network error occurred (likely due to image size or connection). Please try again or use a smaller image.");
     }
@@ -307,6 +278,7 @@ export const analyzeImage = async (
   base64ImageData: string,
   mimeType: string,
 ): Promise<AnalysisResult> => {
+  const ai = getAiClient();
   try {
     const { resizedBase64, resizedMimeType } = await resizeImage(
       base64ImageData,
@@ -326,8 +298,8 @@ export const analyzeImage = async (
         required: ["architecturalStyle", "keyMaterials", "lightingConditions", "improvementSuggestions"]
     };
 
-    const response: GenerateContentResponse = await withRetry(() => ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+    const response: GenerateContentResponse = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview', // Upgraded to Gemini 3 Pro
       contents: {
         parts: [
           {
@@ -343,14 +315,13 @@ export const analyzeImage = async (
         responseMimeType: "application/json",
         responseSchema: responseSchema,
       },
-    }));
+    });
 
-    if (!response.text) {
+    const text = response.text;
+    if (!text) {
       throw new Error("The AI returned an empty analysis. Please try again.");
     }
-    const text = response.text.trim();
-    // The text might be wrapped in ```json ... ```, need to strip it.
-    const jsonStr = text.startsWith('```json') ? text.replace(/^```json\n|```$/g, '') : text;
+    const jsonStr = text.trim().startsWith('```json') ? text.trim().replace(/^```json\n|```$/g, '') : text.trim();
     const parsedResult = JSON.parse(jsonStr) as AnalysisResult;
 
     if (!parsedResult.architecturalStyle || !parsedResult.improvementSuggestions) {
@@ -385,6 +356,7 @@ export const suggestCameraAngles = async (
   base64ImageData: string,
   mimeType: string,
 ): Promise<string[]> => {
+  const ai = getAiClient();
   try {
     const { resizedBase64, resizedMimeType } = await resizeImage(
       base64ImageData,
@@ -398,8 +370,8 @@ export const suggestCameraAngles = async (
         items: { type: Type.STRING },
     };
 
-    const response: GenerateContentResponse = await withRetry(() => ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+    const response: GenerateContentResponse = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview', // Upgraded to Gemini 3 Pro
       contents: {
         parts: [
           {
@@ -415,13 +387,13 @@ export const suggestCameraAngles = async (
         responseMimeType: "application/json",
         responseSchema: responseSchema,
       },
-    }));
+    });
     
-    if (!response.text) {
+    const text = response.text;
+    if (!text) {
       throw new Error("The AI returned empty suggestions. Please try again.");
     }
-    const text = response.text.trim();
-    const jsonStr = text.startsWith('```json') ? text.replace(/^```json\n|```$/g, '') : text;
+    const jsonStr = text.trim().startsWith('```json') ? text.trim().replace(/^```json\n|```$/g, '') : text.trim();
     const parsedResult = JSON.parse(jsonStr) as string[];
 
     if (!Array.isArray(parsedResult) || parsedResult.some(item => typeof item !== 'string')) {
