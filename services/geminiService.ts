@@ -19,12 +19,12 @@ export interface AnalysisResult {
  * Converts the image to JPEG for better compression.
  * @param base64Data The base64 string of the image.
  * @param mimeType The original MIME type of the image.
- * @returns A promise that resolves to the new base64 string and MIME type.
+ * @returns A promise that resolves to the new base64 string, MIME type, and dimensions.
  */
 const resizeImage = (
   base64Data: string,
   mimeType: string,
-): Promise<{ resizedBase64: string; resizedMimeType: string }> => {
+): Promise<{ resizedBase64: string; resizedMimeType: string; width: number; height: number }> => {
   return new Promise((resolve, reject) => {
     const dataUrl = `data:${mimeType};base64,${base64Data}`;
     const img = new Image();
@@ -33,7 +33,7 @@ const resizeImage = (
       
       // If the image is already small enough, no need to resize.
       if (width <= MAX_IMAGE_DIMENSION && height <= MAX_IMAGE_DIMENSION) {
-        resolve({ resizedBase64: base64Data, resizedMimeType: mimeType });
+        resolve({ resizedBase64: base64Data, resizedMimeType: mimeType, width, height });
         return;
       }
       
@@ -67,6 +67,8 @@ const resizeImage = (
       resolve({
         resizedBase64: resizedDataUrl.split(',')[1],
         resizedMimeType: 'image/jpeg',
+        width,
+        height
       });
     };
     img.onerror = () => {
@@ -139,11 +141,12 @@ export const editImage = async (
   mimeType: string,
   prompt: string,
   maskBase64?: string | null,
-  outputSize?: '1K' | '2K' | '4K'
+  outputSize?: '1K' | '2K' | '4K',
+  referenceImage?: { base64: string; mimeType: string } | null
 ): Promise<string> => {
   const ai = getAiClient();
   try {
-    const { resizedBase64, resizedMimeType } = await resizeImage(
+    const { resizedBase64, resizedMimeType, width, height } = await resizeImage(
       base64ImageData,
       mimeType,
     );
@@ -155,10 +158,22 @@ export const editImage = async (
           mimeType: resizedMimeType,
         },
       },
-      {
-        text: prompt,
-      },
     ];
+
+    if (referenceImage) {
+        const { resizedBase64: refBase64, resizedMimeType: refMimeType } = await resizeImage(
+            referenceImage.base64,
+            referenceImage.mimeType
+        );
+        parts.push({
+            inlineData: {
+                data: refBase64,
+                mimeType: refMimeType
+            }
+        });
+    }
+
+    parts.push({ text: prompt });
 
     if (maskBase64) {
       parts.push({
@@ -177,10 +192,38 @@ export const editImage = async (
         responseModalities: [Modality.IMAGE],
     };
 
+    // Calculate aspect ratio to prevent default 1:1 cropping
+    const ratio = width / height;
+    let targetAspectRatio = "1:1";
+    
+    // Map to supported Gemini aspect ratios
+    const supportedRatios = {
+        "1:1": 1,
+        "3:4": 3/4,
+        "4:3": 4/3,
+        "9:16": 9/16,
+        "16:9": 16/9
+    };
+    
+    let minDiff = Number.MAX_VALUE;
+    for (const [key, val] of Object.entries(supportedRatios)) {
+        const diff = Math.abs(ratio - val);
+        if (diff < minDiff) {
+            minDiff = diff;
+            targetAspectRatio = key;
+        }
+    }
+
     if (outputSize) {
-        config.imageConfig = { imageSize: outputSize };
+        config.imageConfig = { 
+            imageSize: outputSize,
+            aspectRatio: targetAspectRatio 
+        };
     } else if (isHighRes) {
-        config.imageConfig = { imageSize: '4K' };
+        config.imageConfig = { 
+            imageSize: '4K',
+            aspectRatio: targetAspectRatio
+        };
     }
 
     const response: GenerateContentResponse = await ai.models.generateContent({

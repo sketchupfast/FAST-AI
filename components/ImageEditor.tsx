@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { editImage, analyzeImage, suggestCameraAngles, type AnalysisResult, cropAndResizeImage } from '../services/geminiService';
 import { saveProjects, loadProjects, clearProjects } from '../services/dbService';
@@ -95,7 +94,8 @@ const translations = {
         conversionMode: "Conversion Mode",
         roomConfig: "Room Configuration",
         brushSettings: "Brush Settings",
-        manualAdjustments: "Manual Adjustments (Offline)"
+        manualAdjustments: "Manual Adjustments (Offline)",
+        moodboard: "Moodboard & Materials"
     },
     controls: {
         turnOnLights: "Turn On Lights",
@@ -172,7 +172,8 @@ const translations = {
         conversionMode: "โหมดแปลงภาพ",
         roomConfig: "ตั้งค่าห้อง",
         brushSettings: "ตั้งค่าแปรง",
-        manualAdjustments: "ปรับแต่งภาพ (ไม่ต้องใช้เน็ต)"
+        manualAdjustments: "ปรับแต่งภาพ (ไม่ต้องใช้เน็ต)",
+        moodboard: "มู้ดบอร์ดและวัสดุตัวอย่าง"
     },
     controls: {
         turnOnLights: "เปิดไฟ",
@@ -257,6 +258,7 @@ const gardenStyleOptions = [
     { name: 'Modern Natural Garden', description: 'Simple, clean, with a checkerboard path and natural feel.' },
     { name: 'Tropical Pathway Garden', description: 'A dense, resort-style pathway through tropical plants.' },
     { name: 'Thai Stream Garden', description: 'A clear stream flows through rocks and large, shady trees.' },
+    { name: 'Tropical Stream Garden', description: 'A lush rainforest garden with a clear stream, river rocks, stepping stones, and dense shade trees.' },
 ];
 
 const architecturalStyleOptions = [
@@ -270,6 +272,8 @@ const architecturalStyleOptions = [
 ];
 
 const interiorStyleOptions = [
+    { name: 'Modern', description: 'Sharp lines, geometric shapes, polished surfaces, and no decorative patterns.' },
+    { name: 'Modern Luxury', description: 'Combines modern simplicity with luxurious materials like marble, gold accents, and high-gloss surfaces for a sophisticated and glamorous feel.' },
     { name: 'Contemporary', description: 'Clean lines, neutral colors, open spaces, and emphasis on natural light.' },
     { name: 'Scandinavian', description: 'Simple, functional, using light-colored woods and natural fabrics.' },
     { name: 'Japanese', description: 'Serene, simple, close to nature, using materials like bamboo and paper.' },
@@ -277,8 +281,14 @@ const interiorStyleOptions = [
     { name: 'Chinese', description: 'Lacquered wood furniture, screens, and use of red and gold for prosperity.' },
     { name: 'Moroccan', description: 'Vibrant colors, mosaic tiles, metal lanterns, creating a warm atmosphere.' },
     { name: 'Classic', description: 'Elegant and formal, focusing on symmetry, high-quality materials, and carved furniture for a timeless and sophisticated look.' },
-    { name: 'Modern', description: 'Sharp lines, geometric shapes, polished surfaces, and no decorative patterns.' },
-    { name: 'Modern Luxury', description: 'Combines modern simplicity with luxurious materials like marble, gold accents, and high-gloss surfaces for a sophisticated and glamorous feel.' },
+    { name: 'Industrial', description: 'Raw aesthetic with exposed brick, ductwork, concrete floors, and metal accents.' },
+    { name: 'Minimalist', description: 'Extreme simplicity, clean lines, monochromatic palette, open spaces, and lack of clutter.' },
+    { name: 'Tropical', description: 'Brings the outdoors in with lush plants, natural materials like rattan and bamboo, and airy spaces.' },
+    { name: 'Mid-Century Modern', description: 'Retro style from the 1950s-60s, featuring organic curves, teak wood, and functional design.' },
+    { name: 'Bohemian', description: 'Eclectic and free-spirited, mixing patterns, textures, plants, and global artifacts.' },
+    { name: 'Rustic', description: 'Natural beauty, raw wood, stone, earthy colors, and a cozy, farmhouse-like feel.' },
+    { name: 'Art Deco', description: 'Glamorous and bold, featuring geometric patterns, gold/brass accents, velvet, and rich colors.' },
+    { name: 'Coastal', description: 'Light, airy, and breezy, using whites, blues, natural fibers, and nautical elements.' },
 ];
 
 const backgrounds = [
@@ -347,12 +357,24 @@ const roomTypeOptions = [
     "Walk-in Closet",
     "Balcony/Terrace",
     "Kids Bedroom",
-    "Lobby/Entrance"
+    "Lobby/Entrance",
+    "Home Theater",
+    "Home Gym/Fitness",
+    "Game Room",
+    "Laundry Room",
+    "Prayer Room / Altar",
+    "Pantry",
+    "Garage (Interior)",
+    "Kids Playroom",
+    "Large Conference Room",
+    "Seminar Room",
+    "Hotel Lobby",
+    "Restaurant"
 ];
 
 const exteriorQuickActionList = [
     { id: 'sketchToPhoto', label: 'Sketch to Photo', desc: 'Convert sketch to realism.', icon: <SketchWatercolorIcon className="w-4 h-4"/> },
-    { id: 'modernVillageWithProps', label: 'New Village Estate', desc: 'Lawn, shrubs, and staked trees.' },
+    { id: 'modernVillageWithProps', label: 'New Village Estate', desc: 'Mixed large & staked trees.' },
     { id: 'grandVillageEstate', label: 'Grand Village Estate', desc: 'Hedge fence, propped trees, grand view.' },
     { id: 'poolVillaBright', label: 'Pool Villa', desc: 'Sparkling pool, sunny & vibrant.' },
     { id: 'modernTwilightHome', label: 'Modern Twilight', desc: 'Dusk setting, warm lights.' },
@@ -373,10 +395,16 @@ const exteriorQuickActionList = [
     { id: 'classicMansionFormalGarden', label: 'Classic Mansion', desc: 'Formal garden, elegant.' },
     { id: 'foregroundTreeFrame', label: 'Tree Framing', desc: 'Blurred foreground leaves.' },
     { id: 'aerialNatureView', label: 'Aerial Nature View', desc: 'High angle, atmosphere, trees.' },
+    { id: 'tropicalStreamGarden', label: 'Tropical Stream', desc: 'Stream, rocks, lush trees.' },
+    { id: 'thaiRiversideRetreat', label: 'Thai Riverside', desc: 'Coconut trees, Plumeria, river view.' },
 ];
 
 const interiorQuickActionList: { id: string; label: string; desc: string; icon?: React.ReactNode }[] = [
     { id: 'sketchupToPhotoreal', label: 'Sketch to Real', desc: 'Render 3D model to photo.' },
+    { id: 'modernLuxuryKitchen', label: 'Modern Kitchen', desc: 'Clean, marble island, high-end.' },
+    { id: 'luxurySpaBathroom', label: 'Spa Bathroom', desc: 'Stone, soaking tub, ambient light.' },
+    { id: 'modernHomeOffice', label: 'Home Office', desc: 'Productive, sleek, ergonomic.' },
+    { id: 'luxuryDiningRoom', label: 'Luxury Dining', desc: 'Grand table, chandelier, elegant.' },
     { id: 'darkMoodyLuxuryBedroom', label: 'Dark Luxury', desc: 'Moody, charcoal, gold.' },
     { id: 'softModernSanctuary', label: 'Soft Sanctuary', desc: 'Light, curves, peaceful.' },
     { id: 'geometricChicBedroom', label: 'Geometric Chic', desc: 'Patterns, modern, stylish.' },
@@ -394,7 +422,7 @@ type EditingMode = 'default' | 'object';
 type SceneType = 'exterior' | 'interior' | 'plan';
 
 const QUICK_ACTION_PROMPTS: Record<string, string> = {
-    modernVillageWithProps: "Transform the image into a high-quality, photorealistic architectural photograph capturing the atmosphere of a well-maintained, modern housing estate. The landscape should feature a lush, perfectly manicured green lawn and neat rows of shrubbery. Crucially, include newly planted trees with visible wooden support stakes (tree props), typical of a new village development. The lighting should be bright and natural, enhancing the fresh and inviting community feel. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
+    modernVillageWithProps: "Transform the image into a high-quality, photorealistic architectural photograph capturing the atmosphere of a well-maintained, modern housing estate. The landscape should feature a lush, perfectly manicured green lawn and neat rows of shrubbery. Crucially, include a mix of large, mature trees to create a shady, established feel, alongside newly planted trees with visible wooden support stakes (tree props), typical of a new village development. The lighting should be bright and natural, enhancing the fresh and inviting community feel. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     grandVillageEstate: "Transform the image into a high-quality, photorealistic architectural photograph of a grand and luxurious village estate. The landscape features a perfectly manicured lawn and a neat green hedge fence outlining the property. Crucially, include large, newly planted trees with visible wooden support stakes (tree props). The scene is framed by beautiful, mature trees in the background and foreground, creating a lush 'tree view'. The lighting is bright and natural, emphasizing the spacious and upscale nature of the estate. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     poolVillaBright: "Transform the image into a stunning, high-quality photorealistic architectural photograph of a modern Pool Villa. The key feature must be a beautiful, crystal-clear blue swimming pool, integrated seamlessly into the landscape (foreground or adjacent to the house). The atmosphere should be incredibly bright, sunny, and vibrant, evoking a perfect holiday feeling. The sky is clear blue. Surround the pool with a clean deck, stylish lounge chairs, and lush, green tropical plants. The lighting should be natural and cheerful. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     sereneTwilightEstate: "Transform the image into a high-quality, photorealistic architectural photograph, maintaining the original architecture and camera angle. The scene is set at dusk, with a beautiful twilight sky. Turn on warm, inviting interior lights that are visible through the large glass windows. The landscape must feature a meticulously manicured green lawn. Crucially, frame the house with a large deciduous tree on the left and a tall pine tree on the right. The overall atmosphere should be serene, modern, and luxurious. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
@@ -417,6 +445,8 @@ const QUICK_ACTION_PROMPTS: Record<string, string> = {
     classicMansionFormalGarden: "Transform the image into a high-quality, photorealistic architectural photograph of a luxurious, classic-style two-story house, maintaining the original architecture and camera angle. The house should have a pristine white facade with elegant moldings and contrasting black window frames and doors. The lighting should be bright, clear daylight, creating a clean and crisp look. The surrounding landscape must be a meticulously designed formal garden, featuring symmetrical topiary, low boxwood hedges, a neat lawn, and a classic water feature or fountain. The overall mood should be one of timeless elegance and grandeur. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     foregroundTreeFrame: "Transform the image into a professional architectural photograph with a specific composition. Add soft, blurred tree branches and leaves in the immediate foreground to create a natural frame around the building (bokeh effect). The house should be perfectly sharp and in focus, creating a sense of depth as if looking through the foliage. The lighting should be natural and inviting. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     aerialNatureView: "Transform the image into a professional high-angle or aerial architectural photograph. Capture a wide view of the building and its surroundings, emphasizing the lush natural atmosphere. Surround the property with a dense, green forest and well-maintained grounds. The lighting should be soft, atmospheric, and natural, highlighting the connection between the architecture and nature. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
+    tropicalStreamGarden: "Transform the landscape into a high-quality, photorealistic Tropical Stream Garden. The scene should feature a crystal-clear, shallow stream flowing naturally over smooth river stones and boulders. Include large, flat concrete stepping stones crossing the water, and a wooden deck or terrace in the foreground. The garden is densely populated with lush tropical plants, ferns, and large, sprawling shade trees creating a cool, dappled light effect. The atmosphere is serene, refreshing, and resembles a luxury rainforest resort.",
+    thaiRiversideRetreat: "Transform the image into a high-quality, photorealistic architectural photograph of a Thai riverside home. The setting is right on the edge of a wide, calm river. The landscape features tall Coconut palm trees swaying in the breeze in the background. The home's garden is landscaped with native Thai trees, specifically featuring beautiful Plumeria (Frangipani) trees with white flowers. In the water along the riverbank, add natural clumps of reeds, tall grasses, or aquatic plants to create a soft, organic shoreline. The overall atmosphere is peaceful, tropical, and luxurious.",
 
 
     // --- Interior Presets ---
@@ -431,6 +461,12 @@ const QUICK_ACTION_PROMPTS: Record<string, string> = {
     modernEclecticArtLivingRoom: "Transform this living room into an artistic and contemporary eclectic space. Combine different materials like concrete, wood, and metal. The lighting should be modern and integrated, such as LED strips in shelving or ceiling coves. The focal point should be a large, prominent piece of abstract or modern artwork on the main wall. The furniture should be a curated mix of modern styles. The overall atmosphere must feel creative, unique, and sophisticated.",
     brightModernClassicLivingRoom: "Redesign this into a bright, luxurious, and open-plan living and dining space with a modern classic aesthetic. Create a feature wall using large slabs of light-colored marble. Incorporate built-in, backlit shelving to display decorative items. Use a sophisticated color palette of whites, creams, and grays, accented with polished gold details in the furniture and lighting. The space must feel grand, luminous, and impeccably designed.",
     parisianChicLivingRoom: "Transform this interior into an elegant Parisian-style living room. The architecture should feature high ceilings, intricate neoclassical wall paneling (boiserie), and a large, arched window that floods the space with natural light. Furnish the room with a mix of chic, modern furniture and classic pieces to create a timeless look. The color palette should be light and sophisticated. The overall atmosphere must feel effortlessly elegant and chic.",
+    
+    // New Interior Room Types Presets
+    modernLuxuryKitchen: "Transform the image into a photorealistic, high-end modern luxury kitchen. Feature a large marble kitchen island, sleek handleless cabinetry, and built-in premium appliances. The lighting should be a mix of natural light and warm under-cabinet LED strips. The atmosphere is clean, sophisticated, and expensive.",
+    luxurySpaBathroom: "Transform the image into a photorealistic, spa-like luxury bathroom. Include a freestanding soaking tub, a rain shower with glass enclosure, and natural stone tiles (marble or slate). Add ambient lighting and perhaps some greenery/plants for a relaxing, zen atmosphere.",
+    modernHomeOffice: "Transform the image into a photorealistic modern home office. Feature a sleek wooden desk, an ergonomic chair, and built-in shelving with organized books and decor. The lighting should be bright and conducive to work, with a view of the outdoors if possible. The style is professional yet comfortable.",
+    luxuryDiningRoom: "Transform the image into a photorealistic luxury dining room. Center the room around a grand dining table with upholstered chairs. Hang a statement chandelier above the table. The walls could feature wainscoting or textured wallpaper. The atmosphere is elegant and ready for a formal dinner party.",
 };
 
 const brushColors = [
@@ -736,6 +772,10 @@ const ImageEditor: React.FC = () => {
   // Plan Mode States
   const [planConversionMode, setPlanConversionMode] = useState<string>('2d_bw');
   const [selectedRoomType, setSelectedRoomType] = useState<string>('Living Room');
+  // Interior Room Type State
+  const [selectedInteriorRoomType, setSelectedInteriorRoomType] = useState<string>('');
+  // Moodboard State
+  const [referenceImage, setReferenceImage] = useState<{ base64: string; mimeType: string; dataUrl: string } | null>(null);
   
   // Color adjustment states
   const [brightness, setBrightness] = useState<number>(100);
@@ -775,6 +815,8 @@ const ImageEditor: React.FC = () => {
     cameraAngle: false,
     interiorStyle: true,
     interiorQuickActions: true,
+    interiorRoomType: false,
+    moodboard: true,
     livingRoomQuickActions: false,
     artStyle: false,
     background: false,
@@ -881,7 +923,7 @@ const ImageEditor: React.FC = () => {
         }
       } catch (e) {
         console.error("Error loading projects from IndexedDB:", e);
-        setError("Could not load your saved projects. Please try refreshing the page.");
+        setError("Could not load projects. Please try refreshing the page.");
       } finally {
         if (isMounted) {
           setIsDataLoaded(true);
@@ -1006,6 +1048,20 @@ const ImageEditor: React.FC = () => {
     }
   }, [activeImageIndex, imageList.length]);
 
+  const handleReferenceImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        const mimeType = result.substring(5, result.indexOf(';'));
+        const base64 = result.split(',')[1];
+        setReferenceImage({ dataUrl: result, mimeType, base64 });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleRemoveImage = (indexToRemove: number) => {
     setImageList(prevImageList => {
         const newList = prevImageList.filter((_, i) => i !== indexToRemove);
@@ -1044,6 +1100,8 @@ const ImageEditor: React.FC = () => {
     setSelectedGardenStyle('');
     setSelectedInteriorStyle('');
     setSelectedInteriorLighting('');
+    setSelectedInteriorRoomType('');
+    setReferenceImage(null); // Reset moodboard
     setSelectedBackgrounds([]);
     setSelectedForegrounds([]);
     setSelectedCameraAngle('');
@@ -1075,6 +1133,7 @@ const ImageEditor: React.FC = () => {
        selectedArchStyle !== '' ||
        selectedGardenStyle !== '' ||
        selectedInteriorStyle !== '' ||
+       selectedInteriorRoomType !== '' ||
        selectedInteriorLighting !== '' ||
        selectedBackgrounds.length > 0 ||
        selectedForegrounds.length > 0 ||
@@ -1084,6 +1143,7 @@ const ImageEditor: React.FC = () => {
        isDownlightActive ||
        addFourWayAC ||
        addWallTypeAC ||
+       referenceImage !== null ||
        isPlanModeReady
    );
 
@@ -1250,12 +1310,12 @@ const ImageEditor: React.FC = () => {
           const sourceMimeType = sourceDataUrl.substring(5, sourceDataUrl.indexOf(';'));
           const sourceBase64 = sourceDataUrl.split(',')[1];
           
-          // Ensure the prompt is clean and direct.
-          // Removing "As an expert photo editor..." prefix which can confuse the model 
-          // when doing strict image-to-image editing.
           const finalPrompt = promptForGeneration;
           
-          const generatedImageBase64 = await editImage(sourceBase64, sourceMimeType, finalPrompt, maskBase64, size);
+          // Use reference image only for normal generations (not upscaling) and if one is selected
+          const refImg = (!size && referenceImage) ? referenceImage : null;
+
+          const generatedImageBase64 = await editImage(sourceBase64, sourceMimeType, finalPrompt, maskBase64, size, refImg);
           
           if (!mountedRef.current) return;
           const newResult = `data:image/jpeg;base64,${generatedImageBase64}`;
@@ -1330,6 +1390,11 @@ const ImageEditor: React.FC = () => {
         if (selectedQuickAction) {
             promptParts.push(QUICK_ACTION_PROMPTS[selectedQuickAction]);
             constructedHistory = "Quick Action: " + selectedQuickAction;
+        }
+        
+        if (sceneType === 'interior' && selectedInteriorRoomType) {
+             promptParts.push(`Transform the room into a ${selectedInteriorRoomType}.`);
+             if (!constructedHistory.includes("Quick Action")) constructedHistory += `, Room: ${selectedInteriorRoomType}`;
         }
         
         if (selectedArchStyle) {
@@ -1410,6 +1475,12 @@ const ImageEditor: React.FC = () => {
                  promptParts.push(`Install a modern wall-mounted air conditioner unit on the upper part of the wall.`);
                  constructedHistory += `, Wall AC: On`;
              }
+             
+             // Moodboard reference
+             if (referenceImage) {
+                 promptParts.push("Use the provided reference image as a strict guide for the mood, color palette, and materials. Adopt the style and atmosphere from the reference image.");
+                 constructedHistory += `, Moodboard: Attached`;
+             }
         }
     }
 
@@ -1423,7 +1494,7 @@ const ImageEditor: React.FC = () => {
   
   const handleHighResGenerate = async (size: '2K' | '4K') => {
       setGeneratingHighResSize(size);
-      const prompt = `Upscale this image to ${size} resolution. Enhance details, sharpness, and clarity suitable for large-format displays. Maintain the original composition and colors.`;
+      const prompt = `Upscale this image to ${size} resolution. Enhance details, sharpness, and clarity suitable for large-format displays. Maintain the original composition and colors. Do not change the aspect ratio.`; // Added explicit aspect ratio instruction
       await executeGeneration(prompt, `Upscaled (${size})`, size, true);
       setGeneratingHighResSize(null);
   };
@@ -1711,6 +1782,34 @@ const ImageEditor: React.FC = () => {
                         <CollapsibleSection title={t.sections.prompt} sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-4 h-4"/>}>
                             <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={t.placeholders.promptInterior} className="w-full bg-zinc-950 border border-zinc-700 rounded-md p-3 text-sm text-zinc-200 placeholder-zinc-600" rows={3} />
                         </CollapsibleSection>
+                        <CollapsibleSection title={t.sections.moodboard} sectionKey="moodboard" isOpen={openSections.moodboard} onToggle={() => toggleSection('moodboard')} icon={<TextureIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                            <div className="space-y-3">
+                                {!referenceImage ? (
+                                    <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-zinc-700 rounded-lg hover:border-red-500 hover:bg-zinc-800/50 transition-colors cursor-pointer group">
+                                        <PhotoIcon className="w-6 h-6 text-zinc-500 group-hover:text-red-500 mb-2"/>
+                                        <span className="text-xs font-medium text-zinc-400 group-hover:text-zinc-200 text-center">
+                                            {language === 'th' ? 'อัปโหลดภาพตัวอย่าง' : 'Upload Reference Image'}
+                                        </span>
+                                        <input type="file" accept="image/*" onChange={handleReferenceImageChange} className="hidden" />
+                                    </label>
+                                ) : (
+                                    <div className="relative group">
+                                        <div className="aspect-video w-full rounded-lg overflow-hidden border border-zinc-700 bg-zinc-950">
+                                            <img src={referenceImage.dataUrl} alt="Moodboard" className="w-full h-full object-cover" />
+                                        </div>
+                                        <button 
+                                            onClick={() => setReferenceImage(null)}
+                                            className="absolute top-2 right-2 p-1.5 bg-red-600 hover:bg-red-500 text-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <XMarkIcon className="w-3 h-3" />
+                                        </button>
+                                        <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/60 backdrop-blur rounded text-[10px] text-white">
+                                            {language === 'th' ? 'ใช้งานเป็น Reference' : 'Using as Reference'}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </CollapsibleSection>
                         <CollapsibleSection title={t.sections.quickActions} sectionKey="interiorQuickActions" isOpen={openSections.interiorQuickActions} onToggle={() => toggleSection('interiorQuickActions')} icon={<StarIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                              <div className="space-y-2">
                                  {interiorQuickActionList.map(action => (
@@ -1724,6 +1823,18 @@ const ImageEditor: React.FC = () => {
                                  ))}
                              </div>
                         </CollapsibleSection>
+                        <CollapsibleSection title={t.sections.roomConfig} sectionKey="interiorRoomType" isOpen={openSections.interiorRoomType} onToggle={() => toggleSection('interiorRoomType')} icon={<HomeIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                            <div className="grid grid-cols-2 gap-2">
+                                {roomTypeOptions.map(room => (
+                                    <OptionButton
+                                        key={room}
+                                        option={room}
+                                        isSelected={selectedInteriorRoomType === room}
+                                        onClick={() => setSelectedInteriorRoomType(prev => prev === room ? '' : room)}
+                                    />
+                                ))}
+                            </div>
+                        </CollapsibleSection>
                         <CollapsibleSection title={t.sections.artStyle} sectionKey="artStyle" isOpen={openSections.artStyle} onToggle={() => toggleSection('artStyle')} icon={<SparklesIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             <div className="flex flex-wrap gap-2">
                                 {styleOptions.map(s => <OptionButton key={s.name} option={s.name} isSelected={selectedStyle === s.name} onClick={() => setSelectedStyle(prev => prev === s.name ? '' : s.name)} />)}
@@ -1732,7 +1843,7 @@ const ImageEditor: React.FC = () => {
                         </CollapsibleSection>
                         <CollapsibleSection title={t.sections.interiorStyle} sectionKey="interiorStyle" isOpen={openSections.interiorStyle} onToggle={() => toggleSection('interiorStyle')} icon={<HomeIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             <div className="grid grid-cols-2 gap-2">
-                                {interiorStyleOptions.slice(0, 6).map(s => <OptionButton key={s.name} option={s.name} isSelected={selectedInteriorStyle === s.name} onClick={() => setSelectedInteriorStyle(prev => prev === s.name ? '' : s.name)} />)}
+                                {interiorStyleOptions.slice(0, 16).map(s => <OptionButton key={s.name} option={s.name} isSelected={selectedInteriorStyle === s.name} onClick={() => setSelectedInteriorStyle(prev => prev === s.name ? '' : s.name)} />)}
                             </div>
                             {selectedInteriorStyle && <IntensitySlider value={styleIntensity} onChange={setStyleIntensity} t={t} />}
                         </CollapsibleSection>
