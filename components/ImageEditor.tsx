@@ -50,6 +50,7 @@ import { XMarkIcon } from './icons/XMarkIcon';
 import { ShareIcon } from './icons/ShareIcon';
 import { UpscaleIcon } from './icons/UpscaleIcon';
 import { ArrowPathIcon } from './icons/ArrowPathIcon';
+import { KeyIcon } from './icons/KeyIcon';
 
 
 export interface ImageState {
@@ -821,8 +822,7 @@ const ImageEditor: React.FC = () => {
     archStyle: false,
     cameraAngle: false,
     interiorStyle: true,
-    interiorQuickActions: true,
-    interiorRoomType: false,
+    interiorQuickActions: true,    interiorRoomType: false,
     moodboard: true,
     livingRoomQuickActions: false,
     artStyle: false,
@@ -886,10 +886,20 @@ const ImageEditor: React.FC = () => {
 
   const handleManualKeySubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      if (tempKey.trim().length > 0) {
-          localStorage.setItem('fast-ai-user-key', tempKey);
-          setUserApiKey(tempKey);
+      const trimmedKey = tempKey.trim();
+      if (trimmedKey.length > 0) {
+          localStorage.setItem('fast-ai-user-key', trimmedKey);
+          setUserApiKey(trimmedKey);
           setHasApiKey(true);
+      }
+  };
+
+  const handleResetKey = () => {
+      if(confirm(language === 'th' ? 'คุณต้องการเปลี่ยน API Key ใช่หรือไม่?' : 'Do you want to change your API Key?')) {
+        localStorage.removeItem('fast-ai-user-key');
+        setUserApiKey('');
+        setHasApiKey(false);
+        setTempKey('');
       }
   };
 
@@ -2161,6 +2171,18 @@ const ImageEditor: React.FC = () => {
                     {saveStatus === 'saved' && <span className="text-green-500">{t.header.saved}</span>}
                     {saveStatus === 'error' && <span className="text-red-500">{t.header.error}</span>}
                 </div>
+                
+                {/* Change Key Button (Only show if key exists) */}
+                {hasApiKey && !(window as any).aistudio && (
+                     <button 
+                        onClick={handleResetKey}
+                        className="p-2 text-zinc-400 hover:text-yellow-400 hover:bg-zinc-800 rounded-md transition-colors"
+                        title={language === 'th' ? 'เปลี่ยน API Key' : 'Change API Key'}
+                     >
+                        <KeyIcon className="w-5 h-5"/>
+                     </button>
+                )}
+
                 <button onClick={toggleLanguage} className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded border border-zinc-700">
                     {language === 'en' ? 'TH' : 'EN'}
                 </button>
