@@ -117,6 +117,20 @@ export const cropAndResizeImage = (
   });
 };
 
+// Internal function to call the API with a specific model
+const generateImageWithModel = async (
+  modelName: string,
+  parts: any[],
+  config: any,
+  apiKey?: string
+): Promise<GenerateContentResponse> => {
+  const ai = getAiClient(apiKey);
+  return await ai.models.generateContent({
+    model: modelName,
+    contents: { parts: parts },
+    config: config,
+  });
+};
 
 export const editImage = async (
   base64ImageData: string,
@@ -127,7 +141,6 @@ export const editImage = async (
   referenceImage?: { base64: string; mimeType: string } | null,
   apiKey?: string
 ): Promise<{ data: string; mimeType: string }> => {
-  const ai = getAiClient(apiKey);
   try {
     const { resizedBase64, resizedMimeType, width, height } = await resizeImage(
       base64ImageData,
@@ -204,15 +217,46 @@ export const editImage = async (
             imageSize: '4K',
             aspectRatio: targetAspectRatio
         };
+    } else {
+        // Default aspect ratio if no size specified
+        config.imageConfig = {
+            aspectRatio: targetAspectRatio
+        };
     }
 
-    const response: GenerateContentResponse = await ai.models.generateContent({
-      model: 'gemini-3-pro-image-preview',
-      contents: {
-        parts: parts,
-      },
-      config: config,
-    });
+    let response: GenerateContentResponse;
+    
+    // 1. Try Gemini 3 Pro (Best Quality)
+    try {
+        console.log("Attempting generation with gemini-3-pro-image-preview...");
+        response = await generateImageWithModel('gemini-3-pro-image-preview', parts, config, apiKey);
+    } catch (error: any) {
+        // Check for Quota Exceeded (429) or Permission issues (403/404) or specific Model Overloaded (503)
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const isQuotaError = errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED') || errorMessage.includes('quota');
+        const isModelError = errorMessage.includes('404') || errorMessage.includes('403') || errorMessage.includes('not found') || errorMessage.includes('503');
+
+        if (isQuotaError || isModelError) {
+             console.warn(`Gemini 3 Pro failed (${errorMessage}). Falling back to Gemini 2.5 Flash Image.`);
+             
+             // 2. Fallback to Gemini 2.5 Flash Image (Better availability/Lower Quota)
+             // Note: 2.5 Flash Image does not support 'imageSize' config, remove it.
+             const fallbackConfig = { ...config };
+             if (fallbackConfig.imageConfig) {
+                 delete fallbackConfig.imageConfig.imageSize; // Remove 4K/2K request for fallback
+             }
+             
+             try {
+                response = await generateImageWithModel('gemini-2.5-flash-image', parts, fallbackConfig, apiKey);
+             } catch (fallbackError) {
+                 // If fallback also fails, throw the original error or the fallback error
+                 console.error("Fallback failed:", fallbackError);
+                 throw fallbackError;
+             }
+        } else {
+            throw error;
+        }
+    }
     
     if (!response.candidates || response.candidates.length === 0) {
         if (response.promptFeedback && response.promptFeedback.blockReason) {
@@ -257,11 +301,15 @@ export const editImage = async (
     }
 
     if (errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
-        throw new Error("API quota exceeded. Check billing or try again later.");
+        throw new Error("API quota exceeded. Please wait a moment or check your plan.");
+    }
+    
+    if (errorMessage.includes('Invalid API Key') || errorMessage.includes('API key not valid')) {
+        throw new Error("Invalid API Key. Please check your settings.");
     }
     
     if (errorMessage.includes('xhr error') || errorMessage.includes('500') || errorMessage.includes('Rpc failed')) {
-      throw new Error("Network error. Please try again.");
+      throw new Error("Network error. Please check your internet connection and try again.");
     }
 
     if (error instanceof Error) {
