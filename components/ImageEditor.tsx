@@ -99,7 +99,8 @@ const translations = {
         roomConfig: "Room Configuration",
         brushSettings: "Brush Settings",
         manualAdjustments: "Manual Adjustments (Offline)",
-        moodboard: "Moodboard & Materials"
+        moodboard: "Moodboard & Materials",
+        flooring: "Flooring & Materials"
     },
     controls: {
         turnOnLights: "Turn On Lights",
@@ -176,7 +177,8 @@ const translations = {
         roomConfig: "ตั้งค่าห้อง",
         brushSettings: "ตั้งค่าแปรง",
         manualAdjustments: "ปรับแต่งภาพ (ไม่ต้องใช้เน็ต)",
-        moodboard: "มู้ดบอร์ดและวัสดุตัวอย่าง"
+        moodboard: "มู้ดบอร์ดและวัสดุตัวอย่าง",
+        flooring: "วัสดุพื้น"
     },
     controls: {
         turnOnLights: "เปิดไฟ",
@@ -366,6 +368,19 @@ const roomTypeOptions = [
     "Spa / Wellness Room"
 ];
 
+const flooringOptions = [
+    "Light Wood Parquet",
+    "Dark Wood Planks",
+    "White Marble",
+    "Black Marble",
+    "Polished Concrete",
+    "Beige Tiles",
+    "Grey Slate Tiles",
+    "Cream Carpet",
+    "Terrazzo",
+    "Herringbone Wood"
+];
+
 const exteriorQuickActionList = [
     { id: 'sketchToPhoto', label: 'Sketch to Photo', desc: 'Convert sketch to realism.', icon: <SketchWatercolorIcon className="w-4 h-4"/> },
     { id: 'modernVillageWithProps', label: 'New Village Estate', desc: 'Mixed large & staked trees.' },
@@ -411,6 +426,13 @@ const interiorQuickActionList: { id: string; label: string; desc: string; icon?:
     { id: 'modernEclecticArtLivingRoom', label: 'Eclectic Art', desc: 'Creative, unique, modern.' },
     { id: 'brightModernClassicLivingRoom', label: 'Bright Classic', desc: 'Marble, light, grand.' },
     { id: 'parisianChicLivingRoom', label: 'Parisian Chic', desc: 'Paneling, high ceilings.' },
+];
+
+const planQuickActionList: { id: string; label: string; desc: string; icon?: React.ReactNode }[] = [
+    { id: 'furnishEmptyPlan', label: 'Furnish Plan', desc: 'Populate empty plan with furniture.', icon: <HomeIcon className="w-4 h-4"/> },
+    { id: 'blueprintStyle', label: 'Blueprint Style', desc: 'Classic blue technical blueprint.', icon: <ArchitecturalSketchIcon className="w-4 h-4"/> },
+    { id: 'handDrawnPlan', label: 'Hand-drawn Sketch', desc: 'Artistic ink and marker style.', icon: <SketchWatercolorIcon className="w-4 h-4"/> },
+    { id: 'cleanCad', label: 'Clean CAD', desc: 'Sharp B&W technical drawing.', icon: <PlanIcon className="w-4 h-4"/> },
 ];
 
 
@@ -464,6 +486,12 @@ const QUICK_ACTION_PROMPTS: Record<string, string> = {
     luxurySpaBathroom: "Transform the room into a 'Spa Bathroom' with ambient lighting and natural stone tiles for a relaxing, zen atmosphere. Include a freestanding soaking tub, a rain shower, and minimal decor to foster tranquility.",
     modernHomeOffice: "Transform the image into a photorealistic modern home office. Feature a sleek wooden desk, an ergonomic chair, and built-in shelving with organized books and decor. The lighting should be bright and conducive to work, with a view of the outdoors if possible. The style is professional yet comfortable.",
     luxuryDiningRoom: "Transform the image into a photorealistic luxury dining room. Center the room around a grand dining table with upholstered chairs. Hang a statement chandelier above the table. The walls could feature wainscoting or textured wallpaper. The atmosphere is elegant and ready for a formal dinner party.",
+
+    // Plan Presets
+    furnishEmptyPlan: "Populate this empty floor plan with modern, stylish furniture appropriate for each room. Add beds in bedrooms, sofas and TV units in living areas, dining sets, and kitchen fixtures. Ensure the furniture scale is realistic and the layout is functional. Keep the walls and structural elements exactly as they are.",
+    blueprintStyle: "Transform this image into a classic architectural blueprint. Use a deep blue background with crisp white lines for walls, windows, and doors. Include standard architectural symbols and technical annotations style. The result should look like a professional construction document.",
+    handDrawnPlan: "Convert this floor plan into an artistic hand-drawn architectural sketch. Use loose, expressive ink lines and marker-style coloring. The drawing should look organic and creative, like a concept sketch by an architect.",
+    cleanCad: "Clean up this floor plan into a sharp, high-contrast black and white CAD drawing. Remove any noise, blur, or existing colors. Make wall lines thick and black, and other details thin and precise. The result should be a vector-like technical drawing.",
 };
 
 const brushColors = [
@@ -783,6 +811,8 @@ const ImageEditor: React.FC = () => {
   // Plan Mode States
   const [planConversionMode, setPlanConversionMode] = useState<string>('2d_bw');
   const [selectedRoomType, setSelectedRoomType] = useState<string>('Living Room');
+  const [selectedFlooring, setSelectedFlooring] = useState<string>('');
+  
   // Interior Room Type State
   const [selectedInteriorRoomType, setSelectedInteriorRoomType] = useState<string>('');
   // Moodboard State
@@ -845,6 +875,8 @@ const ImageEditor: React.FC = () => {
     projectHistory: false,
     planConversion: true,
     perspectiveConfig: true,
+    planQuickActions: true,
+    planFlooring: true,
   });
   
   const [editingMode, setEditingMode] = useState<EditingMode>('default');
@@ -1143,6 +1175,8 @@ const ImageEditor: React.FC = () => {
     setIsDownlightActive(false);
     setAddFourWayAC(false);
     setAddWallTypeAC(false);
+    setPlanConversionMode('2d_bw');
+    setSelectedFlooring('');
   };
 
   const updateActiveImage = (updater: (image: ImageState) => ImageState) => {
@@ -1444,25 +1478,37 @@ const ImageEditor: React.FC = () => {
     
     if (sceneType === 'plan') {
         if (editingMode !== 'object') {
-            let planPrompt = "";
-            if (planConversionMode === '2d_bw') {
-                planPrompt = "Transform this image into a professional, high-contrast black and white 2D architectural floor plan. Remove all colors and textures. Emphasize clear wall lines, door swings, and window symbols. The result should look like a clean CAD drawing or technical blueprint.";
-                constructedHistory = "Plan: 2D Black & White";
-            } else if (planConversionMode === '2d_real') {
-                planPrompt = "Transform this into a realistic colored 2D floor plan. Top-down view. Apply realistic textures to floors (e.g., wood parquet, tiles, carpet). Show furniture layout clearly with realistic top-down symbols and soft drop shadows. Keep architectural lines crisp.";
-                constructedHistory = "Plan: 2D Realistic";
-            } else if (planConversionMode === '3d_iso') {
-                planPrompt = "Transform this 2D floor plan into a stunning 3D isometric cutaway render. Extrude the walls to show height. Furnish the rooms with modern furniture appropriate for the layout. Add realistic lighting and shadows to create depth. The style should be photorealistic and architectural.";
-                constructedHistory = "Plan: 3D Isometric";
-            } else if (planConversionMode === '3d_top') {
-                planPrompt = "Transform this 2D floor plan into a realistic 3D top-down view (bird's eye view). Render realistic floor materials, 3D furniture models from above, and soft ambient occlusion shadows. It should look like a photograph of a roofless model house from directly above.";
-                constructedHistory = "Plan: 3D Top-Down";
-            } else if (planConversionMode === 'perspective') {
-                const styleText = selectedInteriorStyle ? `in a ${selectedInteriorStyle} style` : "in a modern style";
-                planPrompt = `Transform this floor plan into a photorealistic eye-level interior perspective view of the ${selectedRoomType} ${styleText}. Interpret the layout from the plan to generate the room. Use photorealistic materials, natural lighting, and detailed furniture. The view should be immersive, as if standing inside the room.`;
-                constructedHistory = `Plan: ${selectedRoomType} Perspective`;
+            // Quick Actions for Plan
+            if (selectedQuickAction) {
+                promptParts.push(QUICK_ACTION_PROMPTS[selectedQuickAction]);
+                constructedHistory = "Plan Action: " + selectedQuickAction;
+            } else {
+                let planPrompt = "";
+                if (planConversionMode === '2d_bw') {
+                    planPrompt = "Transform this image into a professional, high-contrast black and white 2D architectural floor plan. Remove all colors and textures. Emphasize clear wall lines, door swings, and window symbols. The result should look like a clean CAD drawing or technical blueprint.";
+                    constructedHistory = "Plan: 2D Black & White";
+                } else if (planConversionMode === '2d_real') {
+                    planPrompt = "Transform this into a realistic colored 2D floor plan. Top-down view. Apply realistic textures to floors. Show furniture layout clearly with realistic top-down symbols and soft drop shadows. Keep architectural lines crisp.";
+                    constructedHistory = "Plan: 2D Realistic";
+                } else if (planConversionMode === '3d_iso') {
+                    planPrompt = "Transform this 2D floor plan into a stunning 3D isometric cutaway render. Extrude the walls to show height. Furnish the rooms with modern furniture appropriate for the layout. Add realistic lighting and shadows to create depth. The style should be photorealistic and architectural.";
+                    constructedHistory = "Plan: 3D Isometric";
+                } else if (planConversionMode === '3d_top') {
+                    planPrompt = "Transform this 2D floor plan into a realistic 3D top-down view (bird's eye view). Render realistic floor materials, 3D furniture models from above, and soft ambient occlusion shadows. It should look like a photograph of a roofless model house from directly above.";
+                    constructedHistory = "Plan: 3D Top-Down";
+                } else if (planConversionMode === 'perspective') {
+                    const styleText = selectedInteriorStyle ? `in a ${selectedInteriorStyle} style` : "in a modern style";
+                    planPrompt = `Transform this floor plan into a photorealistic eye-level interior perspective view of the ${selectedRoomType} ${styleText}. Interpret the layout from the plan to generate the room. Use photorealistic materials, natural lighting, and detailed furniture. The view should be immersive, as if standing inside the room.`;
+                    constructedHistory = `Plan: ${selectedRoomType} Perspective`;
+                }
+                if (planPrompt) promptParts.push(planPrompt);
+
+                // Add Flooring
+                if (selectedFlooring && planConversionMode !== '2d_bw') {
+                    promptParts.push(`Use ${selectedFlooring} for the flooring material.`);
+                    if(!constructedHistory.includes("Flooring")) constructedHistory += `, Floor: ${selectedFlooring}`;
+                }
             }
-            if (planPrompt) promptParts.push(planPrompt);
         } else {
             if (!constructedHistory) constructedHistory = "Plan Edit: Object";
         }
@@ -2097,6 +2143,23 @@ const ImageEditor: React.FC = () => {
                             <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={editingMode === 'object' ? t.placeholders.promptMask : t.placeholders.promptPlan} className="w-full bg-zinc-950 border border-zinc-700 rounded-md p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none" rows={3} />
                         </CollapsibleSection>
 
+                        {/* Plan Quick Actions */}
+                        <CollapsibleSection title={t.sections.quickActions} sectionKey="planQuickActions" isOpen={openSections.planQuickActions} onToggle={() => toggleSection('planQuickActions')} icon={<StarIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                             <div className="space-y-2">
+                                 {planQuickActionList.map(action => (
+                                    <PreviewCard 
+                                        key={action.id}
+                                        label={action.label} 
+                                        description={action.desc}
+                                        isSelected={selectedQuickAction === action.id} 
+                                        onClick={() => handleQuickActionClick(action.id)} 
+                                        icon={action.icon}
+                                        isNested
+                                    />
+                                 ))}
+                             </div>
+                        </CollapsibleSection>
+
                         {/* Plan Transformation Mode */}
                         <CollapsibleSection title={t.sections.conversionMode} sectionKey="planConversion" isOpen={openSections.planConversion} onToggle={() => toggleSection('planConversion')} icon={<PlanIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             <div className="space-y-2">
@@ -2112,6 +2175,22 @@ const ImageEditor: React.FC = () => {
                                 ))}
                             </div>
                         </CollapsibleSection>
+                        
+                        {/* Flooring Config (Visible for Realistic/3D/Perspective modes) */}
+                        {planConversionMode !== '2d_bw' && (
+                             <CollapsibleSection title={t.sections.flooring} sectionKey="planFlooring" isOpen={openSections.planFlooring} onToggle={() => toggleSection('planFlooring')} icon={<TextureIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {flooringOptions.map(floor => (
+                                        <OptionButton
+                                            key={floor}
+                                            option={floor}
+                                            isSelected={selectedFlooring === floor}
+                                            onClick={() => setSelectedFlooring(prev => prev === floor ? '' : floor)}
+                                        />
+                                    ))}
+                                </div>
+                            </CollapsibleSection>
+                        )}
 
                         {/* Additional Config for Perspective Mode */}
                         {planConversionMode === 'perspective' && (
