@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { editImage, analyzeImage, suggestCameraAngles, type AnalysisResult, cropAndResizeImage } from '../services/geminiService';
 import { saveProjects, loadProjects, clearProjects } from '../services/dbService';
@@ -290,6 +291,7 @@ const interiorStyleOptions = [
     { name: 'Rustic', description: 'Natural beauty, raw wood, stone, earthy colors, and a cozy, farmhouse-like feel.' },
     { name: 'Art Deco', description: 'Glamorous and bold, featuring geometric patterns, gold/brass accents, velvet, and rich colors.' },
     { name: 'Coastal', description: 'Light, airy, and breezy, using whites, blues, natural fibers, and nautical elements.' },
+    { name: 'Zen', description: 'Focuses on harmony, balance, and relaxation, using natural materials, soft lighting, and minimalist decor.' },
 ];
 
 const backgrounds = [
@@ -360,7 +362,8 @@ const roomTypeOptions = [
     "Large Conference Room",
     "Seminar Room",
     "Hotel Lobby",
-    "Restaurant"
+    "Restaurant",
+    "Spa / Wellness Room"
 ];
 
 const exteriorQuickActionList = [
@@ -458,7 +461,7 @@ const QUICK_ACTION_PROMPTS: Record<string, string> = {
     
     // New Interior Room Types Presets
     modernLuxuryKitchen: "Transform the image into a photorealistic, high-end modern luxury kitchen. Feature a large marble kitchen island, sleek handleless cabinetry, and built-in premium appliances. The lighting should be a mix of natural light and warm under-cabinet LED strips. The atmosphere is clean, sophisticated, and expensive.",
-    luxurySpaBathroom: "Transform the image into a photorealistic, spa-like luxury bathroom. Include a freestanding soaking tub, a rain shower with glass enclosure, and natural stone tiles (marble or slate). Add ambient lighting and perhaps some greenery/plants for a relaxing, zen atmosphere.",
+    luxurySpaBathroom: "Transform the room into a 'Spa Bathroom' with ambient lighting and natural stone tiles for a relaxing, zen atmosphere. Include a freestanding soaking tub, a rain shower, and minimal decor to foster tranquility.",
     modernHomeOffice: "Transform the image into a photorealistic modern home office. Feature a sleek wooden desk, an ergonomic chair, and built-in shelving with organized books and decor. The lighting should be bright and conducive to work, with a view of the outdoors if possible. The style is professional yet comfortable.",
     luxuryDiningRoom: "Transform the image into a photorealistic luxury dining room. Center the room around a grand dining table with upholstered chairs. Hang a statement chandelier above the table. The walls could feature wainscoting or textured wallpaper. The atmosphere is elegant and ready for a formal dinner party.",
 };
@@ -1440,25 +1443,29 @@ const ImageEditor: React.FC = () => {
     let constructedHistory = prompt || "Generated Image";
     
     if (sceneType === 'plan') {
-        let planPrompt = "";
-        if (planConversionMode === '2d_bw') {
-            planPrompt = "Transform this image into a professional, high-contrast black and white 2D architectural floor plan. Remove all colors and textures. Emphasize clear wall lines, door swings, and window symbols. The result should look like a clean CAD drawing or technical blueprint.";
-            constructedHistory = "Plan: 2D Black & White";
-        } else if (planConversionMode === '2d_real') {
-            planPrompt = "Transform this into a realistic colored 2D floor plan. Top-down view. Apply realistic textures to floors (e.g., wood parquet, tiles, carpet). Show furniture layout clearly with realistic top-down symbols and soft drop shadows. Keep architectural lines crisp.";
-            constructedHistory = "Plan: 2D Realistic";
-        } else if (planConversionMode === '3d_iso') {
-            planPrompt = "Transform this 2D floor plan into a stunning 3D isometric cutaway render. Extrude the walls to show height. Furnish the rooms with modern furniture appropriate for the layout. Add realistic lighting and shadows to create depth. The style should be photorealistic and architectural.";
-            constructedHistory = "Plan: 3D Isometric";
-        } else if (planConversionMode === '3d_top') {
-            planPrompt = "Transform this 2D floor plan into a realistic 3D top-down view (bird's eye view). Render realistic floor materials, 3D furniture models from above, and soft ambient occlusion shadows. It should look like a photograph of a roofless model house from directly above.";
-            constructedHistory = "Plan: 3D Top-Down";
-        } else if (planConversionMode === 'perspective') {
-            const styleText = selectedInteriorStyle ? `in a ${selectedInteriorStyle} style` : "in a modern style";
-            planPrompt = `Transform this floor plan into a photorealistic eye-level interior perspective view of the ${selectedRoomType} ${styleText}. Interpret the layout from the plan to generate the room. Use photorealistic materials, natural lighting, and detailed furniture. The view should be immersive, as if standing inside the room.`;
-            constructedHistory = `Plan: ${selectedRoomType} Perspective`;
+        if (editingMode !== 'object') {
+            let planPrompt = "";
+            if (planConversionMode === '2d_bw') {
+                planPrompt = "Transform this image into a professional, high-contrast black and white 2D architectural floor plan. Remove all colors and textures. Emphasize clear wall lines, door swings, and window symbols. The result should look like a clean CAD drawing or technical blueprint.";
+                constructedHistory = "Plan: 2D Black & White";
+            } else if (planConversionMode === '2d_real') {
+                planPrompt = "Transform this into a realistic colored 2D floor plan. Top-down view. Apply realistic textures to floors (e.g., wood parquet, tiles, carpet). Show furniture layout clearly with realistic top-down symbols and soft drop shadows. Keep architectural lines crisp.";
+                constructedHistory = "Plan: 2D Realistic";
+            } else if (planConversionMode === '3d_iso') {
+                planPrompt = "Transform this 2D floor plan into a stunning 3D isometric cutaway render. Extrude the walls to show height. Furnish the rooms with modern furniture appropriate for the layout. Add realistic lighting and shadows to create depth. The style should be photorealistic and architectural.";
+                constructedHistory = "Plan: 3D Isometric";
+            } else if (planConversionMode === '3d_top') {
+                planPrompt = "Transform this 2D floor plan into a realistic 3D top-down view (bird's eye view). Render realistic floor materials, 3D furniture models from above, and soft ambient occlusion shadows. It should look like a photograph of a roofless model house from directly above.";
+                constructedHistory = "Plan: 3D Top-Down";
+            } else if (planConversionMode === 'perspective') {
+                const styleText = selectedInteriorStyle ? `in a ${selectedInteriorStyle} style` : "in a modern style";
+                planPrompt = `Transform this floor plan into a photorealistic eye-level interior perspective view of the ${selectedRoomType} ${styleText}. Interpret the layout from the plan to generate the room. Use photorealistic materials, natural lighting, and detailed furniture. The view should be immersive, as if standing inside the room.`;
+                constructedHistory = `Plan: ${selectedRoomType} Perspective`;
+            }
+            if (planPrompt) promptParts.push(planPrompt);
+        } else {
+            if (!constructedHistory) constructedHistory = "Plan Edit: Object";
         }
-        if (planPrompt) promptParts.push(planPrompt);
 
     } else {
         if (selectedQuickAction) {
@@ -1780,12 +1787,10 @@ const ImageEditor: React.FC = () => {
                </div>
             ) : (
                <>
-                  {sceneType !== 'plan' && (
-                    <div className="flex gap-2 mb-4">
+                  <div className="flex gap-2 mb-4">
                          <ModeButton label={t.modes.general} icon={<SparklesIcon className="w-4 h-4" />} mode="default" activeMode={editingMode} onClick={setEditingMode} />
                          <ModeButton label={t.modes.object} icon={<BrushIcon className="w-4 h-4" />} mode="object" activeMode={editingMode} onClick={setEditingMode} />
-                    </div>
-                  )}
+                  </div>
                   
                    {/* Common Tools (Offline) */}
                    <CollapsibleSection title={t.sections.manualAdjustments} sectionKey="manualAdjustments" isOpen={openSections.manualAdjustments} onToggle={() => toggleSection('manualAdjustments')} icon={<AdjustmentsIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
@@ -1992,7 +1997,7 @@ const ImageEditor: React.FC = () => {
                         </CollapsibleSection>
                         <CollapsibleSection title={t.sections.interiorStyle} sectionKey="interiorStyle" isOpen={openSections.interiorStyle} onToggle={() => toggleSection('interiorStyle')} icon={<HomeIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             <div className="grid grid-cols-2 gap-2">
-                                {interiorStyleOptions.slice(0, 16).map(s => <OptionButton key={s.name} option={s.name} isSelected={selectedInteriorStyle === s.name} onClick={() => setSelectedInteriorStyle(prev => prev === s.name ? '' : s.name)} />)}
+                                {interiorStyleOptions.map(s => <OptionButton key={s.name} option={s.name} isSelected={selectedInteriorStyle === s.name} onClick={() => setSelectedInteriorStyle(prev => prev === s.name ? '' : s.name)} />)}
                             </div>
                             {selectedInteriorStyle && <IntensitySlider value={styleIntensity} onChange={setStyleIntensity} t={t} />}
                         </CollapsibleSection>
@@ -2089,11 +2094,11 @@ const ImageEditor: React.FC = () => {
                   {sceneType === 'plan' && (
                     <>
                         <CollapsibleSection title={t.sections.prompt} sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-4 h-4"/>}>
-                            <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={t.placeholders.promptPlan} className="w-full bg-zinc-950 border border-zinc-700 rounded-md p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none" rows={3} />
+                            <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={editingMode === 'object' ? t.placeholders.promptMask : t.placeholders.promptPlan} className="w-full bg-zinc-950 border border-zinc-700 rounded-md p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none" rows={3} />
                         </CollapsibleSection>
 
                         {/* Plan Transformation Mode */}
-                        <CollapsibleSection title={t.sections.conversionMode} sectionKey="planConversion" isOpen={openSections.planConversion} onToggle={() => toggleSection('planConversion')} icon={<PlanIcon className="w-4 h-4"/>}>
+                        <CollapsibleSection title={t.sections.conversionMode} sectionKey="planConversion" isOpen={openSections.planConversion} onToggle={() => toggleSection('planConversion')} icon={<PlanIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             <div className="space-y-2">
                                 {planConversionModes.map(mode => (
                                     <PreviewCard
@@ -2110,7 +2115,7 @@ const ImageEditor: React.FC = () => {
 
                         {/* Additional Config for Perspective Mode */}
                         {planConversionMode === 'perspective' && (
-                            <CollapsibleSection title={t.sections.roomConfig} sectionKey="perspectiveConfig" isOpen={openSections.perspectiveConfig} onToggle={() => toggleSection('perspectiveConfig')} icon={<HomeIcon className="w-4 h-4"/>}>
+                            <CollapsibleSection title={t.sections.roomConfig} sectionKey="perspectiveConfig" isOpen={openSections.perspectiveConfig} onToggle={() => toggleSection('perspectiveConfig')} icon={<HomeIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                                 <div className="space-y-4">
                                     <div>
                                         <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">Room Type</label>
