@@ -318,7 +318,7 @@ const backgrounds = [
 
 const interiorBackgrounds = ["No Change", "View from Inside to Garden", "Ground Floor View (Hedge & House)", "Upper Floor View (House)", "Bangkok High-rise View", "Mountain View", "Cityscape", "Beach", "Forest", "Chao Phraya River View", "Public Park"];
 
-const foregrounds = ["Foreground Large Tree", "Foreground River", "Foreground Road", "Foreground Flowers", "Foreground Fence", "Top Corner Leaves", "Bottom Corner Bush", "Foreground Lawn", "Foreground Pathway", "Foreground Water Feature", "Foreground Low Wall"];
+const foregrounds = ["Foreground Large Tree", "Foreground River", "Foreground Road", "Foreground Flowers", "Foreground Fence", "Top Corner Leaves", "Bottom Corner Bush", "Foreground Lawn", "Foreground Pathway", "Foreground Water Feature", "Foreground Low Wall", "Foreground Bangkok Traffic", "Foreground Bangkok Electric Poles"];
 const interiorForegrounds = [
     "Blurred Coffee Table", 
     "Indoor Plant", 
@@ -452,7 +452,7 @@ const QUICK_ACTION_PROMPTS: Record<string, string> = {
     luxuryHomeDusk: "Transform this architectural photo to have the atmosphere of a luxury modern home at dusk, shortly after a light rain. The ground and surfaces should be wet, creating beautiful reflections from the lighting. The lighting should be a mix of warm, inviting interior lights glowing from the windows and strategically placed exterior architectural up-lights. The overall mood should be sophisticated, warm, and serene, mimicking a high-end real estate photograph. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     morningHousingEstate: "Transform this architectural photo to capture the serene atmosphere of an early morning in a modern housing estate. The lighting should be soft, warm, and golden, characteristic of the hour just after sunrise, casting long, gentle shadows. The air should feel fresh and clean, with a hint of morning dew on the manicured lawns. The overall mood should be peaceful, pristine, and inviting, typical of a high-end, well-maintained residential village. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     urbanSketch: "Transform this image into a beautiful urban watercolor sketch. It should feature loose, expressive ink linework combined with soft, atmospheric watercolor washes. The style should capture the gritty yet vibrant energy of a bustling city street, similar to the work of a professional urban sketch artist. Retain the core composition but reinterpret it in this artistic, hand-drawn style. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
-    sketchToPhoto: "Transform this architectural sketch into a high-quality, photorealistic architectural photograph. Interpret the lines and shapes to create realistic materials like concrete, glass, and wood. Add natural daylight, soft shadows, and a suitable natural environment around the building to make it look like a real photo. The final image should be hyper-realistic and detailed. Do NOT change the design of the building. Maintain the exact geometry and structure from the sketch. Do NOT change the camera angle. Completely REMOVE all black outlines, wireframes, and sketch artifacts.",
+    sketchToPhoto: "Transform this architectural sketch into a high-end, award-winning real estate photograph suitable for a luxury housing project sales brochure. Intelligently analyze the sketch to create the most beautiful and realistic interpretation possible. STRICTLY ELIMINATE all black outlines, SketchUp lines, wireframes, and digital artifacts. Render hyper-realistic materials (glass, wood, stone, concrete) with physical depth. Lighting must be spectacular—either a vibrant sunny day or a warm, inviting twilight with interior lights glowing. Add a lush, professionally landscaped garden with realistic trees and grass. The final result must be indistinguishable from a photograph taken by a professional architectural photographer using a high-end camera.",
     architecturalSketch: "Transform the image into a sophisticated architectural concept sketch. The main subject should be rendered with a blend of clean linework and artistic, semi-realistic coloring, showcasing materials like wood, concrete, and glass. Superimpose this rendering over a background that resembles a technical blueprint or a working draft, complete with faint construction lines, dimensional annotations, and handwritten notes. The final result should look like a page from an architect's sketchbook, merging a polished design with the raw, creative process. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     midjourneyArtlineSketch: "Transform the image into a stunning architectural artline sketch, in the style of a midjourney AI generation. The image should feature a blend of photorealistic rendering of the building with clean, precise art lines overlaid. The background should be a vintage or parchment-like paper with faint blueprint lines, handwritten notes, and technical annotations, giving it the feel of an architect's creative draft. The final result must be a sophisticated and artistic representation, seamlessly merging technical drawing with a photorealistic render. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     pristineShowHome: "Transform the image into a high-quality, photorealistic photograph of a modern house, as if it were brand new. Meticulously arrange the landscape to be neat and tidy, featuring a perfectly manicured lawn, a clean driveway and paths, and well-placed trees. Add a neat, green hedge fence around the property. The lighting should be bright, natural daylight, creating a clean and inviting atmosphere typical of a show home in a housing estate. Ensure the final result looks like a professional real estate photo, maintaining the original architecture. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
@@ -469,7 +469,7 @@ const QUICK_ACTION_PROMPTS: Record<string, string> = {
 
 
     // --- Interior Presets ---
-    sketchupToPhotoreal: "Transform this SketchUp or 3D model image into a hyper-realistic, photorealistic 3D render. Focus on creating natural lighting, realistic material textures (like wood grain, fabric weaves, metal reflections), and soft shadows to make it look like a real photograph taken with a professional camera. Do NOT change the design of the room. Maintain the exact geometry and structure from the model. Do NOT change the camera angle. Completely REMOVE all black outlines, wireframes, and sketch artifacts.",
+    sketchupToPhotoreal: "Transform this SketchUp interior model into a hyper-realistic, high-end luxury photograph. **CRITICAL: STRICTLY PRESERVE the original design, geometry, and furniture layout 100%.** Do NOT change the architecture or camera angle. **REMOVE ALL SKETCH LINES:** Eliminate black outlines, wireframes, and edge lines completely. Apply **PBR (Physically Based Rendering) materials** with perfect texture and reflectivity. Use **IES Lighting profiles** to create realistic, shaped downlight beams on walls and warm, layered illumination. **ADD LUXURY PROPS:** significantly enhance the scene with high-end decor—designer vases, coffee table books, plush cushions, and fresh flowers to create a sophisticated, 'lived-in' luxury showroom atmosphere.",
     darkMoodyLuxuryBedroom: "Redesign this bedroom into a dark, moody, and luxurious sanctuary. Use a sophisticated color palette of deep charcoals, rich browns, and black, accented with warm, soft lighting from designer fixtures. Incorporate high-end materials like dark wood paneling, a feature wall with book-matched marble, plush velvet textiles, and subtle brass or gold details. The atmosphere should be intimate, sophisticated, and exceptionally cozy.",
     softModernSanctuary: "Transform this bedroom into a soft, modern sanctuary with a focus on comfort and serenity. The centerpiece should be a large, fully upholstered bed with a tall, curved, and backlit headboard that creates a gentle glow. Use a calming and light color palette of warm whites, soft beiges, and muted grays. Incorporate gentle curves throughout the room's furniture and decor. The lighting should be soft and layered, creating a peaceful and relaxing atmosphere.",
     geometricChicBedroom: "Redesign this bedroom with a chic and elegant modern aesthetic. The main feature should be a stunning headboard wall with a geometric pattern, such as inlaid wood or upholstered panels. Flank the bed with stylish, modern pendant lights. Use a balanced color palette of neutral tones with a single sophisticated accent color. The furniture should be clean-lined and contemporary. The overall look must be polished, high-end, and visually interesting.",
@@ -544,6 +544,8 @@ const FOREGROUND_PROMPTS: Record<string, string> = {
   "Foreground Pathway": "Add a pathway in the foreground.",
   "Foreground Water Feature": "Add a water feature in the foreground.",
   "Foreground Low Wall": "Add a low wall in the foreground.",
+  "Foreground Bangkok Traffic": "Add busy Bangkok traffic in the foreground including cars, taxis, tuk-tuks, and motorcycles.",
+  "Foreground Bangkok Electric Poles": "Add a chaotic tangled web of electrical wires and utility poles in the foreground, typical of a Bangkok street scene.",
   
   // Interior
   "Blurred Coffee Table": "Add a blurred coffee table surface in the immediate foreground to create depth of field.",
@@ -552,7 +554,7 @@ const FOREGROUND_PROMPTS: Record<string, string> = {
   "Armchair": "Add a cozy armchair in the foreground.",
   "Floor Lamp": "Add a modern floor lamp in the foreground.",
   "Rug/Carpet": "Add a textured rug or carpet covering the floor in the foreground.",
-  "Curtains": "Add sheer curtains framing the sides of the image in the foreground.",
+  "Curtains": "Add sheer curtains framing the sides of of the image in the foreground.",
   "Decorative Vase": "Add a decorative vase on a surface in the foreground.",
   "Dining Table Edge": "Add the edge of a dining table with place settings in the foreground.",
   "Magazine/Books": "Add a stack of design magazines or books on a surface in the foreground."
@@ -564,16 +566,16 @@ const OptionButton: React.FC<{
   onClick: (option: string) => void,
   size?: 'sm' | 'md'
 }> = ({ option, isSelected, onClick, size = 'sm' }) => {
-  const sizeClasses = size === 'md' ? 'px-4 py-2 text-base' : 'px-3 py-1 text-xs font-medium uppercase tracking-wide';
+  const sizeClasses = size === 'md' ? 'px-4 py-2 text-base' : 'px-3 py-1.5 text-xs font-medium uppercase tracking-wide';
   return (
     <button
       key={option}
       type="button"
       onClick={() => onClick(option)}
-      className={`${sizeClasses} rounded-md transition-all duration-200 border 
+      className={`${sizeClasses} rounded-lg transition-all duration-300 border backdrop-blur-sm
         ${isSelected
-          ? 'bg-red-600 text-white border-red-500 shadow-md shadow-red-900/20'
-          : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 border-zinc-700 hover:text-zinc-200'
+          ? 'bg-red-600/80 text-white border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.4)] ring-1 ring-red-400/50'
+          : 'bg-zinc-800/40 text-zinc-400 hover:bg-zinc-700/60 border-zinc-700/50 hover:text-zinc-200 hover:border-zinc-500'
         }`}
     >
       {option}
@@ -582,7 +584,7 @@ const OptionButton: React.FC<{
 };
 
 const IntensitySlider: React.FC<{ value: number; onChange: (val: number) => void; t: any }> = ({ value, onChange, t }) => (
-    <div className="mt-3 p-3 bg-zinc-800/50 rounded-lg animate-fade-in border border-zinc-700/50">
+    <div className="mt-3 p-3 bg-zinc-900/50 rounded-lg animate-fade-in border border-zinc-700/50">
         <div className="flex justify-between text-xs mb-2 text-zinc-400">
             <span className="font-medium text-zinc-300">{t.controls.intensity}</span>
             <span className="font-mono text-red-400">{value}% {value === 100 && `(${t.controls.strong})`}</span>
@@ -593,7 +595,7 @@ const IntensitySlider: React.FC<{ value: number; onChange: (val: number) => void
             max="100" 
             value={value} 
             onChange={(e) => onChange(Number(e.target.value))}
-            className="w-full h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-red-500 hover:accent-red-400 transition-all"
+            className="w-full h-1.5 bg-zinc-700/50 rounded-lg appearance-none cursor-pointer accent-red-500 hover:accent-red-400 transition-all"
         />
         <div className="flex justify-between text-[10px] text-zinc-500 mt-1 px-0.5">
             <span>{t.controls.subtle}</span>
@@ -612,18 +614,18 @@ const CollapsibleSection: React.FC<{
     icon?: React.ReactNode;
     actions?: React.ReactNode;
   }> = ({ title, isOpen, onToggle, children, disabled = false, icon, actions }) => (
-    <div className={`bg-zinc-900/30 rounded-lg border border-zinc-800 overflow-hidden transition-all duration-300 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
+    <div className={`bg-zinc-900/40 rounded-xl border border-zinc-800/50 overflow-hidden transition-all duration-300 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
       <button
         type="button"
         onClick={onToggle}
         disabled={disabled}
-        className="w-full flex justify-between items-center p-3 text-left bg-zinc-800/20 hover:bg-zinc-800/50 transition-colors disabled:cursor-not-allowed"
+        className="w-full flex justify-between items-center p-3 text-left bg-zinc-900/40 hover:bg-zinc-800/60 transition-colors disabled:cursor-not-allowed backdrop-blur-sm"
         aria-expanded={isOpen}
         aria-controls={`section-content-${title.replace(/\s+/g, '-')}`}
       >
         <h3 className="flex items-center gap-3 text-xs font-bold text-zinc-300 uppercase tracking-wider">
           {icon && <span className="text-zinc-500">{icon}</span>}
-          <span>{title}</span>
+          <span className="bg-gradient-to-r from-zinc-200 to-zinc-400 bg-clip-text text-transparent">{title}</span>
         </h3>
         <div className="flex items-center gap-2">
             {actions}
@@ -634,7 +636,7 @@ const CollapsibleSection: React.FC<{
           id={`section-content-${title.replace(/\s+/g, '-')}`}
           className={`overflow-hidden transition-[max-height] duration-500 ease-in-out ${isOpen ? 'max-h-[1500px]' : 'max-h-0'}`}
       >
-        <div className={`p-4 ${isOpen ? 'border-t border-zinc-800/50' : ''}`}>
+        <div className={`p-4 ${isOpen ? 'border-t border-zinc-800/50 bg-black/20' : ''}`}>
             {children}
         </div>
       </div>
@@ -651,10 +653,10 @@ const ModeButton: React.FC<{
   <button
     type="button"
     onClick={() => onClick(mode)}
-    className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-2 p-2 text-xs font-bold uppercase tracking-wide rounded-md transition-all duration-200 border
+    className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-2 p-2 text-xs font-bold uppercase tracking-wide rounded-lg transition-all duration-300 border
       ${activeMode === mode 
-          ? 'bg-zinc-800 text-white border-zinc-600 shadow-inner'
-          : 'bg-transparent text-zinc-500 border-transparent hover:bg-zinc-800/50 hover:text-zinc-300'
+          ? 'bg-gradient-to-br from-zinc-800 to-zinc-900 text-white border-zinc-600 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]'
+          : 'bg-transparent text-zinc-500 border-zinc-800 hover:bg-zinc-800/50 hover:text-zinc-300'
       }`}
   >
       {icon}
@@ -673,21 +675,21 @@ const PreviewCard: React.FC<{
   <button
     type="button"
     onClick={onClick}
-    className={`p-3 text-left rounded-lg border transition-all duration-200 group flex flex-col ${
+    className={`p-3 text-left rounded-xl border transition-all duration-300 group flex flex-col backdrop-blur-sm ${
       isSelected 
-      ? 'bg-red-900/20 border-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.15)]' 
-      : 'bg-zinc-900/40 border-zinc-800 hover:border-zinc-600 hover:bg-zinc-800/60'
+      ? 'bg-red-900/10 border-red-500/50 shadow-[0_0_20px_rgba(220,38,38,0.15)] ring-1 ring-red-500/20' 
+      : 'bg-zinc-900/40 border-zinc-800/60 hover:border-zinc-600/80 hover:bg-zinc-800/60'
     } ${description ? (isNested ? 'min-h-[5rem]' : 'min-h-[6rem]') : ''} h-auto`}
   >
     <div className="w-full">
         <div className={`flex items-center gap-2 ${description ? 'mb-1.5' : ''}`}>
-            {icon && <span className={`flex-shrink-0 ${isSelected ? 'text-red-400' : 'text-zinc-500'}`}>{icon}</span>}
-            <span className={`font-bold transition-colors text-xs uppercase tracking-wide break-words ${isSelected ? 'text-red-400' : 'text-zinc-300'}`}>
+            {icon && <span className={`flex-shrink-0 transition-colors duration-300 ${isSelected ? 'text-red-400' : 'text-zinc-500 group-hover:text-zinc-400'}`}>{icon}</span>}
+            <span className={`font-bold transition-colors text-xs uppercase tracking-wide break-words ${isSelected ? 'text-red-400' : 'text-zinc-300 group-hover:text-white'}`}>
               {label}
             </span>
         </div>
         {description && (
-        <p className={`text-[10px] leading-relaxed transition-colors ${isSelected ? 'text-zinc-300' : 'text-zinc-500'}`}>
+        <p className={`text-[10px] leading-relaxed transition-colors ${isSelected ? 'text-zinc-400' : 'text-zinc-500'}`}>
             {description}
         </p>
         )}
@@ -712,34 +714,34 @@ const ImageToolbar: React.FC<{
   isLoading: boolean;
   t: any;
 }> = ({ onUndo, onRedo, onReset, onDownload, onShare, onUpscale, onRegenerate, onTransform, canUndo, canRedo, canReset, canUpscaleAndSave, canRegenerate, isLoading, t }) => (
-  <div className="flex items-center gap-2 bg-zinc-900/80 backdrop-blur-md p-1.5 rounded-full border border-zinc-700 shadow-2xl">
+  <div className="flex items-center gap-2 bg-gray-500/20 backdrop-blur-md p-2 rounded-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] transform hover:scale-[1.02] transition-transform duration-300">
     {/* History */}
-    <div className="flex items-center gap-1 px-2 border-r border-zinc-700">
-      <button onClick={onUndo} disabled={!canUndo || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors"><UndoIcon className="w-4 h-4" /></button>
-      <button onClick={onRedo} disabled={!canRedo || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors"><RedoIcon className="w-4 h-4" /></button>
+    <div className="flex items-center gap-1 px-2 border-r border-white/10">
+      <button onClick={onUndo} disabled={!canUndo || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><UndoIcon className="w-4 h-4" /></button>
+      <button onClick={onRedo} disabled={!canRedo || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><RedoIcon className="w-4 h-4" /></button>
     </div>
     
     {/* Transformations */}
-    <div className="flex items-center gap-1 px-2 border-r border-zinc-700">
-      <button onClick={() => onTransform('rotateLeft')} disabled={!canUpscaleAndSave || isLoading} title="Rotate Left" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors"><RotateLeftIcon className="w-4 h-4" /></button>
-      <button onClick={() => onTransform('rotateRight')} disabled={!canUpscaleAndSave || isLoading} title="Rotate Right" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors"><RotateRightIcon className="w-4 h-4" /></button>
-      <button onClick={() => onTransform('flipHorizontal')} disabled={!canUpscaleAndSave || isLoading} title="Flip Horizontal" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors"><FlipHorizontalIcon className="w-4 h-4" /></button>
+    <div className="flex items-center gap-1 px-2 border-r border-white/10">
+      <button onClick={() => onTransform('rotateLeft')} disabled={!canUpscaleAndSave || isLoading} title="Rotate Left" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><RotateLeftIcon className="w-4 h-4" /></button>
+      <button onClick={() => onTransform('rotateRight')} disabled={!canUpscaleAndSave || isLoading} title="Rotate Right" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><RotateRightIcon className="w-4 h-4" /></button>
+      <button onClick={() => onTransform('flipHorizontal')} disabled={!canUpscaleAndSave || isLoading} title="Flip Horizontal" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><FlipHorizontalIcon className="w-4 h-4" /></button>
     </div>
 
     {/* Main Actions */}
     <div className="flex items-center gap-2 pl-2">
-      <button onClick={onRegenerate} disabled={!canRegenerate || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors" title={t.buttons.regenerate}>
+      <button onClick={onRegenerate} disabled={!canRegenerate || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg" title={t.buttons.regenerate}>
           <ArrowPathIcon className="w-4 h-4" />
       </button>
-      <div className="w-px h-4 bg-zinc-700 mx-1"></div>
-      <button onClick={onUpscale} disabled={!canUpscaleAndSave || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors flex items-center gap-1" title={t.buttons.upscale4k}>
+      <div className="w-px h-4 bg-white/10 mx-1"></div>
+      <button onClick={onUpscale} disabled={!canUpscaleAndSave || isLoading} className="p-2 text-zinc-200 hover:text-white disabled:opacity-30 transition-colors flex items-center gap-1 hover:bg-white/10 rounded-lg" title={t.buttons.upscale4k}>
           <UpscaleIcon className="w-4 h-4" />
-          <span className="text-[10px] font-bold uppercase hidden sm:inline">{t.buttons.upscale4k}</span>
+          <span className="text-[10px] font-extrabold uppercase hidden sm:inline tracking-wider">{t.buttons.upscale4k}</span>
       </button>
-      <div className="w-px h-4 bg-zinc-700 mx-1"></div>
-      <button onClick={onShare} disabled={!canUpscaleAndSave || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors" title="Share"><ShareIcon className="w-4 h-4" /></button>
-      <button onClick={onDownload} disabled={!canUpscaleAndSave || isLoading} className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-full transition-colors disabled:opacity-50"><DownloadIcon className="w-3 h-3" /> {t.buttons.download}</button>
-      <button onClick={onReset} disabled={!canReset || isLoading} className="p-2 text-red-500 hover:text-red-400 disabled:opacity-30 transition-colors" title={t.buttons.reset}><ResetEditsIcon className="w-4 h-4" /></button>
+      <div className="w-px h-4 bg-white/10 mx-1"></div>
+      <button onClick={onShare} disabled={!canUpscaleAndSave || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg" title="Share"><ShareIcon className="w-4 h-4" /></button>
+      <button onClick={onDownload} disabled={!canUpscaleAndSave || isLoading} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-sm font-extrabold rounded-lg transition-all disabled:opacity-50 shadow-lg shadow-blue-900/30"><DownloadIcon className="w-3 h-3" /> {t.buttons.download}</button>
+      <button onClick={onReset} disabled={!canReset || isLoading} className="p-2 text-red-500 hover:text-red-400 disabled:opacity-30 transition-colors hover:bg-red-500/10 rounded-lg" title={t.buttons.reset}><ResetEditsIcon className="w-4 h-4" /></button>
     </div>
   </div>
 );
@@ -775,8 +777,8 @@ const ImageEditor: React.FC = () => {
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
   
-  // Language State
-  const [language, setLanguage] = useState<'en' | 'th'>('en');
+  // Language State - Default to Thai ('th')
+  const [language, setLanguage] = useState<'en' | 'th'>('th');
   
   // Auto-save Status
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
@@ -790,7 +792,9 @@ const ImageEditor: React.FC = () => {
   const [selectedInteriorStyle, setSelectedInteriorStyle] = useState<string>('');
   const [selectedInteriorLighting, setSelectedInteriorLighting] = useState<string>('');
   const [selectedBackgrounds, setSelectedBackgrounds] = useState<string[]>([]);
+  const [backgroundIntensity, setBackgroundIntensity] = useState<number>(100);
   const [selectedForegrounds, setSelectedForegrounds] = useState<string[]>([]);
+  const [foregroundIntensity, setForegroundIntensity] = useState<number>(100);
   const [selectedDecorativeItems, setSelectedDecorativeItems] = useState<string[]>([]);
   const [selectedTimeOfDay, setSelectedTimeOfDay] = useState<string>('');
   const [selectedWeather, setSelectedWeather] = useState<string>('');
@@ -971,6 +975,8 @@ const ImageEditor: React.FC = () => {
         const savedLang = localStorage.getItem('fast-ai-language');
         if (savedLang === 'th' || savedLang === 'en') {
             setLanguage(savedLang);
+        } else {
+            setLanguage('th'); // Default to Thai if not set
         }
 
         if (isMounted && Array.isArray(savedProjects)) {
@@ -1559,12 +1565,14 @@ const ImageEditor: React.FC = () => {
         if (selectedBackgrounds.length > 0) {
             const bgPrompts = selectedBackgrounds.map(bg => BACKGROUND_PROMPTS[bg] || INTERIOR_BACKGROUND_PROMPTS[bg]).filter(Boolean).join(' ');
             if(bgPrompts) promptParts.push(bgPrompts);
+            if(backgroundIntensity !== 100) promptParts.push(`Apply the background transformation with an intensity of ${backgroundIntensity}%.`);
             if (!constructedHistory.includes("Quick Action")) constructedHistory += ", BG: " + selectedBackgrounds.join(', ');
         }
         
         if (selectedForegrounds.length > 0) {
             const fgPrompts = selectedForegrounds.map(fg => FOREGROUND_PROMPTS[fg]).filter(Boolean).join(' ');
             if(fgPrompts) promptParts.push(fgPrompts);
+            if(foregroundIntensity !== 100) promptParts.push(`Apply the foreground elements with an intensity of ${foregroundIntensity}%.`);
             if (!constructedHistory.includes("Quick Action")) constructedHistory += ", FG: " + selectedForegrounds.join(', ');
         }
 
@@ -1691,69 +1699,78 @@ const ImageEditor: React.FC = () => {
   const canUpscaleAndSave = !!selectedImageUrl;
   const canRegenerate = activeImage ? activeImage.apiPromptHistory.length > 0 : false;
 
-  if (!isDataLoaded) return <div className="flex items-center justify-center h-screen bg-zinc-950"><Spinner /></div>;
+  if (!isDataLoaded) return <div className="flex items-center justify-center h-screen bg-black text-white"><Spinner /></div>;
 
   return (
-    <div className="flex h-screen w-full bg-zinc-950 text-zinc-300 overflow-hidden font-sans">
+    <div className="flex h-screen w-full bg-[#09090b] text-zinc-300 overflow-hidden font-sans">
       
       {/* API Key Modal (Triggered on Demand) */}
       {isKeyModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => hasApiKey ? setIsKeyModalOpen(false) : null}>
-            <div className="bg-zinc-900 rounded-2xl border border-zinc-700 shadow-2xl w-full max-w-md p-6 overflow-hidden" onClick={e => e.stopPropagation()}>
-                <div className="flex justify-between items-start mb-4">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-md p-4" onClick={() => hasApiKey ? setIsKeyModalOpen(false) : null}>
+            <div className="bg-[#18181b] rounded-2xl border border-white/10 shadow-2xl w-full max-w-md p-6 overflow-hidden transform transition-all" onClick={e => e.stopPropagation()}>
+                <div className="flex justify-between items-start mb-6">
                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20">
-                            <SparklesIcon className="w-6 h-6 text-white" />
+                        <div className="w-12 h-12 bg-gradient-to-br from-red-600 to-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/20">
+                            <SparklesIcon className="w-7 h-7 text-white" />
                         </div>
-                        <h2 className="text-xl font-bold text-white">Setup Gemini 3</h2>
+                        <div>
+                            <h2 className="text-xl font-bold text-white tracking-tight">Setup Gemini 3</h2>
+                            <p className="text-xs text-zinc-500 font-medium">POWERED BY GOOGLE DEEPMIND</p>
+                        </div>
                      </div>
                      {hasApiKey && (
-                         <button onClick={() => setIsKeyModalOpen(false)} className="text-zinc-500 hover:text-white">
-                             <XMarkIcon className="w-5 h-5"/>
+                         <button onClick={() => setIsKeyModalOpen(false)} className="text-zinc-500 hover:text-white transition-colors">
+                             <XMarkIcon className="w-6 h-6"/>
                          </button>
                      )}
                 </div>
                 
-                <p className="text-zinc-400 text-sm leading-relaxed mb-6">
+                <p className="text-zinc-300 text-sm leading-relaxed mb-6 font-light">
                    {language === 'th' 
-                    ? 'กรุณาเชื่อมต่อ API Key เพื่อเริ่มการสร้างภาพ AI' 
-                    : 'Please connect your API Key to enable AI generation features.'}
+                    ? 'กรุณาเชื่อมต่อ API Key เพื่อเริ่มการสร้างภาพ AI ความละเอียดสูง' 
+                    : 'Please connect your API Key to enable high-resolution AI generation.'}
                 </p>
                 
                 {/* Auto-selection button if supported */}
                 {(window as any).aistudio ? (
                     <button 
                         onClick={handleApiKeySelect}
-                        className="w-full py-3 px-6 bg-white text-zinc-950 font-bold rounded-lg hover:bg-zinc-200 transition-all transform active:scale-95 mb-4"
+                        className="w-full py-3 px-6 bg-white text-black font-bold rounded-xl hover:bg-zinc-200 transition-all transform active:scale-95 mb-4 shadow-lg"
                     >
                         {language === 'th' ? 'เลือก API Key (Auto)' : 'Select API Key (Auto)'}
                     </button>
                 ) : (
                     /* Manual Input Form for Production */
-                    <form onSubmit={handleManualKeySubmit} className="space-y-3">
-                        <input 
-                            type="password" 
-                            value={tempKey}
-                            onChange={(e) => setTempKey(e.target.value)}
-                            placeholder="Paste your Gemini API Key here"
-                            className="w-full p-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 outline-none"
-                        />
+                    <form onSubmit={handleManualKeySubmit} className="space-y-4">
+                        <div className="relative">
+                            <input 
+                                type="password" 
+                                value={tempKey}
+                                onChange={(e) => setTempKey(e.target.value)}
+                                placeholder="Paste your Gemini API Key here"
+                                className="w-full p-4 bg-black/50 border border-zinc-700 rounded-xl text-white placeholder-zinc-600 focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all font-mono text-sm"
+                            />
+                            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-zinc-600">
+                                <KeyIcon className="w-5 h-5" />
+                            </div>
+                        </div>
                         <button 
                             type="submit"
                             disabled={!tempKey.trim()}
-                            className="w-full py-3 px-6 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full py-4 px-6 bg-gradient-to-r from-red-600 to-orange-600 text-white font-bold rounded-xl hover:from-red-500 hover:to-orange-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-red-900/30 active:scale-95"
                         >
                             {language === 'th' ? 'บันทึกและเริ่มใช้งาน' : 'Save & Start Using'}
                         </button>
-                        <p className="text-[10px] text-zinc-600 text-center">
-                            Key is stored locally in your browser.
+                        <p className="text-[10px] text-zinc-500 text-center uppercase tracking-wide">
+                            Key is stored locally in your browser
                         </p>
                     </form>
                 )}
                 
-                <div className="text-center mt-4 pt-4 border-t border-zinc-800">
-                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:text-blue-300 hover:underline">
+                <div className="text-center mt-6 pt-6 border-t border-white/5">
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:text-blue-300 hover:underline flex items-center justify-center gap-1">
                         {language === 'th' ? 'ขอกุญแจ API Key (ฟรี)' : 'Get a free API Key'}
+                        <ArrowPathIcon className="w-3 h-3 rotate-[-45deg]"/>
                     </a>
                 </div>
             </div>
@@ -1762,98 +1779,104 @@ const ImageEditor: React.FC = () => {
 
       {/* Project Modal */}
       {isProjectModalOpen && (
-         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setIsProjectModalOpen(false)}>
-            <div className="bg-zinc-900 rounded-xl border border-zinc-700 shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
-                <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-900">
-                    <h2 className="text-lg font-bold text-white">{t.header.projects}</h2>
-                    <button onClick={() => setIsProjectModalOpen(false)} className="text-zinc-400 hover:text-white"><XMarkIcon className="w-5 h-5"/></button>
+         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-lg p-4" onClick={() => setIsProjectModalOpen(false)}>
+            <div className="bg-[#18181b] rounded-2xl border border-white/10 shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
+                <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/20">
+                    <h2 className="text-xl font-bold text-white">{t.header.projects}</h2>
+                    <button onClick={() => setIsProjectModalOpen(false)} className="text-zinc-500 hover:text-white transition-colors"><XMarkIcon className="w-6 h-6"/></button>
                 </div>
-                <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-zinc-950/50">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <label className="cursor-pointer flex flex-col items-center justify-center p-6 border-2 border-dashed border-zinc-700 rounded-lg hover:border-red-500 hover:bg-zinc-800/50 transition-colors group">
-                             <PhotoIcon className="w-8 h-8 text-zinc-500 group-hover:text-red-500 mb-2"/>
-                             <span className="text-sm font-medium text-zinc-400 group-hover:text-zinc-200">{t.buttons.newProject}</span>
+                <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-black/40">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <label className="cursor-pointer flex flex-col items-center justify-center p-8 border-2 border-dashed border-zinc-800 rounded-xl hover:border-red-500 hover:bg-red-500/5 transition-all group">
+                             <div className="w-12 h-12 rounded-full bg-zinc-800/50 flex items-center justify-center group-hover:bg-red-500/10 transition-colors mb-3">
+                                <PhotoIcon className="w-6 h-6 text-zinc-500 group-hover:text-red-500 transition-colors"/>
+                             </div>
+                             <span className="text-sm font-medium text-zinc-400 group-hover:text-white transition-colors">{t.buttons.newProject}</span>
                              <input type="file" accept="image/*" multiple onChange={handleImageChange} className="hidden" />
                         </label>
                         {imageList.map((img, index) => (
                             <div key={img.id} onClick={() => { setActiveImageIndex(index); setIsProjectModalOpen(false); }} 
-                                 className={`flex items-center p-3 rounded-lg border cursor-pointer transition-all ${activeImageIndex === index ? 'bg-red-900/20 border-red-500/50' : 'bg-zinc-800 border-zinc-700 hover:border-zinc-500'}`}>
-                                <div className="w-16 h-16 bg-zinc-950 rounded-md overflow-hidden flex-shrink-0 border border-zinc-700">
-                                    {img.dataUrl && <img src={img.dataUrl} className="w-full h-full object-cover" alt="thumb" />}
+                                 className={`flex items-center p-3 rounded-xl border cursor-pointer transition-all ${activeImageIndex === index ? 'bg-red-900/10 border-red-500/50 ring-1 ring-red-500/20' : 'bg-zinc-900/50 border-white/5 hover:border-zinc-600 hover:bg-zinc-800'}`}>
+                                <div className="w-16 h-16 bg-black rounded-lg overflow-hidden flex-shrink-0 border border-white/5 shadow-inner">
+                                    {img.dataUrl && <img src={img.dataUrl} className="w-full h-full object-cover opacity-80" alt="thumb" />}
                                 </div>
-                                <div className="ml-3 flex-1 min-w-0">
-                                    <p className="text-sm font-semibold text-zinc-200 truncate">{img.file?.name || `Project ${index + 1}`}</p>
+                                <div className="ml-4 flex-1 min-w-0">
+                                    <p className="text-sm font-bold text-zinc-200 truncate">{img.file?.name || `Project ${index + 1}`}</p>
                                     <p className="text-xs text-zinc-500 mt-1">{img.history.length} edits made</p>
                                 </div>
-                                <button onClick={(e) => { e.stopPropagation(); handleRemoveImage(index); }} className="p-2 text-zinc-500 hover:text-red-500"><ResetEditsIcon className="w-4 h-4"/></button>
+                                <button onClick={(e) => { e.stopPropagation(); handleRemoveImage(index); }} className="p-2 text-zinc-600 hover:text-red-500 transition-colors"><ResetEditsIcon className="w-4 h-4"/></button>
                             </div>
                         ))}
                     </div>
                 </div>
-                <div className="p-4 border-t border-zinc-800 bg-zinc-900 flex justify-between">
-                    <button onClick={handleClearAllProjects} className="text-xs text-red-400 hover:text-red-300 underline">{t.buttons.clearAll}</button>
-                    <div className="text-xs text-zinc-600">Stored locally in your browser</div>
+                <div className="p-4 border-t border-white/5 bg-black/20 flex justify-between items-center">
+                    <button onClick={handleClearAllProjects} className="text-xs text-red-500 hover:text-red-400 font-medium px-3 py-1.5 rounded hover:bg-red-500/10 transition-colors">{t.buttons.clearAll}</button>
+                    <div className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold">Local Browser Storage</div>
                 </div>
             </div>
          </div>
       )}
 
       {/* LEFT SIDEBAR */}
-      <aside className="w-80 flex flex-col border-r border-zinc-800 bg-zinc-900/95 backdrop-blur flex-shrink-0 z-20 shadow-2xl">
+      <aside className="w-80 flex flex-col border-r border-white/5 bg-black/80 backdrop-blur-xl flex-shrink-0 z-20 shadow-[4px_0_24px_rgba(0,0,0,0.5)]">
          {/* Logo Area */}
-         <div className="h-16 flex items-center px-6 border-b border-zinc-800">
-             <h1 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">FAST AI</h1>
+         <div className="h-16 flex items-center px-6 border-b border-white/5 bg-gradient-to-r from-black/50 to-transparent">
+             <div className="flex items-center gap-2">
+                 <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-red-600 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
+                    <SparklesIcon className="w-5 h-5 text-white" />
+                 </div>
+                 <h1 className="text-xl font-black tracking-tighter text-white italic">FAST <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">AI</span></h1>
+             </div>
          </div>
 
          {/* Scene Tabs */}
          {activeImage && (
-           <div className="flex border-b border-zinc-800 bg-zinc-900">
-             <button onClick={() => handleSceneTypeSelect('exterior')} className={`flex-1 py-4 text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors relative ${sceneType === 'exterior' ? 'text-white bg-zinc-800/50' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/30'}`}>
+           <div className="flex border-b border-white/5 bg-black/40 p-1">
+             <button onClick={() => handleSceneTypeSelect('exterior')} className={`flex-1 py-2 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-300 ${sceneType === 'exterior' ? 'text-white bg-zinc-800 shadow-lg' : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'}`}>
                 {t.tabs.exterior}
-                {sceneType === 'exterior' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-500"></div>}
              </button>
-             <button onClick={() => handleSceneTypeSelect('interior')} className={`flex-1 py-4 text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors relative ${sceneType === 'interior' ? 'text-white bg-zinc-800/50' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/30'}`}>
+             <button onClick={() => handleSceneTypeSelect('interior')} className={`flex-1 py-2 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-300 ${sceneType === 'interior' ? 'text-white bg-zinc-800 shadow-lg' : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'}`}>
                 {t.tabs.interior}
-                {sceneType === 'interior' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-500"></div>}
              </button>
-             <button onClick={() => handleSceneTypeSelect('plan')} className={`flex-1 py-4 text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors relative ${sceneType === 'plan' ? 'text-white bg-zinc-800/50' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/30'}`}>
+             <button onClick={() => handleSceneTypeSelect('plan')} className={`flex-1 py-2 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-300 ${sceneType === 'plan' ? 'text-white bg-zinc-800 shadow-lg' : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'}`}>
                 {t.tabs.plan}
-                {sceneType === 'plan' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-500"></div>}
              </button>
            </div>
          )}
 
          {/* Scrollable Controls */}
-         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3 bg-zinc-900">
+         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3 bg-transparent">
             {!activeImage ? (
-               <div className="flex flex-col items-center justify-center h-full text-zinc-500 space-y-4">
-                  <PhotoIcon className="w-12 h-12 opacity-20"/>
-                  <p className="text-sm">{t.header.noProject}</p>
-                  <button onClick={() => setIsProjectModalOpen(true)} className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-md text-sm font-bold">{t.buttons.openProjects}</button>
+               <div className="flex flex-col items-center justify-center h-full text-zinc-500 space-y-6 animate-fade-in">
+                  <div className="w-24 h-24 rounded-2xl bg-zinc-900/50 flex items-center justify-center border border-white/5 shadow-inner">
+                      <PhotoIcon className="w-10 h-10 opacity-20"/>
+                  </div>
+                  <p className="text-sm font-light tracking-wide">{t.header.noProject}</p>
+                  <button onClick={() => setIsProjectModalOpen(true)} className="px-6 py-3 bg-white text-black hover:bg-zinc-200 rounded-full text-sm font-bold transition-transform hover:scale-105 shadow-xl shadow-white/5">{t.buttons.openProjects}</button>
                </div>
             ) : (
                <>
-                  <div className="flex gap-2 mb-4">
+                  <div className="flex gap-2 mb-4 p-1 bg-black/30 rounded-xl border border-white/5">
                          <ModeButton label={t.modes.general} icon={<SparklesIcon className="w-4 h-4" />} mode="default" activeMode={editingMode} onClick={setEditingMode} />
                          <ModeButton label={t.modes.object} icon={<BrushIcon className="w-4 h-4" />} mode="object" activeMode={editingMode} onClick={setEditingMode} />
                   </div>
                   
                    {/* Common Tools (Offline) */}
                    <CollapsibleSection title={t.sections.manualAdjustments} sectionKey="manualAdjustments" isOpen={openSections.manualAdjustments} onToggle={() => toggleSection('manualAdjustments')} icon={<AdjustmentsIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
-                       <div className="space-y-3">
+                       <div className="space-y-4">
                            <div>
                                <div className="flex justify-between text-xs mb-1 text-zinc-400"><span>{t.controls.brightness}</span><span>{brightness}%</span></div>
-                               <input type="range" min="50" max="150" value={brightness} onChange={(e) => setBrightness(Number(e.target.value))} className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-red-500"/>
+                               <input type="range" min="50" max="150" value={brightness} onChange={(e) => setBrightness(Number(e.target.value))} className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-red-500"/>
                            </div>
                            <div>
                                <div className="flex justify-between text-xs mb-1 text-zinc-400"><span>{t.controls.contrast}</span><span>{contrast}%</span></div>
-                               <input type="range" min="50" max="150" value={contrast} onChange={(e) => setContrast(Number(e.target.value))} className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-red-500"/>
+                               <input type="range" min="50" max="150" value={contrast} onChange={(e) => setContrast(Number(e.target.value))} className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-red-500"/>
                            </div>
                            <div>
                                <div className="flex justify-between text-xs mb-1 text-zinc-400"><span>{t.controls.saturation}</span><span>{saturation}%</span></div>
-                               <input type="range" min="0" max="200" value={saturation} onChange={(e) => setSaturation(Number(e.target.value))} className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-red-500"/>
+                               <input type="range" min="0" max="200" value={saturation} onChange={(e) => setSaturation(Number(e.target.value))} className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-red-500"/>
                            </div>
-                           <button onClick={applyManualChanges} className="w-full mt-2 py-2 text-xs font-bold bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-600 rounded transition-colors flex items-center justify-center gap-2">
+                           <button onClick={applyManualChanges} className="w-full mt-2 py-2.5 text-xs font-bold bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/5 rounded-lg transition-colors flex items-center justify-center gap-2">
                                 <AdjustmentsIcon className="w-3 h-3" /> {t.controls.applyManual}
                            </button>
                        </div>
@@ -1863,7 +1886,7 @@ const ImageEditor: React.FC = () => {
                   {sceneType === 'exterior' && (
                     <>
                         <CollapsibleSection title={t.sections.prompt} sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-4 h-4"/>}>
-                            <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={editingMode === 'object' ? t.placeholders.promptMask : t.placeholders.promptExterior} className="w-full bg-zinc-950 border border-zinc-700 rounded-md p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none" rows={3} />
+                            <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={editingMode === 'object' ? t.placeholders.promptMask : t.placeholders.promptExterior} className="w-full bg-black/50 border border-zinc-700 rounded-xl p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none shadow-inner" rows={3} />
                         </CollapsibleSection>
                         <CollapsibleSection title={t.sections.quickActions} sectionKey="quickActions" isOpen={openSections.quickActions} onToggle={() => toggleSection('quickActions')} icon={<StarIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                              <div className="space-y-2">
@@ -1918,14 +1941,14 @@ const ImageEditor: React.FC = () => {
                                     <span className="text-sm font-medium text-zinc-300">{t.controls.turnOnLights}</span>
                                     <button 
                                         onClick={() => setIsAddLightActive(!isAddLightActive)}
-                                        className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 ease-in-out ${isAddLightActive ? 'bg-red-600' : 'bg-zinc-700'}`}
+                                        className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 ease-in-out ${isAddLightActive ? 'bg-red-600 shadow-[0_0_10px_rgba(220,38,38,0.5)]' : 'bg-zinc-800'}`}
                                     >
                                         <div className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-200 ease-in-out ${isAddLightActive ? 'translate-x-6' : 'translate-x-0'}`} />
                                     </button>
                                 </div>
                                 
                                 {isAddLightActive && (
-                                    <div className="space-y-3 animate-fade-in p-3 bg-zinc-800/50 rounded-lg border border-zinc-700/50">
+                                    <div className="space-y-3 animate-fade-in p-3 bg-black/20 rounded-lg border border-white/5">
                                         <div>
                                             <div className="flex justify-between text-xs mb-1 text-zinc-400">
                                                 <span>{t.controls.brightness}</span>
@@ -1937,7 +1960,7 @@ const ImageEditor: React.FC = () => {
                                                 max="100" 
                                                 value={lightingBrightness} 
                                                 onChange={(e) => setLightingBrightness(Number(e.target.value))}
-                                                className="w-full h-1 bg-zinc-600 rounded-lg appearance-none cursor-pointer accent-red-500"
+                                                className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-red-500"
                                             />
                                              <div className="flex justify-between text-[10px] text-zinc-500 mt-1">
                                                 <span>{t.controls.soft}</span>
@@ -1968,11 +1991,13 @@ const ImageEditor: React.FC = () => {
                             <div className="flex flex-wrap gap-2">
                                 {backgrounds.map(bg => <OptionButton key={bg} option={bg} isSelected={selectedBackgrounds.includes(bg)} onClick={() => handleBackgroundToggle(bg)} />)}
                             </div>
+                            {selectedBackgrounds.length > 0 && <IntensitySlider value={backgroundIntensity} onChange={setBackgroundIntensity} t={t} />}
                         </CollapsibleSection>
                         <CollapsibleSection title={t.sections.foreground} sectionKey="foreground" isOpen={openSections.foreground} onToggle={() => toggleSection('foreground')} icon={<LandscapeIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             <div className="flex flex-wrap gap-2">
                                 {foregrounds.map(fg => <OptionButton key={fg} option={fg} isSelected={selectedForegrounds.includes(fg)} onClick={() => handleForegroundToggle(fg)} />)}
                             </div>
+                            {selectedForegrounds.length > 0 && <IntensitySlider value={foregroundIntensity} onChange={setForegroundIntensity} t={t} />}
                         </CollapsibleSection>
                     </>
                   )}
@@ -1980,12 +2005,12 @@ const ImageEditor: React.FC = () => {
                    {sceneType === 'interior' && (
                     <>
                         <CollapsibleSection title={t.sections.prompt} sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-4 h-4"/>}>
-                            <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={t.placeholders.promptInterior} className="w-full bg-zinc-950 border border-zinc-700 rounded-md p-3 text-sm text-zinc-200 placeholder-zinc-600" rows={3} />
+                            <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={t.placeholders.promptInterior} className="w-full bg-black/50 border border-zinc-700 rounded-xl p-3 text-sm text-zinc-200 placeholder-zinc-600 shadow-inner" rows={3} />
                         </CollapsibleSection>
                         <CollapsibleSection title={t.sections.moodboard} sectionKey="moodboard" isOpen={openSections.moodboard} onToggle={() => toggleSection('moodboard')} icon={<TextureIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             <div className="space-y-3">
                                 {!referenceImage ? (
-                                    <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-zinc-700 rounded-lg hover:border-red-500 hover:bg-zinc-800/50 transition-colors cursor-pointer group">
+                                    <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-zinc-700 rounded-xl hover:border-red-500 hover:bg-red-500/5 transition-colors cursor-pointer group bg-black/20">
                                         <PhotoIcon className="w-6 h-6 text-zinc-500 group-hover:text-red-500 mb-2"/>
                                         <span className="text-xs font-medium text-zinc-400 group-hover:text-zinc-200 text-center">
                                             {language === 'th' ? 'อัปโหลดภาพตัวอย่าง' : 'Upload Reference Image'}
@@ -1994,8 +2019,8 @@ const ImageEditor: React.FC = () => {
                                     </label>
                                 ) : (
                                     <div className="relative group">
-                                        <div className="aspect-video w-full rounded-lg overflow-hidden border border-zinc-700 bg-zinc-950">
-                                            <img src={referenceImage.dataUrl} alt="Moodboard" className="w-full h-full object-cover" />
+                                        <div className="aspect-video w-full rounded-xl overflow-hidden border border-zinc-700 bg-black">
+                                            <img src={referenceImage.dataUrl} alt="Moodboard" className="w-full h-full object-cover opacity-80" />
                                         </div>
                                         <button 
                                             onClick={() => setReferenceImage(null)}
@@ -2054,7 +2079,7 @@ const ImageEditor: React.FC = () => {
                                     <span className="text-sm font-medium text-zinc-300">{t.controls.coveLight}</span>
                                     <button 
                                         onClick={() => setIsCoveLightActive(!isCoveLightActive)}
-                                        className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 ease-in-out ${isCoveLightActive ? 'bg-red-600' : 'bg-zinc-700'}`}
+                                        className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 ease-in-out ${isCoveLightActive ? 'bg-red-600 shadow-glow-red' : 'bg-zinc-700'}`}
                                     >
                                         <div className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-200 ease-in-out ${isCoveLightActive ? 'translate-x-6' : 'translate-x-0'}`} />
                                     </button>
@@ -2085,7 +2110,7 @@ const ImageEditor: React.FC = () => {
                                     <span className="text-sm font-medium text-zinc-300">{t.controls.downlight}</span>
                                     <button 
                                         onClick={() => setIsDownlightActive(!isDownlightActive)}
-                                        className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 ease-in-out ${isDownlightActive ? 'bg-red-600' : 'bg-zinc-700'}`}
+                                        className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 ease-in-out ${isDownlightActive ? 'bg-red-600 shadow-glow-red' : 'bg-zinc-700'}`}
                                     >
                                         <div className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-200 ease-in-out ${isDownlightActive ? 'translate-x-6' : 'translate-x-0'}`} />
                                     </button>
@@ -2128,11 +2153,13 @@ const ImageEditor: React.FC = () => {
                             <div className="flex flex-wrap gap-2">
                                 {interiorBackgrounds.map(bg => <OptionButton key={bg} option={bg} isSelected={selectedBackgrounds.includes(bg)} onClick={() => handleBackgroundToggle(bg)} />)}
                             </div>
+                            {selectedBackgrounds.length > 0 && <IntensitySlider value={backgroundIntensity} onChange={setBackgroundIntensity} t={t} />}
                         </CollapsibleSection>
                          <CollapsibleSection title={t.sections.foreground} sectionKey="foreground" isOpen={openSections.foreground} onToggle={() => toggleSection('foreground')} icon={<LandscapeIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             <div className="flex flex-wrap gap-2">
                                 {interiorForegrounds.map(fg => <OptionButton key={fg} option={fg} isSelected={selectedForegrounds.includes(fg)} onClick={() => handleForegroundToggle(fg)} />)}
                             </div>
+                            {selectedForegrounds.length > 0 && <IntensitySlider value={foregroundIntensity} onChange={setForegroundIntensity} t={t} />}
                         </CollapsibleSection>
                     </>
                   )}
@@ -2140,7 +2167,7 @@ const ImageEditor: React.FC = () => {
                   {sceneType === 'plan' && (
                     <>
                         <CollapsibleSection title={t.sections.prompt} sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-4 h-4"/>}>
-                            <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={editingMode === 'object' ? t.placeholders.promptMask : t.placeholders.promptPlan} className="w-full bg-zinc-950 border border-zinc-700 rounded-md p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none" rows={3} />
+                            <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={editingMode === 'object' ? t.placeholders.promptMask : t.placeholders.promptPlan} className="w-full bg-black/50 border border-zinc-700 rounded-xl p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none shadow-inner" rows={3} />
                         </CollapsibleSection>
 
                         {/* Plan Quick Actions */}
@@ -2233,8 +2260,8 @@ const ImageEditor: React.FC = () => {
                       <CollapsibleSection title={t.sections.brushSettings} sectionKey="brushTool" isOpen={openSections.brushTool} onToggle={() => toggleSection('brushTool')} icon={<BrushIcon className="w-4 h-4"/>}>
                           <input type="range" min="5" max="100" value={brushSize} onChange={e => setBrushSize(Number(e.target.value))} className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-red-500 mb-4"/>
                           <div className="flex justify-between items-center">
-                              <div className="flex gap-2">{brushColors.map(c => <button key={c.name} onClick={() => setBrushColor(c.value)} className={`w-6 h-6 rounded-full ${c.css} ${brushColor === c.value ? 'ring-2 ring-white' : ''}`} />)}</div>
-                              <button onClick={() => imageDisplayRef.current?.clearMask()} className="text-xs text-red-400 underline">{t.controls.clearMask}</button>
+                              <div className="flex gap-2">{brushColors.map(c => <button key={c.name} onClick={() => setBrushColor(c.value)} className={`w-6 h-6 rounded-full ${c.css} ${brushColor === c.value ? 'ring-2 ring-white shadow-lg' : 'opacity-70'}`} />)}</div>
+                              <button onClick={() => imageDisplayRef.current?.clearMask()} className="text-xs text-red-400 hover:text-red-300 underline font-medium">{t.controls.clearMask}</button>
                           </div>
                       </CollapsibleSection>
                   )}
@@ -2244,13 +2271,13 @@ const ImageEditor: React.FC = () => {
 
          {/* Footer: Generate Button */}
          {activeImage && (
-            <div className="p-4 border-t border-zinc-800 bg-zinc-900">
+            <div className="p-4 border-t border-white/5 bg-black/40 backdrop-blur-md">
                <button
                  onClick={handleSubmit}
                  disabled={isLoading || (!hasEditInstruction && editingMode !== 'object')}
-                 className="w-full bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg shadow-red-900/20 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                 className="w-full bg-gradient-to-r from-red-600 via-orange-600 to-red-600 bg-size-200 animate-gradient hover:bg-right text-white font-bold py-4 px-4 rounded-xl shadow-[0_0_20px_rgba(220,38,38,0.4)] hover:shadow-[0_0_30px_rgba(220,38,38,0.6)] transition-all transform active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-3 text-lg tracking-wide"
                >
-                 {isLoading ? <Spinner /> : <SparklesIcon className="w-5 h-5" />}
+                 {isLoading ? <Spinner className="w-6 h-6 text-white"/> : <SparklesIcon className="w-6 h-6 animate-pulse" />}
                  <span>{isLoading ? t.buttons.generating : t.buttons.generate}</span>
                </button>
             </div>
@@ -2258,58 +2285,66 @@ const ImageEditor: React.FC = () => {
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 flex flex-col min-w-0 relative bg-zinc-950">
+      <main className="flex-1 flex flex-col min-w-0 relative bg-[#09090b]">
+         {/* Background Grid Pattern */}
+         <div className="absolute inset-0 z-0 opacity-10 pointer-events-none" 
+            style={{ 
+                backgroundImage: 'linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px)', 
+                backgroundSize: '40px 40px' 
+            }}
+         />
+
          {/* Header */}
-         <header className="h-16 flex items-center justify-between px-6 border-b border-zinc-800 bg-zinc-900/50 backdrop-blur z-10">
+         <header className="h-16 flex items-center justify-between px-6 border-b border-white/5 bg-black/60 backdrop-blur-xl z-10">
              <div className="flex items-center gap-3">
                 {activeImage ? (
                      <>
-                        <span className="px-2 py-1 rounded bg-zinc-800 text-xs font-mono text-zinc-400 border border-zinc-700">{sceneType.toUpperCase()}</span>
-                        <h2 className="text-sm font-medium text-zinc-200 truncate max-w-xs">{activeImage.file?.name}</h2>
+                        <span className="px-2.5 py-1 rounded-md bg-zinc-800/50 text-xs font-mono font-bold text-red-400 border border-red-500/20 shadow-[0_0_10px_rgba(220,38,38,0.1)]">{sceneType.toUpperCase()}</span>
+                        <h2 className="text-sm font-medium text-zinc-300 truncate max-w-xs">{activeImage.file?.name}</h2>
                      </>
-                ) : <div className="text-zinc-600 text-sm italic">{t.header.noProject}</div>}
+                ) : <div className="text-zinc-500 text-sm font-light italic">{t.header.noProject}</div>}
              </div>
              <div className="flex items-center gap-4">
-                <div className="text-xs font-medium flex items-center gap-2">
-                    {saveStatus === 'saving' && <span className="text-yellow-500 animate-pulse">{t.header.saving}</span>}
-                    {saveStatus === 'saved' && <span className="text-green-500">{t.header.saved}</span>}
-                    {saveStatus === 'error' && <span className="text-red-500">{t.header.error}</span>}
+                <div className="text-xs font-bold uppercase tracking-wider flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-full border border-white/5">
+                    {saveStatus === 'saving' && <span className="text-yellow-500 animate-pulse flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-yellow-500"/> {t.header.saving}</span>}
+                    {saveStatus === 'saved' && <span className="text-green-500 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-500"/> {t.header.saved}</span>}
+                    {saveStatus === 'error' && <span className="text-red-500 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500"/> {t.header.error}</span>}
                 </div>
                 
                 {/* Change/Add Key Button */}
                 {!(window as any).aistudio && (
                      <button 
                         onClick={handleResetKey}
-                        className={`p-2 rounded-md transition-colors ${!hasApiKey ? 'text-red-500 bg-red-500/10 hover:bg-red-500/20 animate-pulse' : 'text-zinc-400 hover:text-yellow-400 hover:bg-zinc-800'}`}
+                        className={`p-2 rounded-lg transition-all ${!hasApiKey ? 'text-red-500 bg-red-500/10 border border-red-500/50 hover:bg-red-500/20 animate-pulse shadow-[0_0_15px_rgba(220,38,38,0.3)]' : 'text-zinc-400 hover:text-white hover:bg-white/10'}`}
                         title={!hasApiKey ? (language === 'th' ? 'กรุณาใส่ API Key' : 'API Key Required') : (language === 'th' ? 'เปลี่ยน API Key' : 'Change API Key')}
                      >
                         <KeyIcon className="w-5 h-5"/>
                      </button>
                 )}
 
-                <button onClick={toggleLanguage} className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded border border-zinc-700">
+                <button onClick={toggleLanguage} className="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white text-xs font-bold rounded-lg border border-white/10 transition-colors">
                     {language === 'en' ? 'TH' : 'EN'}
                 </button>
-                 <button onClick={() => setIsProjectModalOpen(true)} className="px-4 py-2 text-xs font-bold uppercase tracking-wide bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-md border border-zinc-700 transition-all flex items-center gap-2 group">
-                    <PhotoIcon className="w-4 h-4 group-hover:text-white"/> {t.buttons.openProjects}
+                 <button onClick={() => setIsProjectModalOpen(true)} className="px-4 py-2 text-xs font-bold uppercase tracking-wide bg-white text-black hover:bg-zinc-200 rounded-lg shadow-lg shadow-white/10 transition-all transform hover:scale-105 flex items-center gap-2 group">
+                    <PhotoIcon className="w-4 h-4"/> {t.buttons.openProjects}
                  </button>
              </div>
          </header>
 
          {/* Workspace Canvas */}
-         <div className="flex-1 overflow-y-auto custom-scrollbar p-8 flex flex-col items-center relative bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-zinc-900 via-zinc-950 to-zinc-950">
-            <div className="w-full max-w-6xl h-full flex flex-col">
+         <div className="flex-1 overflow-y-auto custom-scrollbar p-8 flex flex-col items-center relative z-0">
+            <div className="w-full max-w-7xl h-full flex flex-col">
                
                {/* Error Banner */}
                {error && (
-                  <div className="mb-4 bg-red-900/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg flex justify-between items-center animate-fade-in">
-                      <span className="text-sm">{error}</span>
-                      <button onClick={() => setError(null)} className="text-red-400 hover:text-white"><XMarkIcon className="w-4 h-4"/></button>
+                  <div className="mb-4 bg-red-950/40 border border-red-500/30 text-red-200 px-6 py-4 rounded-xl flex justify-between items-center animate-fade-in shadow-xl backdrop-blur-md">
+                      <span className="text-sm font-medium flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"/>{error}</span>
+                      <button onClick={() => setError(null)} className="text-red-400 hover:text-white transition-colors"><XMarkIcon className="w-5 h-5"/></button>
                   </div>
                )}
 
                {/* Image Display Area */}
-               <div className="flex-1 min-h-[400px] bg-zinc-900/50 rounded-xl border border-zinc-800 shadow-2xl overflow-hidden relative flex flex-col">
+               <div className="flex-1 min-h-[450px] bg-black/40 rounded-2xl border border-white/5 shadow-2xl overflow-hidden relative flex flex-col backdrop-blur-sm">
                   <div className="flex-1 relative">
                       <ImageDisplay
                         ref={imageDisplayRef}
@@ -2332,7 +2367,7 @@ const ImageEditor: React.FC = () => {
                   
                   {/* Floating Toolbar Overlay */}
                   {activeImage && (
-                      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20">
+                      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30">
                            <ImageToolbar
                                 onUndo={handleUndo}
                                 onRedo={handleRedo}
@@ -2356,17 +2391,17 @@ const ImageEditor: React.FC = () => {
 
                {/* Variations Grid (Bottom Panel) */}
                {currentResults.length > 1 && (
-                  <div className="mt-6">
-                      <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                          <SparklesIcon className="w-3 h-3"/> Generated Variations
+                  <div className="mt-8">
+                      <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                          <SparklesIcon className="w-4 h-4 text-red-500"/> Generated Variations
                       </h3>
-                      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                           {currentResults.map((resultUrl, index) => (
                               <div key={index} onClick={() => updateActiveImage(img => ({ ...img, selectedResultIndex: index }))}
-                                   className={`group relative aspect-square rounded-lg overflow-hidden cursor-pointer border-2 transition-all ${activeImage?.selectedResultIndex === index ? 'border-red-500 ring-2 ring-red-500/20' : 'border-zinc-800 hover:border-zinc-600'}`}>
-                                  <img src={resultUrl} alt="var" className="w-full h-full object-contain bg-zinc-900" />
-                                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                                  {activeImage?.selectedResultIndex === index && <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full shadow-lg shadow-red-500/50" />}
+                                   className={`group relative aspect-square rounded-xl overflow-hidden cursor-pointer border-2 transition-all transform hover:scale-105 shadow-lg ${activeImage?.selectedResultIndex === index ? 'border-red-500 ring-2 ring-red-500/20 scale-105 z-10' : 'border-zinc-800 hover:border-zinc-600 bg-black'}`}>
+                                  <img src={resultUrl} alt="var" className="w-full h-full object-cover" />
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                  {activeImage?.selectedResultIndex === index && <div className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full shadow-[0_0_10px_rgba(220,38,38,0.8)] border border-white/20" />}
                               </div>
                           ))}
                       </div>
@@ -2375,13 +2410,15 @@ const ImageEditor: React.FC = () => {
                
                {/* History */}
                {activeImage && activeImage.promptHistory.length > 0 && (
-                   <div className="mt-6 border-t border-zinc-800 pt-4">
-                        <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">History Log</h3>
+                   <div className="mt-8 border-t border-white/5 pt-6 pb-8">
+                        <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                             <HistoryIcon className="w-4 h-4"/> History Log
+                        </h3>
                         <div className="flex flex-wrap gap-2">
                             {activeImage.promptHistory.map((h, i) => (
                                 <button key={i} onClick={() => updateActiveImage(img => ({ ...img, historyIndex: i, selectedResultIndex: 0 }))}
-                                    className={`px-3 py-1 text-[10px] rounded-full border transition-colors max-w-xs truncate ${activeImage.historyIndex === i ? 'bg-zinc-700 text-white border-zinc-500' : 'bg-zinc-900 text-zinc-500 border-zinc-800 hover:border-zinc-600'}`}>
-                                    {i + 1}. {h}
+                                    className={`px-4 py-1.5 text-[10px] font-medium rounded-full border transition-all max-w-xs truncate ${activeImage.historyIndex === i ? 'bg-zinc-800 text-white border-zinc-600 shadow-md' : 'bg-black/30 text-zinc-500 border-zinc-800 hover:border-zinc-600 hover:text-zinc-300'}`}>
+                                    <span className="opacity-50 mr-1">{i + 1}.</span> {h}
                                 </button>
                             ))}
                         </div>
