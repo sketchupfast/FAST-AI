@@ -743,6 +743,7 @@ const ImageEditor: React.FC = () => {
   const [activeImageIndex, setActiveImageIndex] = useState<number | null>(null);
   const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+  const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
   
   // Language State
   const [language, setLanguage] = useState<'en' | 'th'>('en');
@@ -878,6 +879,7 @@ const ImageEditor: React.FC = () => {
           try {
               await (window as any).aistudio.openSelectKey();
               setHasApiKey(true);
+              setIsKeyModalOpen(false);
           } catch(e) {
               console.error("Key selection failed", e);
           }
@@ -891,16 +893,13 @@ const ImageEditor: React.FC = () => {
           localStorage.setItem('fast-ai-user-key', trimmedKey);
           setUserApiKey(trimmedKey);
           setHasApiKey(true);
+          setIsKeyModalOpen(false);
       }
   };
 
   const handleResetKey = () => {
-      if(confirm(language === 'th' ? 'คุณต้องการเปลี่ยน API Key ใช่หรือไม่?' : 'Do you want to change your API Key?')) {
-        localStorage.removeItem('fast-ai-user-key');
-        setUserApiKey('');
-        setHasApiKey(false);
-        setTempKey('');
-      }
+    setTempKey(userApiKey);
+    setIsKeyModalOpen(true);
   };
 
   const toggleSection = (sectionName: string) => {
@@ -1318,6 +1317,12 @@ const ImageEditor: React.FC = () => {
   };
 
   const executeGeneration = async (promptForGeneration: string, promptForHistory: string, size?: '1K' | '2K' | '4K', autoDownload = false) => {
+      // API Key Check before execution
+      if (!hasApiKey && !(window as any).aistudio) {
+          setIsKeyModalOpen(true);
+          return;
+      }
+      
       if (!activeImage) return;
       let maskBase64: string | null = null;
       if (editingMode === 'object') {
@@ -1424,6 +1429,12 @@ const ImageEditor: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // API Key Check before submitting prompt
+    if (!hasApiKey && !(window as any).aistudio) {
+        setIsKeyModalOpen(true);
+        return;
+    }
+
     const promptParts: string[] = [];
     if (prompt.trim()) promptParts.push(prompt.trim());
 
@@ -1630,27 +1641,38 @@ const ImageEditor: React.FC = () => {
 
   if (!isDataLoaded) return <div className="flex items-center justify-center h-screen bg-zinc-950"><Spinner /></div>;
 
-  if (!hasApiKey) {
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950 text-white">
-            <div className="text-center space-y-6 max-w-md p-8 bg-zinc-900 rounded-2xl border border-zinc-800 shadow-2xl">
-                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-                    <SparklesIcon className="w-8 h-8 text-white" />
+  return (
+    <div className="flex h-screen w-full bg-zinc-950 text-zinc-300 overflow-hidden font-sans">
+      
+      {/* API Key Modal (Triggered on Demand) */}
+      {isKeyModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => hasApiKey ? setIsKeyModalOpen(false) : null}>
+            <div className="bg-zinc-900 rounded-2xl border border-zinc-700 shadow-2xl w-full max-w-md p-6 overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="flex justify-between items-start mb-4">
+                     <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20">
+                            <SparklesIcon className="w-6 h-6 text-white" />
+                        </div>
+                        <h2 className="text-xl font-bold text-white">Setup Gemini 3</h2>
+                     </div>
+                     {hasApiKey && (
+                         <button onClick={() => setIsKeyModalOpen(false)} className="text-zinc-500 hover:text-white">
+                             <XMarkIcon className="w-5 h-5"/>
+                         </button>
+                     )}
                 </div>
-                <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
-                    Setup Gemini 3
-                </h1>
-                <p className="text-zinc-400 leading-relaxed">
+                
+                <p className="text-zinc-400 text-sm leading-relaxed mb-6">
                    {language === 'th' 
-                    ? 'กรุณาเชื่อมต่อ API Key ของคุณเพื่อเริ่มต้นใช้งาน' 
-                    : 'Please connect your API Key to start using the app.'}
+                    ? 'กรุณาเชื่อมต่อ API Key เพื่อเริ่มการสร้างภาพ AI' 
+                    : 'Please connect your API Key to enable AI generation features.'}
                 </p>
                 
                 {/* Auto-selection button if supported */}
                 {(window as any).aistudio ? (
                     <button 
                         onClick={handleApiKeySelect}
-                        className="w-full py-3 px-6 bg-white text-zinc-950 font-bold rounded-lg hover:bg-zinc-200 transition-all transform active:scale-95"
+                        className="w-full py-3 px-6 bg-white text-zinc-950 font-bold rounded-lg hover:bg-zinc-200 transition-all transform active:scale-95 mb-4"
                     >
                         {language === 'th' ? 'เลือก API Key (Auto)' : 'Select API Key (Auto)'}
                     </button>
@@ -1669,24 +1691,23 @@ const ImageEditor: React.FC = () => {
                             disabled={!tempKey.trim()}
                             className="w-full py-3 px-6 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {language === 'th' ? 'เริ่มใช้งาน' : 'Start Using'}
+                            {language === 'th' ? 'บันทึกและเริ่มใช้งาน' : 'Save & Start Using'}
                         </button>
-                        <p className="text-xs text-zinc-500 mt-2">
+                        <p className="text-[10px] text-zinc-600 text-center">
                             Key is stored locally in your browser.
                         </p>
                     </form>
                 )}
                 
-                <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noreferrer" className="block text-xs text-zinc-600 hover:text-zinc-400 underline">
-                    {language === 'th' ? 'ข้อมูลเกี่ยวกับ Billing & Key' : 'Get an API Key'}
-                </a>
+                <div className="text-center mt-4 pt-4 border-t border-zinc-800">
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:text-blue-300 hover:underline">
+                        {language === 'th' ? 'ขอกุญแจ API Key (ฟรี)' : 'Get a free API Key'}
+                    </a>
+                </div>
             </div>
         </div>
-    );
-  }
+      )}
 
-  return (
-    <div className="flex h-screen w-full bg-zinc-950 text-zinc-300 overflow-hidden font-sans">
       {/* Project Modal */}
       {isProjectModalOpen && (
          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setIsProjectModalOpen(false)}>
@@ -2172,12 +2193,12 @@ const ImageEditor: React.FC = () => {
                     {saveStatus === 'error' && <span className="text-red-500">{t.header.error}</span>}
                 </div>
                 
-                {/* Change Key Button (Only show if key exists) */}
-                {hasApiKey && !(window as any).aistudio && (
+                {/* Change/Add Key Button */}
+                {!(window as any).aistudio && (
                      <button 
                         onClick={handleResetKey}
-                        className="p-2 text-zinc-400 hover:text-yellow-400 hover:bg-zinc-800 rounded-md transition-colors"
-                        title={language === 'th' ? 'เปลี่ยน API Key' : 'Change API Key'}
+                        className={`p-2 rounded-md transition-colors ${!hasApiKey ? 'text-red-500 bg-red-500/10 hover:bg-red-500/20 animate-pulse' : 'text-zinc-400 hover:text-yellow-400 hover:bg-zinc-800'}`}
+                        title={!hasApiKey ? (language === 'th' ? 'กรุณาใส่ API Key' : 'API Key Required') : (language === 'th' ? 'เปลี่ยน API Key' : 'Change API Key')}
                      >
                         <KeyIcon className="w-5 h-5"/>
                      </button>
