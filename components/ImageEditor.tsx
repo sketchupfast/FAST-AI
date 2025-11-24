@@ -51,6 +51,7 @@ import { ShareIcon } from './icons/ShareIcon';
 import { UpscaleIcon } from './icons/UpscaleIcon';
 import { ArrowPathIcon } from './icons/ArrowPathIcon';
 import { KeyIcon } from './icons/KeyIcon';
+import { LineSegmentIcon } from './icons/LineSegmentIcon';
 
 
 export interface ImageState {
@@ -140,7 +141,7 @@ const translations = {
         promptExterior: "Describe your changes...",
         promptInterior: "Describe interior changes...",
         promptPlan: "Describe specific details for the plan...",
-        promptMask: "Describe masked area change..."
+        promptMask: "Draw the shape and describe the new element (e.g., 'Add a gable roof extension')..."
     },
     modes: {
         general: "General",
@@ -218,7 +219,7 @@ const translations = {
         promptExterior: "อธิบายสิ่งที่ต้องการแก้ไข...",
         promptInterior: "อธิบายการตกแต่งภายใน...",
         promptPlan: "อธิบายรายละเอียดของแปลน...",
-        promptMask: "อธิบายสิ่งที่ต้องการแก้ในพื้นที่เลือก..."
+        promptMask: "วาดรูปร่างและอธิบายสิ่งที่ต้องการแก้ (เช่น 'ต่อเติมหลังคาหน้าจั่ว')..."
     },
     modes: {
         general: "ทั่วไป",
@@ -226,7 +227,7 @@ const translations = {
     }
   }
 };
-
+// ... [Existing constants: styleOptions, cameraAngleOptions, etc. remain unchanged] ...
 const styleOptions = [
     { name: 'Cinematic' },
     { name: 'Vintage' },
@@ -442,7 +443,9 @@ const planQuickActionList: { id: string; label: string; desc: string; icon?: Rea
 type EditingMode = 'default' | 'object';
 type SceneType = 'exterior' | 'interior' | 'plan';
 
+// ... [Existing QUICK_ACTION_PROMPTS and other constants remain unchanged] ...
 const QUICK_ACTION_PROMPTS: Record<string, string> = {
+    // ... [Content of QUICK_ACTION_PROMPTS] ...
     localVillageDay: "Transform the image into a hyper-realistic daytime street view within a lively housing estate. STRICTLY MAINTAIN THE ORIGINAL CAMERA ANGLE AND PERSPECTIVE. The atmosphere should be bright, sunny, and natural. Crucially, generate a realistic concrete or asphalt road in the foreground. The house fence should be a neat green hedge combined with a modern black steel slatted sliding gate. Add authentic details such as standard electric poles with utility lines running along the street, and lush green trees providing shade. The overall look should capture the authentic, everyday vibe of a residential village neighborhood.",
     modernVillageWithProps: "Transform the image into a high-quality, photorealistic architectural photograph capturing the atmosphere of a well-maintained, modern housing estate. The landscape should feature a lush, perfectly manicured green lawn and neat rows of shrubbery. Crucially, include a mix of large, mature trees to create a shady, established feel, alongside newly planted trees with visible wooden support stakes (tree props), typical of a new village development. The lighting should be bright and natural, enhancing the fresh and inviting community feel. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     modernVillageIsolated: "Transform the image into a high-quality, photorealistic architectural photograph capturing the atmosphere of a well-maintained, modern housing estate. The landscape should feature a lush, perfectly manicured green lawn and neat rows of shrubbery. Crucially, include a mix of large, mature trees to create a shady, established feel, alongside newly planted trees with visible wooden support stakes (tree props). **CRITICAL INSTRUCTION:** Remove any neighboring houses, buildings, or structures from the background. The background must be replaced with a clear sky or distant natural vegetation to make the house look secluded and private. The lighting should be bright and natural. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it.",
@@ -565,6 +568,7 @@ const FOREGROUND_PROMPTS: Record<string, string> = {
   "Magazine/Books": "Add a stack of design magazines or books on a surface in the foreground."
 };
 
+// ... [Existing components OptionButton, IntensitySlider, CollapsibleSection, ModeButton, PreviewCard, ImageToolbar, downloadBase64AsFile remain unchanged] ...
 const OptionButton: React.FC<{
   option: string,
   isSelected: boolean,
@@ -751,7 +755,7 @@ const ImageToolbar: React.FC<{
   </div>
 );
 
-// Helper function to safely download base64 as a file using Blob manually constructed from bytes.
+// ... [downloadBase64AsFile and ImageEditor component structure remain unchanged until brush settings] ...
 const downloadBase64AsFile = (base64Data: string, filename: string, mimeType: string = 'image/jpeg') => {
     try {
         const byteCharacters = atob(base64Data);
@@ -776,16 +780,14 @@ const downloadBase64AsFile = (base64Data: string, filename: string, mimeType: st
 };
 
 const ImageEditor: React.FC = () => {
+  // ... [State declarations] ...
   const [imageList, setImageList] = useState<ImageState[]>([]);
   const [activeImageIndex, setActiveImageIndex] = useState<number | null>(null);
   const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
   
-  // Language State - Default to Thai ('th')
   const [language, setLanguage] = useState<'en' | 'th'>('th');
-  
-  // Auto-save Status
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
 
   const [prompt, setPrompt] = useState<string>('');
@@ -815,29 +817,23 @@ const ImageEditor: React.FC = () => {
   const [outputSize, setOutputSize] = useState<string>('Original');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [sceneType, setSceneType] = useState<SceneType>('exterior'); // Default to exterior
+  const [sceneType, setSceneType] = useState<SceneType>('exterior');
   
-  // Plan Mode States
   const [planConversionMode, setPlanConversionMode] = useState<string>('2d_bw');
   const [selectedRoomType, setSelectedRoomType] = useState<string>('Living Room');
   const [selectedFlooring, setSelectedFlooring] = useState<string>('');
   
-  // Interior Room Type State
   const [selectedInteriorRoomType, setSelectedInteriorRoomType] = useState<string>('');
-  // Moodboard State
   const [referenceImage, setReferenceImage] = useState<{ base64: string; mimeType: string; dataUrl: string } | null>(null);
   
-  // Color adjustment states
   const [brightness, setBrightness] = useState<number>(100);
   const [contrast, setContrast] = useState<number>(100);
   const [saturation, setSaturation] = useState<number>(100);
   const [sharpness, setSharpness] = useState<number>(100);
   
-  // Vegetation state
   const [treeAge, setTreeAge] = useState<number>(50);
   const [season, setSeason] = useState<number>(50);
 
-  // Special interior lighting state
   const [isCoveLightActive, setIsCoveLightActive] = useState<boolean>(false);
   const [coveLightBrightness, setCoveLightBrightness] = useState<number>(70);
   const [coveLightColor, setCoveLightColor] = useState<string>('Warm'); 
@@ -853,10 +849,9 @@ const ImageEditor: React.FC = () => {
   const [addFourWayAC, setAddFourWayAC] = useState<boolean>(false);
   const [addWallTypeAC, setAddWallTypeAC] = useState<boolean>(false);
 
-  // UI state
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     prompt: true,
-    quickActions: false, // Collapsed by default
+    quickActions: false,
     addLight: false,
     colorAdjust: false,
     filter: false,
@@ -885,7 +880,7 @@ const ImageEditor: React.FC = () => {
     projectHistory: false,
     planConversion: true,
     perspectiveConfig: true,
-    planQuickActions: false, // Collapsed by default
+    planQuickActions: false,
     planFlooring: true,
   });
   
@@ -893,11 +888,11 @@ const ImageEditor: React.FC = () => {
   
   const t = translations[language];
   
-  // API Key Check
   const [hasApiKey, setHasApiKey] = useState<boolean>(false);
   const [userApiKey, setUserApiKey] = useState<string>('');
   const [tempKey, setTempKey] = useState('');
 
+  // ... [useEffect hooks for Key check, load/save DB remain unchanged] ...
   useEffect(() => {
       const checkKey = async () => {
           if ((window as any).aistudio) {
@@ -909,8 +904,6 @@ const ImageEditor: React.FC = () => {
                   setUserApiKey(storedKey);
                   setHasApiKey(true);
               } else {
-                  // If no stored key and no aistudio, assume we need a key unless process.env is set (dev)
-                  // However, for published apps, process.env might be empty.
                   setHasApiKey(false);
               }
           }
@@ -918,6 +911,7 @@ const ImageEditor: React.FC = () => {
       checkKey();
   }, []);
 
+  // ... [Handlers: handleApiKeySelect, handleManualKeySubmit, handleResetKey, toggleSection, changeEditingMode, etc. remain unchanged] ...
   const handleApiKeySelect = async () => {
       if((window as any).aistudio) {
           try {
@@ -956,33 +950,33 @@ const ImageEditor: React.FC = () => {
 
   const imageDisplayRef = useRef<ImageDisplayHandle>(null);
 
-  
-  // State for masking mode
+  // Masking state
   const [brushSize, setBrushSize] = useState<number>(30);
   const [brushColor, setBrushColor] = useState<string>(brushColors[0].value);
   const [isMaskEmpty, setIsMaskEmpty] = useState<boolean>(true);
-
+  const [maskTool, setMaskTool] = useState<'brush' | 'line'>('brush');
 
   const mountedRef = useRef(true);
+  
+  // ... [All other useEffects and handlers remain unchanged] ...
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
     };
   }, []);
-
-  // Load state from IndexedDB on component mount
+  
+  // ... [DB loading/saving logic] ...
   useEffect(() => {
     let isMounted = true;
     const loadData = async () => {
       try {
         const savedProjects = await loadProjects();
-        // Load saved language preference
         const savedLang = localStorage.getItem('fast-ai-language');
         if (savedLang === 'th' || savedLang === 'en') {
             setLanguage(savedLang);
         } else {
-            setLanguage('th'); // Default to Thai if not set
+            setLanguage('th'); 
         }
 
         if (isMounted && Array.isArray(savedProjects)) {
@@ -1011,35 +1005,23 @@ const ImageEditor: React.FC = () => {
         }
       }
     };
-
     loadData();
-    
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, []);
 
-  // Save state to IndexedDB whenever it changes
   useEffect(() => {
-    if (!isDataLoaded) {
-      return; // Don't save until initial data has been loaded
-    }
-    
+    if (!isDataLoaded) return;
     const saveData = async () => {
       setSaveStatus('saving');
       try {
         const serializableImageList = imageList.map(({ file, ...rest }) => rest);
         await saveProjects(serializableImageList);
-
         if (activeImageIndex !== null) {
           localStorage.setItem('fast-ai-active-project-index', activeImageIndex.toString());
         } else {
           localStorage.removeItem('fast-ai-active-project-index');
         }
-        
-        if (error && error.startsWith("Could not save")) {
-            setError(null);
-        }
+        if (error && error.startsWith("Could not save")) setError(null);
         setSaveStatus('saved');
       } catch (e) {
         console.error("Error saving projects to IndexedDB:", e);
@@ -1047,7 +1029,6 @@ const ImageEditor: React.FC = () => {
         setError("Could not save your project progress. Changes might not be saved.");
       }
     };
-    
     const timeoutId = setTimeout(saveData, 500);
     return () => clearTimeout(timeoutId);
   }, [imageList, activeImageIndex, isDataLoaded]);
@@ -1069,12 +1050,10 @@ const ImageEditor: React.FC = () => {
     setSharpness(100);
   }, [activeImage?.id]);
 
-
   const handleImageChange = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files && files.length > 0) {
       setError(null);
-
       const newImagesPromises = Array.from(files).map((file: File) => {
           return new Promise<ImageState>((resolve, reject) => {
               const reader = new FileReader();
@@ -1107,7 +1086,6 @@ const ImageEditor: React.FC = () => {
               reader.readAsDataURL(file);
           });
       });
-
       try {
           const newImages = await Promise.all(newImagesPromises);
           if (mountedRef.current) {
@@ -1301,9 +1279,9 @@ const ImageEditor: React.FC = () => {
   };
 
   const handleTransform = async (type: 'rotateLeft' | 'rotateRight' | 'flipHorizontal' | 'flipVertical') => { 
+      // ... [Existing implementation] ...
       if (!activeImage) return;
       setIsLoading(true);
-  
       try {
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
@@ -1365,7 +1343,7 @@ const ImageEditor: React.FC = () => {
   };
 
   const executeGeneration = async (promptForGeneration: string, promptForHistory: string, size?: '1K' | '2K' | '4K', autoDownload = false) => {
-      // API Key Check before execution
+      // ... [Existing implementation] ...
       if (!hasApiKey && !(window as any).aistudio) {
           setIsKeyModalOpen(true);
           return;
@@ -1395,7 +1373,6 @@ const ImageEditor: React.FC = () => {
           
           const refImg = (!size && referenceImage) ? referenceImage : null;
 
-          // Pass userApiKey to editImage
           const result = await editImage(sourceBase64, sourceMimeType, finalPrompt, maskBase64, size, refImg, userApiKey);
           const generatedImageBase64 = result.data;
           const generatedMimeType = result.mimeType;
@@ -1460,7 +1437,7 @@ const ImageEditor: React.FC = () => {
       "Upscale this image to 4K resolution. Enhance details, clarity, and sharpness for large format display. Do not change the composition or aspect ratio.",
       "Upscale 4K",
       '4K',
-      false // User can check result first then download
+      false 
     );
   };
   
@@ -1476,13 +1453,11 @@ const ImageEditor: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // API Key Check before submitting prompt
     if (!hasApiKey && !(window as any).aistudio) {
         setIsKeyModalOpen(true);
         return;
     }
-
+    // ... [Existing logic for constructing prompts] ...
     const promptParts: string[] = [];
     if (prompt.trim()) promptParts.push(prompt.trim());
 
@@ -1515,7 +1490,6 @@ const ImageEditor: React.FC = () => {
                 }
                 if (planPrompt) promptParts.push(planPrompt);
 
-                // Add Flooring
                 if (selectedFlooring && planConversionMode !== '2d_bw') {
                     promptParts.push(`Use ${selectedFlooring} for the flooring material.`);
                     if(!constructedHistory.includes("Flooring")) constructedHistory += `, Floor: ${selectedFlooring}`;
@@ -1525,7 +1499,6 @@ const ImageEditor: React.FC = () => {
             if (!constructedHistory) constructedHistory = "Plan Edit: Object";
         }
 
-        // Plan Moodboard Prompt
         if (referenceImage) {
             promptParts.push("Use the provided reference image as a strict guide for the architectural style, flooring materials, and color palette of the floor plan.");
             constructedHistory += `, Moodboard: Attached`;
@@ -1643,10 +1616,9 @@ const ImageEditor: React.FC = () => {
   const handleResetEdits = () => { if (window.confirm("Reset?")) updateActiveImage(img => ({ ...img, history: [], historyIndex: -1, selectedResultIndex: null, promptHistory: [] })); };
   
   const handleDownload = async () => { 
+      // ... [Existing implementation] ...
       if (!activeImage) return;
-      
       const url = activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex] : activeImage.dataUrl;
-      
       if (url) {
         if (url.startsWith('data:')) {
              try {
@@ -1674,9 +1646,9 @@ const ImageEditor: React.FC = () => {
   };
   
   const handleShare = async () => {
+      // ... [Existing implementation] ...
       if (!activeImage) return;
       const url = activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex] : activeImage.dataUrl;
-      
       if (url && navigator.share) {
           try {
               const base64Data = url.split(',')[1];
@@ -1688,7 +1660,6 @@ const ImageEditor: React.FC = () => {
               }
               const blob = new Blob([byteNumbers], {type: mimeType});
               const file = new File([blob], `image.${mimeType.split('/')[1]}`, { type: mimeType });
-
               await navigator.share({
                   files: [file],
                   title: 'My Design',
@@ -1701,7 +1672,6 @@ const ImageEditor: React.FC = () => {
           alert("Web Share API not supported in this browser");
       }
   };
-
 
   const selectedImageUrl = activeImage
     ? activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null
@@ -1721,7 +1691,7 @@ const ImageEditor: React.FC = () => {
   return (
     <div className="flex h-screen w-full bg-[#09090b] text-zinc-300 overflow-hidden font-sans">
       
-      {/* API Key Modal (Triggered on Demand) */}
+      {/* API Key Modal */}
       {isKeyModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-md p-4" onClick={() => hasApiKey ? setIsKeyModalOpen(false) : null}>
             <div className="bg-[#18181b] rounded-2xl border border-white/10 shadow-2xl w-full max-w-md p-6 overflow-hidden transform transition-all" onClick={e => e.stopPropagation()}>
@@ -1794,7 +1764,7 @@ const ImageEditor: React.FC = () => {
         </div>
       )}
 
-      {/* Project Modal */}
+      {/* ... [Project Modal remains unchanged] ... */}
       {isProjectModalOpen && (
          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-lg p-4" onClick={() => setIsProjectModalOpen(false)}>
             <div className="bg-[#18181b] rounded-2xl border border-white/10 shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
@@ -1836,7 +1806,7 @@ const ImageEditor: React.FC = () => {
 
       {/* LEFT SIDEBAR */}
       <aside className="w-80 flex flex-col border-r border-white/5 bg-black/80 backdrop-blur-xl flex-shrink-0 z-20 shadow-[4px_0_24px_rgba(0,0,0,0.5)]">
-         {/* Logo Area */}
+         {/* ... [Logo and Tabs remain unchanged] ... */}
          <div className="h-16 flex items-center px-6 border-b border-white/5 bg-gradient-to-r from-black/50 to-transparent">
              <div className="flex items-center gap-2">
                  <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-red-600 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
@@ -1846,7 +1816,6 @@ const ImageEditor: React.FC = () => {
              </div>
          </div>
 
-         {/* Scene Tabs */}
          {activeImage && (
            <div className="flex border-b border-white/5 bg-black/40 p-1">
              <button onClick={() => handleSceneTypeSelect('exterior')} className={`flex-1 py-2 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-300 ${sceneType === 'exterior' ? 'text-white bg-zinc-800 shadow-lg' : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'}`}>
@@ -1878,7 +1847,7 @@ const ImageEditor: React.FC = () => {
                          <ModeButton label={t.modes.object} icon={<BrushIcon className="w-4 h-4" />} mode="object" activeMode={editingMode} onClick={setEditingMode} />
                   </div>
                   
-                   {/* Common Tools (Offline) */}
+                   {/* ... [Manual Adjustments Section remains unchanged] ... */}
                    <CollapsibleSection title={t.sections.manualAdjustments} sectionKey="manualAdjustments" isOpen={openSections.manualAdjustments} onToggle={() => toggleSection('manualAdjustments')} icon={<AdjustmentsIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                        <div className="space-y-4">
                            <div>
@@ -1900,8 +1869,10 @@ const ImageEditor: React.FC = () => {
                    </CollapsibleSection>
 
                   {/* Dynamic Content based on SceneType */}
+                  {/* ... [Exterior & Interior Sections remain largely unchanged, focusing on Brush Settings update] ... */}
                   {sceneType === 'exterior' && (
                     <>
+                        {/* ... [Existing Exterior Sections] ... */}
                         <CollapsibleSection title={t.sections.prompt} sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-4 h-4"/>}>
                             <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={editingMode === 'object' ? t.placeholders.promptMask : t.placeholders.promptExterior} className="w-full bg-black/50 border border-zinc-700 rounded-xl p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none shadow-inner" rows={3} />
                         </CollapsibleSection>
@@ -1946,6 +1917,7 @@ const ImageEditor: React.FC = () => {
                                  ))}
                              </div>
                         </CollapsibleSection>
+                        {/* ... [Other sections: Camera Angle, Art Style, Arch Style, Garden, Lighting, Background, Foreground] ... */}
                         <CollapsibleSection title={t.sections.cameraAngle} sectionKey="cameraAngle" isOpen={openSections.cameraAngle} onToggle={() => toggleSection('cameraAngle')} icon={<CameraAngleIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             <div className="grid grid-cols-2 gap-2">
                                 {cameraAngleOptions.map(angle => (
@@ -1991,7 +1963,6 @@ const ImageEditor: React.FC = () => {
                                         <div className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-200 ease-in-out ${isAddLightActive ? 'translate-x-6' : 'translate-x-0'}`} />
                                     </button>
                                 </div>
-                                
                                 {isAddLightActive && (
                                     <div className="space-y-3 animate-fade-in p-3 bg-black/20 rounded-lg border border-white/5">
                                         <div>
@@ -2049,6 +2020,7 @@ const ImageEditor: React.FC = () => {
                   
                    {sceneType === 'interior' && (
                     <>
+                        {/* ... [Existing Interior Sections] ... */}
                         <CollapsibleSection title={t.sections.prompt} sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-4 h-4"/>}>
                             <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={t.placeholders.promptInterior} className="w-full bg-black/50 border border-zinc-700 rounded-xl p-3 text-sm text-zinc-200 placeholder-zinc-600 shadow-inner" rows={3} />
                         </CollapsibleSection>
@@ -2329,9 +2301,23 @@ const ImageEditor: React.FC = () => {
                     </>
                   )}
                   
-                  {/* Common Tools */}
+                  {/* Common Tools - Brush Settings */}
                   {editingMode === 'object' && (
                       <CollapsibleSection title={t.sections.brushSettings} sectionKey="brushTool" isOpen={openSections.brushTool} onToggle={() => toggleSection('brushTool')} icon={<BrushIcon className="w-4 h-4"/>}>
+                          <div className="flex gap-2 mb-4 p-1 bg-black/20 rounded-lg">
+                             <button
+                               onClick={() => setMaskTool('brush')}
+                               className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-xs font-bold transition-all ${maskTool === 'brush' ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:bg-zinc-800'}`}
+                             >
+                               <BrushIcon className="w-4 h-4" /> Freehand
+                             </button>
+                             <button
+                               onClick={() => setMaskTool('line')}
+                               className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-xs font-bold transition-all ${maskTool === 'line' ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:bg-zinc-800'}`}
+                             >
+                               <LineSegmentIcon className="w-4 h-4" /> Line
+                             </button>
+                          </div>
                           <input type="range" min="5" max="100" value={brushSize} onChange={e => setBrushSize(Number(e.target.value))} className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-red-500 mb-4"/>
                           <div className="flex justify-between items-center">
                               <div className="flex gap-2">{brushColors.map(c => <button key={c.name} onClick={() => setBrushColor(c.value)} className={`w-6 h-6 rounded-full ${c.css} ${brushColor === c.value ? 'ring-2 ring-white shadow-lg' : 'opacity-70'}`} />)}</div>
@@ -2435,6 +2421,7 @@ const ImageEditor: React.FC = () => {
                         isMaskingMode={editingMode === 'object'}
                         brushSize={brushSize}
                         brushColor={brushColor}
+                        maskTool={maskTool}
                         onMaskChange={setIsMaskEmpty}
                       />
                   </div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback, useImperativeHandle, forwardRef } from 'react';
 import ProgressBar from './ProgressBar';
 import { PhotoIcon } from './icons/PhotoIcon';
@@ -21,6 +22,7 @@ interface ImageDisplayProps {
   isMaskingMode?: boolean;
   brushSize?: number;
   brushColor?: string;
+  maskTool?: 'brush' | 'line';
   onMaskChange?: (isMaskEmpty: boolean) => void;
 }
 
@@ -69,6 +71,7 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
   isMaskingMode = false,
   brushSize = 30,
   brushColor = 'rgba(255, 59, 48, 0.7)',
+  maskTool = 'brush',
   onMaskChange
 }, ref) => {
   const [scale, setScale] = useState(1);
@@ -89,6 +92,8 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
   // Masking state
   const isDrawing = useRef(false);
   const lastPosition = useRef<{ x: number; y: number } | null>(null);
+  const startLinePosition = useRef<{ x: number; y: number } | null>(null);
+  const canvasSnapshot = useRef<ImageData | null>(null);
   
   useImperativeHandle(ref, () => ({
     exportMask: () => {
@@ -278,7 +283,8 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
     if (!isDrawing.current) return;
     const coords = getCoords(e);
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
+    const ctx = canvas?.getContext('2d', { willReadFrequently: true });
+    
     if (ctx && coords) {
       ctx.globalCompositeOperation = 'source-over';
       ctx.strokeStyle = brushColor;
@@ -287,27 +293,50 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
 
-      if(lastPosition.current) {
+      if (maskTool === 'line' && startLinePosition.current && canvasSnapshot.current) {
+         // Restore snapshot to clear previous line preview
+         ctx.putImageData(canvasSnapshot.current, 0, 0);
+         // Draw straight line preview
+         ctx.beginPath();
+         ctx.moveTo(startLinePosition.current.x, startLinePosition.current.y);
+         ctx.lineTo(coords.x, coords.y);
+         ctx.stroke();
+      } else if (maskTool === 'brush' && lastPosition.current) {
+         // Freehand draw
          ctx.beginPath();
          ctx.moveTo(lastPosition.current.x, lastPosition.current.y);
          ctx.lineTo(coords.x, coords.y);
          ctx.stroke();
+         lastPosition.current = coords;
       }
       
-      lastPosition.current = coords;
       onMaskChange?.(false);
     }
   };
 
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
     isDrawing.current = true;
-    lastPosition.current = getCoords(e);
-    draw(e);
+    const coords = getCoords(e);
+    lastPosition.current = coords;
+    
+    if (maskTool === 'line' && coords) {
+        startLinePosition.current = coords;
+        // Save state for line preview
+        const canvas = canvasRef.current;
+        const ctx = canvas?.getContext('2d', { willReadFrequently: true });
+        if (canvas && ctx) {
+            canvasSnapshot.current = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        }
+    } else {
+        draw(e);
+    }
   };
   
   const handleCanvasMouseUp = () => {
     isDrawing.current = false;
     lastPosition.current = null;
+    startLinePosition.current = null;
+    canvasSnapshot.current = null;
   };
 
   const resizeCanvas = useCallback(() => {
@@ -352,9 +381,6 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
   );
 
   const baseFilterStyle = getFilterStyle(selectedFilter);
-  // Note: CSS filter for sharpness is not standard.
-  // We use contrast as a visual proxy for sharpness in the preview.
-  // The actual sharpening is handled by the Gemini model prompt.
   const colorAdjustmentsStyle = `brightness(${brightness / 100}) contrast(${contrast / 100}) saturate(${saturation / 100}) contrast(${sharpness / 100})`;
   const filterStyle = [baseFilterStyle, colorAdjustmentsStyle].filter(Boolean).join(' ');
   
