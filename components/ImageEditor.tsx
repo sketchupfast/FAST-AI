@@ -273,6 +273,7 @@ const architecturalStyleOptions = [
     { name: 'Contemporary', description: 'A mix of styles, curved lines, and use of natural materials.' },
     { name: 'Modern Thai', description: 'Combines Thai elements like high gabled roofs with modernism.' },
     { name: '3D Render', description: 'A hyper-realistic, clean 3D rendering style with perfect lighting, sharp details, and idealized textures, looking like a high-end architectural visualization.' },
+    { name: 'Modern Wood', description: 'Features natural wood siding, warm tones, and organic textures integrated with modern architecture.' },
 ];
 
 const interiorStyleOptions = [
@@ -383,6 +384,7 @@ const flooringOptions = [
 
 const exteriorQuickActionList = [
     { id: 'sketchToPhoto', label: 'Sketch to Photo', desc: 'Convert sketch to realism.', icon: <SketchWatercolorIcon className="w-4 h-4"/> },
+    { id: 'localVillageDay', label: 'Local Village Day', desc: 'Sunny street, poles, trees.' },
     { id: 'modernVillageWithProps', label: 'New Village Estate', desc: 'Mixed large & staked trees.' },
     { id: 'modernVillageIsolated', label: 'New Village (Secluded)', desc: 'No background houses.' },
     { id: 'grandVillageEstate', label: 'Grand Village Estate', desc: 'Hedge fence, propped trees, grand view.' },
@@ -408,6 +410,7 @@ const exteriorQuickActionList = [
     { id: 'tropicalStreamGarden', label: 'Tropical Stream', desc: 'Stream, rocks, lush trees.' },
     { id: 'tropicalPathwayGarden', label: 'Tropical Pathway', desc: 'Dense resort-style path.' },
     { id: 'thaiRiversideRetreat', label: 'Thai Riverside', desc: 'Coconut trees, Plumeria, river view.' },
+    { id: 'luxuryThaiVillage', label: 'Luxury Thai Village', desc: 'Foxtail palms, staked trees, Ixora.' },
 ];
 
 const interiorQuickActionList: { id: string; label: string; desc: string; icon?: React.ReactNode }[] = [
@@ -440,6 +443,7 @@ type EditingMode = 'default' | 'object';
 type SceneType = 'exterior' | 'interior' | 'plan';
 
 const QUICK_ACTION_PROMPTS: Record<string, string> = {
+    localVillageDay: "Transform the image into a hyper-realistic daytime street view within a lively housing estate. STRICTLY MAINTAIN THE ORIGINAL CAMERA ANGLE AND PERSPECTIVE. The atmosphere should be bright, sunny, and natural. Crucially, generate a realistic concrete or asphalt road in the foreground. The house fence should be a neat green hedge combined with a modern black steel slatted sliding gate. Add authentic details such as standard electric poles with utility lines running along the street, and lush green trees providing shade. The overall look should capture the authentic, everyday vibe of a residential village neighborhood.",
     modernVillageWithProps: "Transform the image into a high-quality, photorealistic architectural photograph capturing the atmosphere of a well-maintained, modern housing estate. The landscape should feature a lush, perfectly manicured green lawn and neat rows of shrubbery. Crucially, include a mix of large, mature trees to create a shady, established feel, alongside newly planted trees with visible wooden support stakes (tree props), typical of a new village development. The lighting should be bright and natural, enhancing the fresh and inviting community feel. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     modernVillageIsolated: "Transform the image into a high-quality, photorealistic architectural photograph capturing the atmosphere of a well-maintained, modern housing estate. The landscape should feature a lush, perfectly manicured green lawn and neat rows of shrubbery. Crucially, include a mix of large, mature trees to create a shady, established feel, alongside newly planted trees with visible wooden support stakes (tree props). **CRITICAL INSTRUCTION:** Remove any neighboring houses, buildings, or structures from the background. The background must be replaced with a clear sky or distant natural vegetation to make the house look secluded and private. The lighting should be bright and natural. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it.",
     grandVillageEstate: "Transform the image into a high-quality, photorealistic architectural photograph of a grand and luxurious village estate. The landscape features a perfectly manicured lawn and a neat green hedge fence outlining the property. Crucially, include large, newly planted trees with visible wooden support stakes (tree props). The scene is framed by beautiful, mature trees in the background and foreground, creating a lush 'tree view'. The lighting is bright and natural, emphasizing the spacious and upscale nature of the estate. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
@@ -466,10 +470,11 @@ const QUICK_ACTION_PROMPTS: Record<string, string> = {
     tropicalStreamGarden: "Transform the landscape into a high-quality, photorealistic Tropical Stream Garden. The scene should feature a crystal-clear, shallow stream flowing naturally over smooth river stones and boulders. Include large, flat concrete stepping stones crossing the water, and a wooden deck or terrace in the foreground. The garden is densely populated with lush tropical plants, ferns, and large, sprawling shade trees creating a cool, dappled light effect. The atmosphere is serene, refreshing, and resembles a luxury rainforest resort.",
     tropicalPathwayGarden: "Transform the garden into a Tropical Pathway Garden. Create a dense, resort-style pathway winding through lush tropical plants, ferns, and large-leafed vegetation. The atmosphere should be cool, shaded, and private, evoking the feeling of a luxury nature resort walkway.",
     thaiRiversideRetreat: "Transform the image into a high-quality, photorealistic architectural photograph of a Thai riverside home. The setting is right on the edge of a wide, calm river. The landscape features tall Coconut palm trees swaying in the breeze in the background. The home's garden is landscaped with native Thai trees, specifically featuring beautiful Plumeria (Frangipani) trees with white flowers. In the water along the riverbank, add natural clumps of reeds, tall grasses, or aquatic plants to create a soft, organic shoreline. The overall atmosphere is peaceful, tropical, and luxurious.",
+    luxuryThaiVillage: "Transform the image into a high-quality, photorealistic architectural photograph of a Luxury Thai Village. The setting is bright and sunny. The landscape features a Modern Thai Garden style that is perfectly manicured and orderly. Key elements must include: Foxtail Palm trees adding vertical interest, native Thai trees, large trees with wooden support stakes (props) indicating a new high-end estate, and vibrant Ixora (needle flower) bushes planted in neat rows or clusters. The architecture should feel upscale and the environment pristine. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
 
 
     // --- Interior Presets ---
-    sketchupToPhotoreal: "Transform this SketchUp interior model into a hyper-realistic, high-end luxury photograph. **CRITICAL: STRICTLY PRESERVE the original design, geometry, and furniture layout 100%.** Do NOT change the architecture or camera angle. **REMOVE ALL SKETCH LINES:** Eliminate black outlines, wireframes, and edge lines completely. Apply **PBR (Physically Based Rendering) materials** with perfect texture and reflectivity. Use **IES Lighting profiles** to create realistic, shaped downlight beams on walls and warm, layered illumination. **ADD LUXURY PROPS:** significantly enhance the scene with high-end decor—designer vases, coffee table books, plush cushions, and fresh flowers to create a sophisticated, 'lived-in' luxury showroom atmosphere.",
+    sketchupToPhotoreal: "Transform this SketchUp interior model into a hyper-realistic, high-end luxury photograph. **CRITICAL: STRICTLY PRESERVE the original design, geometry, and furniture layout 100%.** Do NOT change the architecture or camera angle. **REMOVE ALL SKETCH LINES:** Eliminate black outlines, wireframes, and edge lines completely. Apply **PBR (Physically Based Rendering) materials** with perfect texture and reflectivity. **GOLD INTELLIGENCE:** Automatically detect yellow or gold colors in the sketch and render them as high-gloss, mirror-like gold stainless steel. **HYPER-REFLECTIVE FLOORING:** Make marble and tiled floors significantly more reflective than usual, creating a high-end polished look. **SMART LIGHTING:** Use **IES Lighting profiles** for realistic conical downlight beams on walls. Automatically add hidden **LED cove lighting** (indirect light) along ceiling edges and shelving for depth and ambiance. **ADD LUXURY PROPS:** significantly enhance the scene with high-end decor—designer vases, coffee table books, plush cushions, and fresh flowers to create a sophisticated, 'lived-in' luxury showroom atmosphere.",
     darkMoodyLuxuryBedroom: "Redesign this bedroom into a dark, moody, and luxurious sanctuary. Use a sophisticated color palette of deep charcoals, rich browns, and black, accented with warm, soft lighting from designer fixtures. Incorporate high-end materials like dark wood paneling, a feature wall with book-matched marble, plush velvet textiles, and subtle brass or gold details. The atmosphere should be intimate, sophisticated, and exceptionally cozy.",
     softModernSanctuary: "Transform this bedroom into a soft, modern sanctuary with a focus on comfort and serenity. The centerpiece should be a large, fully upholstered bed with a tall, curved, and backlit headboard that creates a gentle glow. Use a calming and light color palette of warm whites, soft beiges, and muted grays. Incorporate gentle curves throughout the room's furniture and decor. The lighting should be soft and layered, creating a peaceful and relaxing atmosphere.",
     geometricChicBedroom: "Redesign this bedroom with a chic and elegant modern aesthetic. The main feature should be a stunning headboard wall with a geometric pattern, such as inlaid wood or upholstered panels. Flank the bed with stylish, modern pendant lights. Use a balanced color palette of neutral tones with a single sophisticated accent color. The furniture should be clean-lined and contemporary. The overall look must be polished, high-end, and visually interesting.",
@@ -851,7 +856,7 @@ const ImageEditor: React.FC = () => {
   // UI state
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     prompt: true,
-    quickActions: true,
+    quickActions: false, // Collapsed by default
     addLight: false,
     colorAdjust: false,
     filter: false,
@@ -859,7 +864,8 @@ const ImageEditor: React.FC = () => {
     archStyle: false,
     cameraAngle: false,
     interiorStyle: true,
-    interiorQuickActions: true,    interiorRoomType: false,
+    interiorQuickActions: true,
+    interiorRoomType: false,
     moodboard: true,
     livingRoomQuickActions: false,
     artStyle: false,
@@ -879,7 +885,7 @@ const ImageEditor: React.FC = () => {
     projectHistory: false,
     planConversion: true,
     perspectiveConfig: true,
-    planQuickActions: true,
+    planQuickActions: false, // Collapsed by default
     planFlooring: true,
   });
   
@@ -1398,7 +1404,7 @@ const ImageEditor: React.FC = () => {
           
           if (autoDownload) {
              try {
-                downloadBase64AsFile(generatedImageBase64, `generated-${size}-${Date.now()}.${generatedMimeType.split('/')[1]}`, generatedMimeType);
+                 downloadBase64AsFile(generatedImageBase64, `generated-${size}-${Date.now()}.${generatedMimeType.split('/')[1]}`, generatedMimeType);
              } catch (downloadErr) {
                 console.error("Auto-download failed, but image was generated.", downloadErr);
                 setError("Image generated, but download failed. You can try downloading from the history.");
@@ -1519,6 +1525,12 @@ const ImageEditor: React.FC = () => {
             if (!constructedHistory) constructedHistory = "Plan Edit: Object";
         }
 
+        // Plan Moodboard Prompt
+        if (referenceImage) {
+            promptParts.push("Use the provided reference image as a strict guide for the architectural style, flooring materials, and color palette of the floor plan.");
+            constructedHistory += `, Moodboard: Attached`;
+        }
+
     } else {
         if (selectedQuickAction) {
             promptParts.push(QUICK_ACTION_PROMPTS[selectedQuickAction]);
@@ -1590,6 +1602,11 @@ const ImageEditor: React.FC = () => {
              
              promptParts.push(`Turn on the building's interior and exterior lights. The lighting intensity should be ${brightnessTerm}. The light color temperature should be ${colorTerm}.`);
              if (!constructedHistory.includes("Quick Action")) constructedHistory += `, Lights: On`;
+        }
+
+        if (sceneType === 'exterior' && referenceImage) {
+            promptParts.push("Use the provided reference image as a strict guide for the architectural style, materials, and color palette.");
+            constructedHistory += `, Moodboard: Attached`;
         }
 
         if (sceneType === 'interior') {
@@ -1888,6 +1905,34 @@ const ImageEditor: React.FC = () => {
                         <CollapsibleSection title={t.sections.prompt} sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-4 h-4"/>}>
                             <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={editingMode === 'object' ? t.placeholders.promptMask : t.placeholders.promptExterior} className="w-full bg-black/50 border border-zinc-700 rounded-xl p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none shadow-inner" rows={3} />
                         </CollapsibleSection>
+                        <CollapsibleSection title={t.sections.moodboard} sectionKey="moodboard" isOpen={openSections.moodboard} onToggle={() => toggleSection('moodboard')} icon={<TextureIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                            <div className="space-y-3">
+                                {!referenceImage ? (
+                                    <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-zinc-700 rounded-xl hover:border-red-500 hover:bg-red-500/5 transition-colors cursor-pointer group bg-black/20">
+                                        <PhotoIcon className="w-6 h-6 text-zinc-500 group-hover:text-red-500 mb-2"/>
+                                        <span className="text-xs font-medium text-zinc-400 group-hover:text-zinc-200 text-center">
+                                            {language === 'th' ? 'อัปโหลดภาพตัวอย่าง' : 'Upload Reference Image'}
+                                        </span>
+                                        <input type="file" accept="image/*" onChange={handleReferenceImageChange} className="hidden" />
+                                    </label>
+                                ) : (
+                                    <div className="relative group">
+                                        <div className="aspect-video w-full rounded-xl overflow-hidden border border-zinc-700 bg-black">
+                                            <img src={referenceImage.dataUrl} alt="Moodboard" className="w-full h-full object-cover opacity-80" />
+                                        </div>
+                                        <button 
+                                            onClick={() => setReferenceImage(null)}
+                                            className="absolute top-2 right-2 p-1.5 bg-red-600 hover:bg-red-500 text-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <XMarkIcon className="w-3 h-3" />
+                                        </button>
+                                        <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/60 backdrop-blur rounded text-[10px] text-white">
+                                            {language === 'th' ? 'ใช้งานเป็น Reference' : 'Using as Reference'}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </CollapsibleSection>
                         <CollapsibleSection title={t.sections.quickActions} sectionKey="quickActions" isOpen={openSections.quickActions} onToggle={() => toggleSection('quickActions')} icon={<StarIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                              <div className="space-y-2">
                                  {exteriorQuickActionList.map(action => (
@@ -2168,6 +2213,35 @@ const ImageEditor: React.FC = () => {
                     <>
                         <CollapsibleSection title={t.sections.prompt} sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-4 h-4"/>}>
                             <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={editingMode === 'object' ? t.placeholders.promptMask : t.placeholders.promptPlan} className="w-full bg-black/50 border border-zinc-700 rounded-xl p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none shadow-inner" rows={3} />
+                        </CollapsibleSection>
+
+                        <CollapsibleSection title={t.sections.moodboard} sectionKey="moodboard" isOpen={openSections.moodboard} onToggle={() => toggleSection('moodboard')} icon={<TextureIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
+                            <div className="space-y-3">
+                                {!referenceImage ? (
+                                    <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-zinc-700 rounded-xl hover:border-red-500 hover:bg-red-500/5 transition-colors cursor-pointer group bg-black/20">
+                                        <PhotoIcon className="w-6 h-6 text-zinc-500 group-hover:text-red-500 mb-2"/>
+                                        <span className="text-xs font-medium text-zinc-400 group-hover:text-zinc-200 text-center">
+                                            {language === 'th' ? 'อัปโหลดภาพตัวอย่าง' : 'Upload Reference Image'}
+                                        </span>
+                                        <input type="file" accept="image/*" onChange={handleReferenceImageChange} className="hidden" />
+                                    </label>
+                                ) : (
+                                    <div className="relative group">
+                                        <div className="aspect-video w-full rounded-xl overflow-hidden border border-zinc-700 bg-black">
+                                            <img src={referenceImage.dataUrl} alt="Moodboard" className="w-full h-full object-cover opacity-80" />
+                                        </div>
+                                        <button 
+                                            onClick={() => setReferenceImage(null)}
+                                            className="absolute top-2 right-2 p-1.5 bg-red-600 hover:bg-red-500 text-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <XMarkIcon className="w-3 h-3" />
+                                        </button>
+                                        <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/60 backdrop-blur rounded text-[10px] text-white">
+                                            {language === 'th' ? 'ใช้งานเป็น Reference' : 'Using as Reference'}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </CollapsibleSection>
 
                         {/* Plan Quick Actions */}
