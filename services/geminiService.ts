@@ -237,7 +237,13 @@ export const editImage = async (
         const isModelError = errorMessage.includes('404') || errorMessage.includes('403') || errorMessage.includes('not found') || errorMessage.includes('503');
 
         if (isQuotaError || isModelError) {
-             console.warn(`Gemini 3 Pro failed (${errorMessage}). Falling back to Gemini 2.5 Flash Image.`);
+             // STRICT 4K CHECK: If user specifically requested 4K/Upscale, do NOT fallback to Flash (which produces 1K).
+             // This prevents users from unknowingly getting a low-res image when they asked for high-res.
+             if (outputSize) {
+                 throw new Error(`High-resolution (4K/2K) generation failed due to quota limits or model availability. Please try again later or use standard resolution.`);
+             }
+
+             console.warn(`Gemini 3 Pro failed (${errorMessage}). Falling back to Gemini 2.5 Flash Image with Quality Boosters.`);
              
              // 2. Fallback to Gemini 2.5 Flash Image (Better availability/Lower Quota)
              // Note: 2.5 Flash Image does not support 'imageSize' config, remove it.
@@ -245,9 +251,16 @@ export const editImage = async (
              if (fallbackConfig.imageConfig) {
                  delete fallbackConfig.imageConfig.imageSize; // Remove 4K/2K request for fallback
              }
+
+             // Enhance prompt for fallback model to compensate for lower quality
+             const fallbackParts = parts.map(p => ({...p})); // Shallow copy
+             const textPart = fallbackParts.find(p => p.text);
+             if (textPart) {
+                 textPart.text += ", highly detailed, photorealistic, 8k resolution, HDR, sharp focus, professional photography";
+             }
              
              try {
-                response = await generateImageWithModel('gemini-2.5-flash-image', parts, fallbackConfig, apiKey);
+                response = await generateImageWithModel('gemini-2.5-flash-image', fallbackParts, fallbackConfig, apiKey);
              } catch (fallbackError) {
                  // If fallback also fails, throw the original error or the fallback error
                  console.error("Fallback failed:", fallbackError);
