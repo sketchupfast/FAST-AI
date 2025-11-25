@@ -56,7 +56,7 @@ const resizeImage = (
       
       ctx.drawImage(img, 0, 0, width, height);
       
-      const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.99); // High quality input
+      const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.92);
       
       resolve({
         resizedBase64: resizedDataUrl.split(',')[1],
@@ -117,50 +117,19 @@ export const cropAndResizeImage = (
   });
 };
 
-// Internal function to call the API with a specific model, including smart retry logic
+// Internal function to call the API with a specific model
 const generateImageWithModel = async (
   modelName: string,
   parts: any[],
   config: any,
-  apiKey?: string,
-  retries = 5 // Increased retries
+  apiKey?: string
 ): Promise<GenerateContentResponse> => {
   const ai = getAiClient(apiKey);
-  let lastError;
-  
-  for (let i = 0; i <= retries; i++) {
-    try {
-      return await ai.models.generateContent({
-        model: modelName,
-        contents: { parts: parts },
-        config: config,
-      });
-    } catch (error: any) {
-      lastError = error;
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      
-      // Catch almost any server-side error to trigger retry, except invalid argument
-      const isRetryable = 
-        errorMessage.includes('429') || 
-        errorMessage.includes('RESOURCE_EXHAUSTED') || 
-        errorMessage.includes('quota') ||
-        errorMessage.includes('503') || 
-        errorMessage.includes('500') ||
-        errorMessage.includes('Overloaded') ||
-        errorMessage.includes('internal');
-
-      if (isRetryable && i < retries) {
-         // Exponential backoff: 2s, 4s, 8s, 16s, 32s (capped at 10s for responsiveness)
-         const delay = Math.min(Math.pow(2, i + 1) * 1000 + Math.random() * 1000, 10000);
-         console.warn(`Model ${modelName} hit rate limit/error. Retrying in ${Math.round(delay)}ms... (Attempt ${i + 1}/${retries + 1})`);
-         await new Promise(resolve => setTimeout(resolve, delay));
-         continue;
-      }
-      
-      throw error;
-    }
-  }
-  throw lastError;
+  return await ai.models.generateContent({
+    model: modelName,
+    contents: { parts: parts },
+    config: config,
+  });
 };
 
 export const editImage = async (
@@ -200,9 +169,7 @@ export const editImage = async (
         });
     }
 
-    // Add universal quality boosters to the prompt
-    const boostedPrompt = `${prompt}, award-winning photography, 8k resolution, highly detailed, photorealistic, cinematic lighting, masterpiece`;
-    parts.push({ text: boostedPrompt });
+    parts.push({ text: prompt });
 
     if (maskBase64) {
       parts.push({
@@ -251,6 +218,7 @@ export const editImage = async (
             aspectRatio: targetAspectRatio
         };
     } else {
+        // Default aspect ratio if no size specified
         config.imageConfig = {
             aspectRatio: targetAspectRatio
         };
@@ -258,46 +226,84 @@ export const editImage = async (
 
     let response: GenerateContentResponse;
     
-    // 1. Try Gemini 3 Pro (Best Quality) with retries
+    // 1. Try Gemini 3 Pro (Best Quality)
     try {
         console.log("Attempting generation with gemini-3-pro-image-preview...");
         response = await generateImageWithModel('gemini-3-pro-image-preview', parts, config, apiKey);
     } catch (error: any) {
-        // Check for errors
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        // Check for Quota Exceeded (429) or Permission issues (403/404) or specific Model Overloaded (503)
+        let errorMessage = error instanceof Error ? error.message : String(error);
         
-        // Broad fallback condition: Fallback on ANY error from Pro model except safety blocks
-        // This ensures we don't get stuck on Pro model quotas
-        const isSafetyError = errorMessage.includes('safety') || errorMessage.includes('blocked');
-        
-        if (!isSafetyError) {
-             console.warn(`Gemini 3 Pro failed (${errorMessage}). Fallback initiated.`);
-             
-             // 2. Fallback to Gemini 2.5 Flash Image
-             // Note: 2.5 Flash Image does not support 'imageSize' config, remove it.
-             const fallbackConfig = { ...config };
-             if (fallbackConfig.imageConfig) {
-                 delete fallbackConfig.imageConfig.imageSize; 
+        // Robust JSON error parsing
+        try {
+            const openBrace = errorMessage.indexOf('{');
+            if (openBrace !== -1) {
+                const jsonPart = errorMessage.substring(openBrace);
+                const parsed = JSON.parse(jsonPart);
+                // Extract inner message if available
+                if (parsed.error?.message) {
+                    errorMessage = parsed.error.message;
+                }
+                // Check specifically for daily limit violation in the detailed JSON structure
+                if (JSON.stringify(parsed).includes('generate_requests_per_model_per_day')) {
+                    throw new Error("Daily Quota Exceeded. Please change API Key.");
+                }
+            }
+        } catch (e) {
+            // ignore parsing errors
+        }
+
+        const isDailyQuota = errorMessage.includes('generate_requests_per_model_per_day') || errorMessage.includes('daily') || errorMessage.includes('Quota exceeded for metric');
+        const isQuotaError = errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED') || errorMessage.includes('quota');
+        const isModelError = errorMessage.includes('404') || errorMessage.includes('403') || errorMessage.includes('not found') || errorMessage.includes('503');
+
+        if (isDailyQuota) {
+             throw new Error("Daily Quota Exceeded. Please change API Key.");
+        }
+
+        if (isQuotaError || isModelError) {
+             // STRICT 4K CHECK: If user specifically requested 4K/Upscale, do NOT fallback to Flash (which produces 1K).
+             if (outputSize) {
+                 throw new Error(`High-resolution (4K/2K) generation failed due to quota limits. Please change API Key or try later.`);
              }
 
-             // Enhance prompt even more for fallback model to compensate quality
-             const fallbackParts = parts.map(p => {
-                 if (p.text) return { text: p.text + ", hyper-realistic, sharp focus, professional photography, 8k" };
-                 return p;
-             }); 
+             console.warn(`Gemini 3 Pro failed (${errorMessage}). Falling back to Gemini 2.5 Flash Image.`);
+             
+             // 2. Fallback to Gemini 2.5 Flash Image (Better availability/Lower Quota)
+             const fallbackConfig = { ...config };
+             if (fallbackConfig.imageConfig) {
+                 delete fallbackConfig.imageConfig.imageSize; // Remove 4K/2K request for fallback
+             }
+
+             // Enhance prompt for fallback model
+             const fallbackParts = parts.map(p => ({...p}));
+             const textPart = fallbackParts.find(p => p.text);
+             if (textPart) {
+                 textPart.text += ", highly detailed, photorealistic, 8k resolution, HDR, sharp focus, professional photography";
+             }
              
              try {
-                // Wait a split second to let network/account buffer
-                await new Promise(r => setTimeout(r, 1000));
-                
-                // Also use retries for the fallback model
                 response = await generateImageWithModel('gemini-2.5-flash-image', fallbackParts, fallbackConfig, apiKey);
              } catch (fallbackError: any) {
-                 console.error("Fallback failed:", fallbackError);
-                 const fbMsg = fallbackError.message || '';
-                 if (fbMsg.includes('429') || fbMsg.includes('RESOURCE_EXHAUSTED')) {
-                     throw new Error("Daily API quota exceeded. Please try again tomorrow or use a different API Key.");
+                 let fallbackMsg = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
+                 
+                 // Parse JSON in fallback error
+                 try {
+                    const openBrace = fallbackMsg.indexOf('{');
+                    if (openBrace !== -1) {
+                        const parsed = JSON.parse(fallbackMsg.substring(openBrace));
+                        if (parsed.error?.message) fallbackMsg = parsed.error.message;
+                        if (JSON.stringify(parsed).includes('generate_requests_per_model_per_day')) {
+                            throw new Error("Daily Quota Exceeded. Please change API Key.");
+                        }
+                    }
+                 } catch {}
+
+                 if (fallbackMsg.includes('generate_requests_per_model_per_day') || fallbackMsg.includes('daily') || fallbackMsg.includes('Quota exceeded')) {
+                     throw new Error("Daily Quota Exceeded. Please change API Key.");
                  }
+                 
+                 console.error("Fallback failed:", fallbackError);
                  throw fallbackError;
              }
         } else {
@@ -340,15 +346,24 @@ export const editImage = async (
     let errorMessage = error instanceof Error ? error.message : String(error);
     
     if (!(error instanceof Error) && typeof error === 'object' && error !== null) {
-         if ('message' in error) {
-             errorMessage = String((error as any).message);
-         } else {
-             try { errorMessage = JSON.stringify(error); } catch { errorMessage = String(error); }
+         try { 
+             errorMessage = JSON.stringify(error); 
+             // Try to extract message again if it's a stringified JSON
+             if(errorMessage.includes('{')) {
+                 const parsed = JSON.parse(errorMessage);
+                 if(parsed.error?.message) errorMessage = parsed.error.message;
+             }
+         } catch { 
+             errorMessage = String(error); 
          }
     }
 
+    if (errorMessage.includes('generate_requests_per_model_per_day') || errorMessage.includes('daily') || errorMessage.includes('Quota exceeded for metric')) {
+        throw new Error("Daily Quota Exceeded. Please change API Key.");
+    }
+
     if (errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
-        throw new Error("Daily API quota exceeded. Please change your API Key or try again tomorrow.");
+        throw new Error("API quota exceeded. Please wait a moment or check your plan.");
     }
     
     if (errorMessage.includes('Invalid API Key') || errorMessage.includes('API key not valid')) {
@@ -363,7 +378,7 @@ export const editImage = async (
         throw error;
     }
     
-    throw new Error("Image generation failed.");
+    throw new Error("Image generation failed: " + errorMessage);
   }
 };
 
