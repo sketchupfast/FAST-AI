@@ -1,5 +1,3 @@
-
-// ... [Imports remain mostly unchanged, ensuring KeyIcon is imported] ...
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { editImage, analyzeImage, suggestCameraAngles, type AnalysisResult, cropAndResizeImage } from '../services/geminiService';
 import { saveProjects, loadProjects, clearProjects } from '../services/dbService';
@@ -70,7 +68,6 @@ export interface ImageState {
   generationTypeHistory: ('style' | 'angle' | 'edit' | 'upscale' | 'variation' | 'transform')[];
 }
 
-// ... [Constants translations, styleOptions, etc. remain unchanged] ...
 const translations = {
   en: {
     header: {
@@ -388,6 +385,8 @@ const flooringOptions = [
 const exteriorQuickActionList = [
     { id: 'sketchToPhoto', label: 'Sketch to Photo', desc: 'Convert sketch to realism.', icon: <SketchWatercolorIcon className="w-4 h-4"/> },
     { id: 'localVillageDay', label: 'Local Village Day', desc: 'Sunny street, poles, trees.' },
+    { id: 'bangkokStreetLife', label: 'Bangkok Street Life', desc: 'Traffic, poles, wires, vibrant.' },
+    { id: 'modernMinimalist', label: 'Modern Minimalist', desc: 'Clean white, simple lines.' },
     { id: 'modernVillageWithProps', label: 'New Village Estate', desc: 'Mixed large & staked trees.' },
     { id: 'modernVillageIsolated', label: 'New Village (Secluded)', desc: 'No background houses.' },
     { id: 'grandVillageEstate', label: 'Grand Village Estate', desc: 'Hedge fence, propped trees, grand view.' },
@@ -421,6 +420,8 @@ const interiorQuickActionList: { id: string; label: string; desc: string; icon?:
     { id: 'modernLuxuryKitchen', label: 'Modern Kitchen', desc: 'Clean, marble island, high-end.' },
     { id: 'luxurySpaBathroom', label: 'Spa Bathroom', desc: 'Stone, soaking tub, ambient light.' },
     { id: 'modernHomeOffice', label: 'Home Office', desc: 'Productive, sleek, ergonomic.' },
+    { id: 'modernBedroom', label: 'Modern Bedroom', desc: 'Soft bed, hidden lights, cozy.' },
+    { id: 'modernLivingRoom', label: 'Modern Living Room', desc: 'Stylish sofa, rug, bright.' },
     { id: 'luxuryDiningRoom', label: 'Luxury Dining', desc: 'Grand table, chandelier, elegant.' },
     { id: 'darkMoodyLuxuryBedroom', label: 'Dark Luxury', desc: 'Moody, charcoal, gold.' },
     { id: 'softModernSanctuary', label: 'Soft Sanctuary', desc: 'Light, curves, peaceful.' },
@@ -446,7 +447,10 @@ type EditingMode = 'default' | 'object';
 type SceneType = 'exterior' | 'interior' | 'plan';
 
 const QUICK_ACTION_PROMPTS: Record<string, string> = {
+    // ... [Previous prompts remain, adding new ones]
     localVillageDay: "Transform the image into a hyper-realistic daytime street view within a lively housing estate. STRICTLY MAINTAIN THE ORIGINAL CAMERA ANGLE AND PERSPECTIVE. The atmosphere should be bright, sunny, and natural. Crucially, generate a realistic concrete or asphalt road in the foreground. The house fence should be a neat green hedge combined with a modern black steel slatted sliding gate. Add authentic details such as standard electric poles with utility lines running along the street, and lush green trees providing shade. The overall look should capture the authentic, everyday vibe of a residential village neighborhood.",
+    bangkokStreetLife: "Transform the image into a hyper-realistic scene of a bustling Bangkok street. The atmosphere should be vibrant and chaotic yet charming. Crucially, include a tangle of electrical wires and utility poles in the foreground and background, typical of Bangkok. Add elements of street life such as a parked Tuk-Tuk or motorcycle, and perhaps some street food stalls in the distance. The lighting should be bright tropical daylight with sharp shadows.",
+    modernMinimalist: "Transform the architectural style of the house into a sleek, Modern Minimalist design. Use a pristine white color palette with simple, geometric forms. Remove any ornate details or clutter. The materials should be smooth white render, large frameless glass windows, and subtle light wood accents. The landscape should be equally minimalist, with a neat lawn and a few sculptural trees. The overall look should be clean, bright, and sophisticated.",
     modernVillageWithProps: "Transform the image into a high-quality, photorealistic architectural photograph capturing the atmosphere of a well-maintained, modern housing estate. The landscape should feature a lush, perfectly manicured green lawn and neat rows of shrubbery. Crucially, include a mix of large, mature trees to create a shady, established feel, alongside newly planted trees with visible wooden support stakes (tree props), typical of a new village development. The lighting should be bright and natural, enhancing the fresh and inviting community feel. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     modernVillageIsolated: "Transform the image into a high-quality, photorealistic architectural photograph capturing the atmosphere of a well-maintained, modern housing estate. The landscape should feature a lush, perfectly manicured green lawn and neat rows of shrubbery. Crucially, include a mix of large, mature trees to create a shady, established feel, alongside newly planted trees with visible wooden support stakes (tree props). **CRITICAL INSTRUCTION:** Remove any neighboring houses, buildings, or structures from the background. The background must be replaced with a clear sky or distant natural vegetation to make the house look secluded and private. The lighting should be bright and natural. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it.",
     grandVillageEstate: "Transform the image into a high-quality, photorealistic architectural photograph of a grand and luxurious village estate. The landscape features a perfectly manicured lawn and a neat green hedge fence outlining the property. Crucially, include large, newly planted trees with visible wooden support stakes (tree props). The scene is framed by beautiful, mature trees in the background and foreground, creating a lush 'tree view'. The lighting is bright and natural, emphasizing the spacious and upscale nature of the estate. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
@@ -493,6 +497,8 @@ const QUICK_ACTION_PROMPTS: Record<string, string> = {
     modernLuxuryKitchen: "Transform the image into a photorealistic, high-end modern luxury kitchen. Feature a large marble kitchen island, sleek handleless cabinetry, and built-in premium appliances. The lighting should be a mix of natural light and warm under-cabinet LED strips. The atmosphere is clean, sophisticated, and expensive.",
     luxurySpaBathroom: "Transform the room into a 'Spa Bathroom' with ambient lighting and natural stone tiles for a relaxing, zen atmosphere. Include a freestanding soaking tub, a rain shower, and minimal decor to foster tranquility.",
     modernHomeOffice: "Transform the image into a photorealistic modern home office. Feature a sleek wooden desk, an ergonomic chair, and built-in shelving with organized books and decor. The lighting should be bright and conducive to work, with a view of the outdoors if possible. The style is professional yet comfortable.",
+    modernBedroom: "Transform the room into a cozy modern bedroom. Center the room around a plush, inviting bed with soft linens. Install hidden warm LED lighting under the bed or behind the headboard for a soothing ambiance. The color palette should be calming neutrals. Ensure the atmosphere is relaxing and suitable for rest.",
+    modernLivingRoom: "Transform the room into a stylish modern living room. Place a comfortable contemporary sofa with a textured rug underneath. Ensure the room feels bright and airy with natural light. Add tasteful decor items like cushions and a coffee table book. The overall vibe should be welcoming and chic.",
     luxuryDiningRoom: "Transform the image into a photorealistic luxury dining room. Center the room around a grand dining table with upholstered chairs. Hang a statement chandelier above the table. The walls could feature wainscoting or textured wallpaper. The atmosphere is elegant and ready for a formal dinner party.",
 
     // Plan Presets
@@ -568,7 +574,7 @@ const FOREGROUND_PROMPTS: Record<string, string> = {
   "Magazine/Books": "Add a stack of design magazines or books on a surface in the foreground."
 };
 
-// ... [Helper components OptionButton, IntensitySlider, CollapsibleSection, ModeButton, PreviewCard, ImageToolbar, downloadBase64AsFile remain unchanged] ...
+// ... [Existing components OptionButton, IntensitySlider, CollapsibleSection, ModeButton, PreviewCard, ImageToolbar, downloadBase64AsFile remain unchanged] ...
 const OptionButton: React.FC<{
   option: string,
   isSelected: boolean,
@@ -755,6 +761,7 @@ const ImageToolbar: React.FC<{
   </div>
 );
 
+// ... [downloadBase64AsFile and ImageEditor component structure remain unchanged until brush settings] ...
 const downloadBase64AsFile = (base64Data: string, filename: string, mimeType: string = 'image/jpeg') => {
     try {
         const byteCharacters = atob(base64Data);
@@ -891,7 +898,7 @@ const ImageEditor: React.FC = () => {
   const [userApiKey, setUserApiKey] = useState<string>('');
   const [tempKey, setTempKey] = useState('');
 
-  // ... [useEffect hooks remain unchanged] ...
+  // ... [useEffect hooks for Key check, load/save DB remain unchanged] ...
   useEffect(() => {
       const checkKey = async () => {
           if ((window as any).aistudio) {
@@ -899,8 +906,11 @@ const ImageEditor: React.FC = () => {
                setHasApiKey(has);
           } else {
               const storedKey = localStorage.getItem('fast-ai-user-key');
+              const envKey = process.env.API_KEY;
               if (storedKey) {
                   setUserApiKey(storedKey);
+                  setHasApiKey(true);
+              } else if (envKey && envKey !== 'undefined') {
                   setHasApiKey(true);
               } else {
                   setHasApiKey(false);
@@ -910,6 +920,7 @@ const ImageEditor: React.FC = () => {
       checkKey();
   }, []);
 
+  // ... [Handlers: handleApiKeySelect, handleManualKeySubmit, handleResetKey, toggleSection, changeEditingMode, etc. remain unchanged] ...
   const handleApiKeySelect = async () => {
       if((window as any).aistudio) {
           try {
@@ -930,6 +941,7 @@ const ImageEditor: React.FC = () => {
           setUserApiKey(trimmedKey);
           setHasApiKey(true);
           setIsKeyModalOpen(false);
+          setError(null); // Clear any existing errors immediately
       }
   };
 
@@ -938,7 +950,6 @@ const ImageEditor: React.FC = () => {
     setIsKeyModalOpen(true);
   };
 
-  // ... [toggleSection, changeEditingMode, handleImageChange, handleReferenceImageChange, handleRemoveImage, handleClearAllProjects, handleSceneTypeSelect, updateActiveImage logic remain unchanged] ...
   const toggleSection = (sectionName: string) => {
     setOpenSections(prev => ({ ...prev, [sectionName]: !prev[sectionName] }));
   };
@@ -949,6 +960,7 @@ const ImageEditor: React.FC = () => {
 
   const imageDisplayRef = useRef<ImageDisplayHandle>(null);
 
+  // Masking state
   const [brushSize, setBrushSize] = useState<number>(30);
   const [brushColor, setBrushColor] = useState<string>(brushColors[0].value);
   const [isMaskEmpty, setIsMaskEmpty] = useState<boolean>(true);
@@ -956,6 +968,7 @@ const ImageEditor: React.FC = () => {
 
   const mountedRef = useRef(true);
   
+  // ... [All other useEffects and handlers remain unchanged] ...
   useEffect(() => {
     mountedRef.current = true;
     return () => {
@@ -963,6 +976,7 @@ const ImageEditor: React.FC = () => {
     };
   }, []);
   
+  // ... [DB loading/saving logic] ...
   useEffect(() => {
     let isMounted = true;
     const loadData = async () => {
@@ -1216,8 +1230,6 @@ const ImageEditor: React.FC = () => {
     setSelectedForegrounds(prev => prev.includes(fg) ? prev.filter(item => item !== fg) : [...prev, fg]);
   };
 
-  // ... [applyManualChanges, handleTransform, executeGeneration, handleUpscale, handleRegenerate, handleSubmit, handleUndo, handleRedo, handleResetEdits, handleDownload, handleShare logic remains unchanged] ...
-  
   const applyManualChanges = async () => {
     if (!activeImage) return;
     setIsLoading(true);
@@ -1277,6 +1289,7 @@ const ImageEditor: React.FC = () => {
   };
 
   const handleTransform = async (type: 'rotateLeft' | 'rotateRight' | 'flipHorizontal' | 'flipVertical') => { 
+      // ... [Existing implementation] ...
       if (!activeImage) return;
       setIsLoading(true);
       try {
@@ -1340,6 +1353,7 @@ const ImageEditor: React.FC = () => {
   };
 
   const executeGeneration = async (promptForGeneration: string, promptForHistory: string, size?: '1K' | '2K' | '4K', autoDownload = false) => {
+      // ... [Existing implementation] ...
       if (!hasApiKey && !(window as any).aistudio) {
           setIsKeyModalOpen(true);
           return;
@@ -1453,7 +1467,7 @@ const ImageEditor: React.FC = () => {
         setIsKeyModalOpen(true);
         return;
     }
-    // ... [Logic for constructing prompts] ...
+    // ... [Existing logic for constructing prompts] ...
     const promptParts: string[] = [];
     if (prompt.trim()) promptParts.push(prompt.trim());
 
@@ -1612,7 +1626,7 @@ const ImageEditor: React.FC = () => {
   const handleResetEdits = () => { if (window.confirm("Reset?")) updateActiveImage(img => ({ ...img, history: [], historyIndex: -1, selectedResultIndex: null, promptHistory: [] })); };
   
   const handleDownload = async () => { 
-      // ... [Download logic] ...
+      // ... [Existing implementation] ...
       if (!activeImage) return;
       const url = activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex] : activeImage.dataUrl;
       if (url) {
@@ -1642,7 +1656,7 @@ const ImageEditor: React.FC = () => {
   };
   
   const handleShare = async () => {
-      // ... [Share logic] ...
+      // ... [Existing implementation] ...
       if (!activeImage) return;
       const url = activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex] : activeImage.dataUrl;
       if (url && navigator.share) {
@@ -1760,7 +1774,7 @@ const ImageEditor: React.FC = () => {
         </div>
       )}
 
-      {/* Project Modal remains unchanged */}
+      {/* ... [Project Modal remains unchanged] ... */}
       {isProjectModalOpen && (
          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-lg p-4" onClick={() => setIsProjectModalOpen(false)}>
             <div className="bg-[#18181b] rounded-2xl border border-white/10 shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
@@ -1802,6 +1816,7 @@ const ImageEditor: React.FC = () => {
 
       {/* LEFT SIDEBAR */}
       <aside className="w-80 flex flex-col border-r border-white/5 bg-black/80 backdrop-blur-xl flex-shrink-0 z-20 shadow-[4px_0_24px_rgba(0,0,0,0.5)]">
+         {/* ... [Logo and Tabs remain unchanged] ... */}
          <div className="h-16 flex items-center px-6 border-b border-white/5 bg-gradient-to-r from-black/50 to-transparent">
              <div className="flex items-center gap-2">
                  <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-red-600 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
@@ -1842,6 +1857,7 @@ const ImageEditor: React.FC = () => {
                          <ModeButton label={t.modes.object} icon={<BrushIcon className="w-4 h-4" />} mode="object" activeMode={editingMode} onClick={setEditingMode} />
                   </div>
                   
+                   {/* ... [Manual Adjustments Section remains unchanged] ... */}
                    <CollapsibleSection title={t.sections.manualAdjustments} sectionKey="manualAdjustments" isOpen={openSections.manualAdjustments} onToggle={() => toggleSection('manualAdjustments')} icon={<AdjustmentsIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                        <div className="space-y-4">
                            <div>
@@ -1862,8 +1878,11 @@ const ImageEditor: React.FC = () => {
                        </div>
                    </CollapsibleSection>
 
+                  {/* Dynamic Content based on SceneType */}
+                  {/* ... [Exterior & Interior Sections remain largely unchanged, focusing on Brush Settings update] ... */}
                   {sceneType === 'exterior' && (
                     <>
+                        {/* ... [Existing Exterior Sections] ... */}
                         <CollapsibleSection title={t.sections.prompt} sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-4 h-4"/>}>
                             <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={editingMode === 'object' ? t.placeholders.promptMask : t.placeholders.promptExterior} className="w-full bg-black/50 border border-zinc-700 rounded-xl p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none shadow-inner" rows={3} />
                         </CollapsibleSection>
@@ -1908,6 +1927,7 @@ const ImageEditor: React.FC = () => {
                                  ))}
                              </div>
                         </CollapsibleSection>
+                        {/* ... [Other sections: Camera Angle, Art Style, Arch Style, Garden, Lighting, Background, Foreground] ... */}
                         <CollapsibleSection title={t.sections.cameraAngle} sectionKey="cameraAngle" isOpen={openSections.cameraAngle} onToggle={() => toggleSection('cameraAngle')} icon={<CameraAngleIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                             <div className="grid grid-cols-2 gap-2">
                                 {cameraAngleOptions.map(angle => (
@@ -2010,6 +2030,7 @@ const ImageEditor: React.FC = () => {
                   
                    {sceneType === 'interior' && (
                     <>
+                        {/* ... [Existing Interior Sections] ... */}
                         <CollapsibleSection title={t.sections.prompt} sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-4 h-4"/>}>
                             <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={t.placeholders.promptInterior} className="w-full bg-black/50 border border-zinc-700 rounded-xl p-3 text-sm text-zinc-200 placeholder-zinc-600 shadow-inner" rows={3} />
                         </CollapsibleSection>
@@ -2387,19 +2408,23 @@ const ImageEditor: React.FC = () => {
                {/* Error Banner */}
                {error && (
                   <div className="mb-4 bg-red-950/40 border border-red-500/30 text-red-200 px-6 py-4 rounded-xl flex justify-between items-center animate-fade-in shadow-xl backdrop-blur-md">
-                      <div className="flex items-center gap-4">
-                          <span className="text-sm font-medium flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"/>{error}</span>
-                          {(error.includes("Quota") || error.includes("Key") || error.includes("Limit")) && (
+                      <span className="text-sm font-medium flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"/>
+                          {error}
+                      </span>
+                      <div className="flex items-center gap-3">
+                          {(error.includes('Quota') || error.includes('Limit') || error.includes('Key') || error.includes('403') || error.includes('429')) && (
                               <button 
-                                onClick={handleResetKey}
-                                className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-lg shadow-lg transition-transform transform hover:scale-105 flex items-center gap-2"
+                                  onClick={handleResetKey} 
+                                  className="px-3 py-1.5 bg-white text-red-600 text-xs font-bold rounded-lg hover:bg-zinc-200 transition-colors shadow-sm"
                               >
-                                <KeyIcon className="w-3 h-3" />
-                                {language === 'th' ? 'เปลี่ยนคีย์' : 'Change Key'}
+                                  {language === 'th' ? 'เปลี่ยนคีย์' : 'Change Key'}
                               </button>
                           )}
+                          <button onClick={() => setError(null)} className="text-red-400 hover:text-white transition-colors">
+                              <XMarkIcon className="w-5 h-5"/>
+                          </button>
                       </div>
-                      <button onClick={() => setError(null)} className="text-red-400 hover:text-white transition-colors"><XMarkIcon className="w-5 h-5"/></button>
                   </div>
                )}
 
