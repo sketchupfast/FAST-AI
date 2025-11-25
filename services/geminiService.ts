@@ -11,6 +11,10 @@ const getAiClient = (apiKey?: string) => {
 
 const MAX_IMAGE_DIMENSION = 2048; 
 
+// Quality Boosters
+const PRO_QUALITY_BOOSTER = ", award-winning architectural photography, 8k, highly detailed, hyper-realistic, sharp focus, perfect lighting, cinematic composition, masterpiece";
+const FLASH_QUALITY_BOOSTER = ", masterpiece, best quality, ultra-realistic, 8k, HDR, vivid colors, crisp details, cinematic lighting, award-winning photography";
+
 export interface AnalysisResult {
   architecturalStyle: string;
   keyMaterials: string[];
@@ -56,7 +60,8 @@ const resizeImage = (
       
       ctx.drawImage(img, 0, 0, width, height);
       
-      const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+      // Increased quality to 0.99 for Paid/Pro usage
+      const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.99);
       
       resolve({
         resizedBase64: resizedDataUrl.split(',')[1],
@@ -108,7 +113,7 @@ export const cropAndResizeImage = (
       }
 
       ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, targetWidth, targetHeight);
-      resolve(canvas.toDataURL('image/jpeg', 0.95));
+      resolve(canvas.toDataURL('image/jpeg', 0.99));
     };
     img.onerror = () => {
       reject(new Error('Failed to load image for client-side resizing.'));
@@ -125,11 +130,39 @@ const generateImageWithModel = async (
   apiKey?: string
 ): Promise<GenerateContentResponse> => {
   const ai = getAiClient(apiKey);
-  return await ai.models.generateContent({
-    model: modelName,
-    contents: { parts: parts },
-    config: config,
-  });
+  
+  // Retry logic for handling transient errors (like 429/503)
+  let attempt = 0;
+  const maxRetries = 3;
+  const baseDelay = 2000; // 2 seconds
+
+  while (attempt < maxRetries) {
+      try {
+          return await ai.models.generateContent({
+            model: modelName,
+            contents: { parts: parts },
+            config: config,
+          });
+      } catch (error: any) {
+          const errMsg = parseGeminiError(error);
+          
+          // Fail fast on Daily Limit to allow fallback immediately
+          if (errMsg.includes('generate_requests_per_model_per_day') || errMsg.includes('daily')) {
+              throw error; 
+          }
+
+          // Retry on rate limits (minute) or server errors
+          if (attempt < maxRetries - 1 && (errMsg.includes('429') || errMsg.includes('503') || errMsg.includes('quota'))) {
+              const delay = baseDelay * Math.pow(2, attempt);
+              console.warn(`API busy (${errMsg}). Retrying in ${delay}ms...`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+              attempt++;
+          } else {
+              throw error;
+          }
+      }
+  }
+  throw new Error("Max retries exceeded");
 };
 
 const parseGeminiError = (error: any): string => {
@@ -161,7 +194,7 @@ export const editImage = async (
   outputSize?: '1K' | '2K' | '4K',
   referenceImage?: { base64: string; mimeType: string } | null,
   apiKey?: string
-): Promise<{ data: string; mimeType: string }> => {
+): Promise<{ data: string; mimeType: string; modelUsed: string }> => {
   try {
     const { resizedBase64, resizedMimeType, width, height } = await resizeImage(
       base64ImageData,
@@ -190,7 +223,9 @@ export const editImage = async (
         });
     }
 
-    parts.push({ text: prompt });
+    // INJECT PRO QUALITY BOOSTER to the primary prompt
+    const enhancedPrompt = prompt + PRO_QUALITY_BOOSTER;
+    parts.push({ text: enhancedPrompt });
 
     if (maskBase64) {
       parts.push({
@@ -245,6 +280,7 @@ export const editImage = async (
     }
 
     let response: GenerateContentResponse;
+    let modelUsed = 'Gemini 3 Pro';
     
     // STRATEGY: Try Gemini 3 Pro -> If Fail -> Silent Switch to Gemini 2.5 Flash
     try {
@@ -254,18 +290,20 @@ export const editImage = async (
         const errorMessage = parseGeminiError(error);
         console.warn(`Primary model failed: ${errorMessage}. Switching to fallback.`);
 
+        modelUsed = 'Gemini 2.5 Flash';
+
         // Fallback Configuration: Gemini 2.5 Flash Image
-        // Note: Flash doesn't support 'imageSize' or some advanced configs, so we strip them.
         const fallbackConfig = { ...config };
         if (fallbackConfig.imageConfig) {
             delete fallbackConfig.imageConfig.imageSize;
         }
 
-        // Enhance prompt to help the smaller model perform better
+        // Enhance prompt AGGRESSIVELY for Flash
         const fallbackParts = JSON.parse(JSON.stringify(parts)); 
         const textPart = fallbackParts.find((p: any) => p.text);
         if (textPart) {
-            textPart.text += ", highly detailed, photorealistic, 8k resolution, professional photography, sharp focus";
+            // Replace the Pro booster with Flash booster (appending)
+            textPart.text += FLASH_QUALITY_BOOSTER;
         }
         
         try {
@@ -275,7 +313,6 @@ export const editImage = async (
             const fbErrorMsg = parseGeminiError(fallbackError);
             console.error("Fallback failed:", fbErrorMsg);
             
-            // If fallback also fails, we must report an error.
             if (fbErrorMsg.includes('429') || fbErrorMsg.includes('quota')) {
                 throw new Error("System busy (Quota Exceeded). Please change API Key.");
             }
@@ -286,7 +323,6 @@ export const editImage = async (
         }
     }
     
-    // Validate Response
     if (!response.candidates || response.candidates.length === 0) {
         throw new Error("The AI did not generate a response. Please try again.");
     }
@@ -296,7 +332,8 @@ export const editImage = async (
       if (part.inlineData) {
         return { 
             data: part.inlineData.data,
-            mimeType: part.inlineData.mimeType || 'image/png'
+            mimeType: part.inlineData.mimeType || 'image/png',
+            modelUsed: modelUsed
         };
       }
     }
@@ -305,7 +342,7 @@ export const editImage = async (
 
   } catch (error) {
     console.error("Final Error in editImage:", error);
-    throw error; // Re-throw to be caught by UI
+    throw error;
   }
 };
 
@@ -334,7 +371,6 @@ export const analyzeImage = async (
         required: ["architecturalStyle", "keyMaterials", "lightingConditions", "improvementSuggestions"]
     };
 
-    // Try Pro first, fallback to Flash logic if needed (though analysis usually uses text models)
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-3-pro-preview',
@@ -345,9 +381,8 @@ export const analyzeImage = async (
         });
         return JSON.parse(response.text || "{}") as AnalysisResult;
     } catch (e) {
-        // Fallback to Flash for analysis
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash', // Text model
+            model: 'gemini-2.5-flash', 
             contents: {
                 parts: [{ inlineData: { data: resizedBase64, mimeType: resizedMimeType } }, { text: prompt }],
             },
@@ -358,7 +393,6 @@ export const analyzeImage = async (
 
   } catch (error) {
     console.error("Analysis failed:", error);
-    // Return dummy data to prevent crash
     return {
         architecturalStyle: "Modern",
         keyMaterials: ["Unknown"],
@@ -379,7 +413,6 @@ export const suggestCameraAngles = async (
     const prompt = "Analyze the image and suggest 3 to 5 creative camera angles. Return as JSON string array.";
     const responseSchema = { type: Type.ARRAY, items: { type: Type.STRING } };
 
-    // Try Pro, fallback to Flash
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-3-pro-preview',
@@ -396,6 +429,6 @@ export const suggestCameraAngles = async (
         return JSON.parse(response.text || "[]") as string[];
     }
   } catch (error) {
-    return ["Eye-Level", "Low Angle", "High Angle"]; // Fallback defaults
+    return ["Eye-Level", "Low Angle", "High Angle"];
   }
 };
