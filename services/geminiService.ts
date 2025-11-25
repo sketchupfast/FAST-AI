@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Modality, Type, GenerateContentResponse } from "@google/genai";
 
 // Helper to get a fresh client instance with the provided API key or fallback to env
@@ -56,7 +57,8 @@ const resizeImage = (
       
       ctx.drawImage(img, 0, 0, width, height);
       
-      const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+      // Increased JPEG quality from 0.92 to 0.99 to preserve maximum detail for the AI
+      const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.99);
       
       resolve({
         resizedBase64: resizedDataUrl.split(',')[1],
@@ -108,7 +110,7 @@ export const cropAndResizeImage = (
       }
 
       ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, targetWidth, targetHeight);
-      resolve(canvas.toDataURL('image/jpeg', 0.95));
+      resolve(canvas.toDataURL('image/jpeg', 0.99));
     };
     img.onerror = () => {
       reject(new Error('Failed to load image for client-side resizing.'));
@@ -169,7 +171,17 @@ export const editImage = async (
         });
     }
 
-    parts.push({ text: prompt });
+    // Universal Quality Boosters: Applied to ALL prompts to ensure high aesthetic quality
+    const qualityBoosters = " , award-winning photography, 8k resolution, highly detailed, photorealistic, cinematic lighting, sharp focus, masterpiece, professional architectural photography";
+    
+    // Combine user prompt with quality boosters
+    // Check if prompt already has these to avoid duplication
+    let finalPromptText = prompt;
+    if (!finalPromptText.includes("8k resolution")) {
+        finalPromptText += qualityBoosters;
+    }
+
+    parts.push({ text: finalPromptText });
 
     if (maskBase64) {
       parts.push({
@@ -238,12 +250,11 @@ export const editImage = async (
 
         if (isQuotaError || isModelError) {
              // STRICT 4K CHECK: If user specifically requested 4K/Upscale, do NOT fallback to Flash (which produces 1K).
-             // This prevents users from unknowingly getting a low-res image when they asked for high-res.
              if (outputSize) {
                  throw new Error(`High-resolution (4K/2K) generation failed due to quota limits or model availability. Please try again later or use standard resolution.`);
              }
 
-             console.warn(`Gemini 3 Pro failed (${errorMessage}). Falling back to Gemini 2.5 Flash Image with Quality Boosters.`);
+             console.warn(`Gemini 3 Pro failed (${errorMessage}). Falling back to Gemini 2.5 Flash Image.`);
              
              // 2. Fallback to Gemini 2.5 Flash Image (Better availability/Lower Quota)
              // Note: 2.5 Flash Image does not support 'imageSize' config, remove it.
@@ -252,17 +263,10 @@ export const editImage = async (
                  delete fallbackConfig.imageConfig.imageSize; // Remove 4K/2K request for fallback
              }
 
-             // Enhance prompt for fallback model to compensate for lower quality
-             const fallbackParts = parts.map(p => ({...p})); // Shallow copy
-             const textPart = fallbackParts.find(p => p.text);
-             if (textPart) {
-                 textPart.text += ", highly detailed, photorealistic, 8k resolution, HDR, sharp focus, professional photography";
-             }
-             
+             // Fallback parts already include the boosted prompt text from above
              try {
-                response = await generateImageWithModel('gemini-2.5-flash-image', fallbackParts, fallbackConfig, apiKey);
+                response = await generateImageWithModel('gemini-2.5-flash-image', parts, fallbackConfig, apiKey);
              } catch (fallbackError) {
-                 // If fallback also fails, throw the original error or the fallback error
                  console.error("Fallback failed:", fallbackError);
                  throw fallbackError;
              }
