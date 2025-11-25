@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Modality, Type, GenerateContentResponse } from "@google/genai";
 
 // Helper to get a fresh client instance with the provided API key or fallback to env
@@ -57,8 +56,7 @@ const resizeImage = (
       
       ctx.drawImage(img, 0, 0, width, height);
       
-      // Increased JPEG quality from 0.92 to 0.99 to preserve maximum detail for the AI
-      const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.99);
+      const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.99); // High quality input
       
       resolve({
         resizedBase64: resizedDataUrl.split(',')[1],
@@ -110,7 +108,7 @@ export const cropAndResizeImage = (
       }
 
       ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, targetWidth, targetHeight);
-      resolve(canvas.toDataURL('image/jpeg', 0.99));
+      resolve(canvas.toDataURL('image/jpeg', 0.95));
     };
     img.onerror = () => {
       reject(new Error('Failed to load image for client-side resizing.'));
@@ -119,19 +117,50 @@ export const cropAndResizeImage = (
   });
 };
 
-// Internal function to call the API with a specific model
+// Internal function to call the API with a specific model, including smart retry logic
 const generateImageWithModel = async (
   modelName: string,
   parts: any[],
   config: any,
-  apiKey?: string
+  apiKey?: string,
+  retries = 5 // Increased retries
 ): Promise<GenerateContentResponse> => {
   const ai = getAiClient(apiKey);
-  return await ai.models.generateContent({
-    model: modelName,
-    contents: { parts: parts },
-    config: config,
-  });
+  let lastError;
+  
+  for (let i = 0; i <= retries; i++) {
+    try {
+      return await ai.models.generateContent({
+        model: modelName,
+        contents: { parts: parts },
+        config: config,
+      });
+    } catch (error: any) {
+      lastError = error;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      // Catch almost any server-side error to trigger retry, except invalid argument
+      const isRetryable = 
+        errorMessage.includes('429') || 
+        errorMessage.includes('RESOURCE_EXHAUSTED') || 
+        errorMessage.includes('quota') ||
+        errorMessage.includes('503') || 
+        errorMessage.includes('500') ||
+        errorMessage.includes('Overloaded') ||
+        errorMessage.includes('internal');
+
+      if (isRetryable && i < retries) {
+         // Exponential backoff: 2s, 4s, 8s, 16s, 32s (capped at 10s for responsiveness)
+         const delay = Math.min(Math.pow(2, i + 1) * 1000 + Math.random() * 1000, 10000);
+         console.warn(`Model ${modelName} hit rate limit/error. Retrying in ${Math.round(delay)}ms... (Attempt ${i + 1}/${retries + 1})`);
+         await new Promise(resolve => setTimeout(resolve, delay));
+         continue;
+      }
+      
+      throw error;
+    }
+  }
+  throw lastError;
 };
 
 export const editImage = async (
@@ -171,17 +200,9 @@ export const editImage = async (
         });
     }
 
-    // Universal Quality Boosters: Applied to ALL prompts to ensure high aesthetic quality
-    const qualityBoosters = " , award-winning photography, 8k resolution, highly detailed, photorealistic, cinematic lighting, sharp focus, masterpiece, professional architectural photography";
-    
-    // Combine user prompt with quality boosters
-    // Check if prompt already has these to avoid duplication
-    let finalPromptText = prompt;
-    if (!finalPromptText.includes("8k resolution")) {
-        finalPromptText += qualityBoosters;
-    }
-
-    parts.push({ text: finalPromptText });
+    // Add universal quality boosters to the prompt
+    const boostedPrompt = `${prompt}, award-winning photography, 8k resolution, highly detailed, photorealistic, cinematic lighting, masterpiece`;
+    parts.push({ text: boostedPrompt });
 
     if (maskBase64) {
       parts.push({
@@ -230,7 +251,6 @@ export const editImage = async (
             aspectRatio: targetAspectRatio
         };
     } else {
-        // Default aspect ratio if no size specified
         config.imageConfig = {
             aspectRatio: targetAspectRatio
         };
@@ -238,36 +258,46 @@ export const editImage = async (
 
     let response: GenerateContentResponse;
     
-    // 1. Try Gemini 3 Pro (Best Quality)
+    // 1. Try Gemini 3 Pro (Best Quality) with retries
     try {
         console.log("Attempting generation with gemini-3-pro-image-preview...");
         response = await generateImageWithModel('gemini-3-pro-image-preview', parts, config, apiKey);
     } catch (error: any) {
-        // Check for Quota Exceeded (429) or Permission issues (403/404) or specific Model Overloaded (503)
+        // Check for errors
         const errorMessage = error instanceof Error ? error.message : String(error);
-        const isQuotaError = errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED') || errorMessage.includes('quota');
-        const isModelError = errorMessage.includes('404') || errorMessage.includes('403') || errorMessage.includes('not found') || errorMessage.includes('503');
-
-        if (isQuotaError || isModelError) {
-             // STRICT 4K CHECK: If user specifically requested 4K/Upscale, do NOT fallback to Flash (which produces 1K).
-             if (outputSize) {
-                 throw new Error(`High-resolution (4K/2K) generation failed due to quota limits or model availability. Please try again later or use standard resolution.`);
-             }
-
-             console.warn(`Gemini 3 Pro failed (${errorMessage}). Falling back to Gemini 2.5 Flash Image.`);
+        
+        // Broad fallback condition: Fallback on ANY error from Pro model except safety blocks
+        // This ensures we don't get stuck on Pro model quotas
+        const isSafetyError = errorMessage.includes('safety') || errorMessage.includes('blocked');
+        
+        if (!isSafetyError) {
+             console.warn(`Gemini 3 Pro failed (${errorMessage}). Fallback initiated.`);
              
-             // 2. Fallback to Gemini 2.5 Flash Image (Better availability/Lower Quota)
+             // 2. Fallback to Gemini 2.5 Flash Image
              // Note: 2.5 Flash Image does not support 'imageSize' config, remove it.
              const fallbackConfig = { ...config };
              if (fallbackConfig.imageConfig) {
-                 delete fallbackConfig.imageConfig.imageSize; // Remove 4K/2K request for fallback
+                 delete fallbackConfig.imageConfig.imageSize; 
              }
 
-             // Fallback parts already include the boosted prompt text from above
+             // Enhance prompt even more for fallback model to compensate quality
+             const fallbackParts = parts.map(p => {
+                 if (p.text) return { text: p.text + ", hyper-realistic, sharp focus, professional photography, 8k" };
+                 return p;
+             }); 
+             
              try {
-                response = await generateImageWithModel('gemini-2.5-flash-image', parts, fallbackConfig, apiKey);
-             } catch (fallbackError) {
+                // Wait a split second to let network/account buffer
+                await new Promise(r => setTimeout(r, 1000));
+                
+                // Also use retries for the fallback model
+                response = await generateImageWithModel('gemini-2.5-flash-image', fallbackParts, fallbackConfig, apiKey);
+             } catch (fallbackError: any) {
                  console.error("Fallback failed:", fallbackError);
+                 const fbMsg = fallbackError.message || '';
+                 if (fbMsg.includes('429') || fbMsg.includes('RESOURCE_EXHAUSTED')) {
+                     throw new Error("Daily API quota exceeded. Please try again tomorrow or use a different API Key.");
+                 }
                  throw fallbackError;
              }
         } else {
@@ -318,7 +348,7 @@ export const editImage = async (
     }
 
     if (errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
-        throw new Error("API quota exceeded. Please wait a moment or check your plan.");
+        throw new Error("Daily API quota exceeded. Please change your API Key or try again tomorrow.");
     }
     
     if (errorMessage.includes('Invalid API Key') || errorMessage.includes('API key not valid')) {
