@@ -146,8 +146,8 @@ const generateImageWithModel = async (
       } catch (error: any) {
           const errMsg = parseGeminiError(error);
           
-          // Fail fast on Daily Limit to allow fallback immediately
-          if (errMsg.includes('generate_requests_per_model_per_day') || errMsg.includes('daily')) {
+          // Fail fast on Daily Limit (unless we are in fallback loop, handled by caller)
+          if (errMsg.includes('limit: 0') || errMsg.includes('daily')) {
               throw error; 
           }
 
@@ -167,21 +167,32 @@ const generateImageWithModel = async (
 
 const parseGeminiError = (error: any): string => {
     let message = error instanceof Error ? error.message : String(error);
-    if (typeof error === 'object' && error !== null && !('message' in error)) {
-        try { message = JSON.stringify(error); } catch {}
+    
+    if (typeof error === 'object' && error !== null) {
+        // Try to extract complex nested error details often sent by Google API
+        if ('details' in error && Array.isArray(error.details)) {
+             // Look for quota failure details
+             const quotaFailure = error.details.find((d: any) => d['@type']?.includes('QuotaFailure'));
+             if (quotaFailure && quotaFailure.violations) {
+                 return `Quota exceeded: ${quotaFailure.violations.map((v: any) => v.quotaMetric).join(', ')}`;
+             }
+        }
+        if (!('message' in error)) {
+             try { message = JSON.stringify(error); } catch {}
+        }
     }
     
-    // Extract useful info from JSON error dumps
-    if (message.includes('"message":')) {
+    // Parse JSON string dumps in message
+    if (message.includes('{') && message.includes('}')) {
         try {
-            const jsonMatch = message.match(/\{.*\}/s);
+            const jsonMatch = message.match(/(\{.*\})/s); // naive json extraction
             if (jsonMatch) {
                 const parsed = JSON.parse(jsonMatch[0]);
-                if (parsed.error && parsed.error.message) {
-                    return parsed.error.message;
+                if (parsed.error) {
+                    return parsed.error.message || JSON.stringify(parsed.error);
                 }
             }
-        } catch (e) { /* ignore parsing error */ }
+        } catch (e) { /* ignore */ }
     }
     return message;
 };
@@ -290,12 +301,16 @@ export const editImage = async (
         const errorMessage = parseGeminiError(error);
         console.warn(`Primary model failed: ${errorMessage}. Switching to fallback.`);
 
+        // REMOVED STRICT ADMIN CHECK:
+        // We now allow fallback for EVERYONE (Admin & User) if Pro fails (e.g. Limit 0, Quota)
+        // This ensures the app works even if the Env Key doesn't have Pro access.
+        
         modelUsed = 'Gemini 2.5 Flash';
 
         // Fallback Configuration: Gemini 2.5 Flash Image
         const fallbackConfig = { ...config };
         if (fallbackConfig.imageConfig) {
-            delete fallbackConfig.imageConfig.imageSize;
+            delete fallbackConfig.imageConfig.imageSize; // Flash doesn't support 2K/4K flag
         }
 
         // Enhance prompt AGGRESSIVELY for Flash
@@ -313,7 +328,7 @@ export const editImage = async (
             const fbErrorMsg = parseGeminiError(fallbackError);
             console.error("Fallback failed:", fbErrorMsg);
             
-            if (fbErrorMsg.includes('429') || fbErrorMsg.includes('quota')) {
+            if (fbErrorMsg.includes('429') || fbErrorMsg.includes('quota') || fbErrorMsg.includes('limit')) {
                 throw new Error("System busy (Quota Exceeded). Please change API Key.");
             }
             if (fbErrorMsg.includes('403') || fbErrorMsg.includes('permission denied')) {

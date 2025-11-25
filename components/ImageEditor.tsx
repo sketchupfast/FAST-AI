@@ -985,6 +985,10 @@ const ImageEditor: React.FC = () => {
                         <li>{language === 'th' ? 'เลือก "Create API key in new project"' : 'Select "Create API key in new project"'}</li>
                         <li>{language === 'th' ? 'คัดลอกรหัส (AIza...) มาใส่ในช่องนี้' : 'Copy the code (AIza...) and paste it here'}</li>
                     </ol>
+                    <div className="mt-3 pt-3 border-t border-white/10 text-[10px] text-zinc-500">
+                        <p><strong>*RPD (Requests Per Day):</strong> Free keys have a daily limit (approx 50-100 images). If you hit the limit, come back tomorrow or switch Google Accounts.</p>
+                        {language === 'th' && <p><strong>*คำเตือน:</strong> คีย์ฟรีมีการจำกัดจำนวนต่อวัน (ประมาณ 50-100 ภาพ) ถ้าใช้ไม่ได้ให้รอวันพรุ่งนี้หรือเปลี่ยนบัญชี Google เพื่อขอคีย์ใหม่</p>}
+                    </div>
                 </div>
                 
                 {(window as any).aistudio ? (
