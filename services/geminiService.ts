@@ -201,6 +201,7 @@ export const editImage = async (
   maskBase64?: string | null,
   outputSize?: '1K' | '2K' | '4K',
   referenceImage?: { base64: string; mimeType: string } | null,
+  modelPreference: 'auto' | 'gemini-3-pro' | 'gemini-2.5-flash' = 'auto',
   apiKey?: string
 ): Promise<{ data: string; mimeType: string; modelUsed: string }> => {
   try {
@@ -231,6 +232,7 @@ export const editImage = async (
         });
     }
 
+    // INJECT PRO QUALITY BOOSTER to the primary prompt
     const enhancedPrompt = prompt + PRO_QUALITY_BOOSTER;
     parts.push({ text: enhancedPrompt });
 
@@ -289,41 +291,66 @@ export const editImage = async (
     let response: GenerateContentResponse;
     let modelUsed = 'Gemini 3 Pro';
     
-    // STRATEGY: Try Gemini 3 Pro -> If Fail -> Silent Switch to Gemini 2.5 Flash
-    try {
-        console.log("Attempting generation with gemini-3-pro-image-preview...");
-        response = await generateImageWithModel('gemini-3-pro-image-preview', parts, config, apiKey);
-    } catch (error: any) {
-        const errorMessage = parseGeminiError(error);
-        console.warn(`Primary model (Gemini 3 Pro) failed: ${errorMessage}. Switching to fallback.`);
+    // === MODEL SELECTION LOGIC ===
+    
+    if (modelPreference === 'gemini-2.5-flash') {
+         // FORCE FLASH MODE: Skip Pro entirely to save quota/time
+         console.log("User preferred Gemini 2.5 Flash. Skipping Pro.");
+         modelUsed = 'Gemini 2.5 Flash (Forced)';
+         
+         const fallbackConfig = { ...config };
+         if (fallbackConfig.imageConfig) {
+             delete fallbackConfig.imageConfig.imageSize;
+         }
+         const fallbackParts = JSON.parse(JSON.stringify(parts)); 
+         const textPart = fallbackParts.find((p: any) => p.text);
+         if (textPart) { textPart.text += FLASH_QUALITY_BOOSTER; }
 
-        modelUsed = 'Gemini 2.5 Flash';
-
-        const fallbackConfig = { ...config };
-        if (fallbackConfig.imageConfig) {
-            delete fallbackConfig.imageConfig.imageSize; // Flash doesn't support 2K/4K flag
-        }
-
-        const fallbackParts = JSON.parse(JSON.stringify(parts)); 
-        const textPart = fallbackParts.find((p: any) => p.text);
-        if (textPart) {
-            textPart.text += FLASH_QUALITY_BOOSTER;
-        }
-        
+         response = await generateImageWithModel('gemini-2.5-flash-image', fallbackParts, fallbackConfig, apiKey);
+    
+    } else {
+        // DEFAULT (AUTO) OR FORCE PRO
         try {
-            console.log("Attempting generation with gemini-2.5-flash-image...");
-            response = await generateImageWithModel('gemini-2.5-flash-image', fallbackParts, fallbackConfig, apiKey);
-        } catch (fallbackError: any) {
-            const fbErrorMsg = parseGeminiError(fallbackError);
-            console.error("Fallback failed:", fbErrorMsg);
+            console.log("Attempting generation with gemini-3-pro-image-preview...");
+            response = await generateImageWithModel('gemini-3-pro-image-preview', parts, config, apiKey);
+        } catch (error: any) {
+            // If user specifically requested Pro, throw error (don't fallback)
+            if (modelPreference === 'gemini-3-pro') {
+                throw error;
+            }
+
+            // Auto Fallback Logic
+            const errorMessage = parseGeminiError(error);
+            console.warn(`Primary model (Gemini 3 Pro) failed: ${errorMessage}. Switching to fallback.`);
+
+            modelUsed = 'Gemini 2.5 Flash';
+
+            const fallbackConfig = { ...config };
+            if (fallbackConfig.imageConfig) {
+                delete fallbackConfig.imageConfig.imageSize; // Flash doesn't support 2K/4K flag
+            }
+
+            const fallbackParts = JSON.parse(JSON.stringify(parts)); 
+            const textPart = fallbackParts.find((p: any) => p.text);
+            if (textPart) {
+                textPart.text += FLASH_QUALITY_BOOSTER;
+            }
             
-            if (fbErrorMsg.includes('429') || fbErrorMsg.includes('quota') || fbErrorMsg.includes('limit')) {
-                throw new Error("System busy (Quota Exceeded). Please change API Key.");
+            try {
+                console.log("Attempting generation with gemini-2.5-flash-image...");
+                response = await generateImageWithModel('gemini-2.5-flash-image', fallbackParts, fallbackConfig, apiKey);
+            } catch (fallbackError: any) {
+                const fbErrorMsg = parseGeminiError(fallbackError);
+                console.error("Fallback failed:", fbErrorMsg);
+                
+                if (fbErrorMsg.includes('429') || fbErrorMsg.includes('quota') || fbErrorMsg.includes('limit')) {
+                    throw new Error("System busy (Quota Exceeded). Please change API Key.");
+                }
+                if (fbErrorMsg.includes('403') || fbErrorMsg.includes('permission denied')) {
+                    throw new Error("Access Denied. Please check your API Key permissions.");
+                }
+                throw new Error(fbErrorMsg);
             }
-            if (fbErrorMsg.includes('403') || fbErrorMsg.includes('permission denied')) {
-                throw new Error("Access Denied. Please check your API Key permissions.");
-            }
-            throw new Error(fbErrorMsg);
         }
     }
     

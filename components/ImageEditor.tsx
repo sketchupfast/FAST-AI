@@ -51,6 +51,7 @@ import { UpscaleIcon } from './icons/UpscaleIcon';
 import { ArrowPathIcon } from './icons/ArrowPathIcon';
 import { KeyIcon } from './icons/KeyIcon';
 import { LineSegmentIcon } from './icons/LineSegmentIcon';
+import { CogIcon } from './icons/CogIcon';
 
 
 export interface ImageState {
@@ -377,6 +378,8 @@ const ImageEditor: React.FC = () => {
 
   const [addFourWayAC, setAddFourWayAC] = useState<boolean>(false);
   const [addWallTypeAC, setAddWallTypeAC] = useState<boolean>(false);
+
+  const [selectedModel, setSelectedModel] = useState<'auto' | 'gemini-3-pro' | 'gemini-2.5-flash'>('auto');
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     prompt: true,
@@ -809,8 +812,8 @@ const ImageEditor: React.FC = () => {
           const sourceBase64 = sourceDataUrl.split(',')[1];
           const refImg = (!size && referenceImage) ? referenceImage : null;
 
-          // Call API with Model Used check
-          const result = await editImage(sourceBase64, sourceMimeType, promptForGeneration, maskBase64, size, refImg, userApiKey);
+          // Call API with Model Preference
+          const result = await editImage(sourceBase64, sourceMimeType, promptForGeneration, maskBase64, size, refImg, selectedModel, userApiKey);
           const generatedImageBase64 = result.data;
           const generatedMimeType = result.mimeType;
           const modelUsedLabel = result.modelUsed || 'AI';
@@ -1105,6 +1108,23 @@ const ImageEditor: React.FC = () => {
                   <div className="flex gap-2 mb-4 p-1 bg-black/30 rounded-xl border border-white/5">
                          <ModeButton label={t.modes.general} icon={<SparklesIcon className="w-4 h-4" />} mode="default" activeMode={editingMode} onClick={setEditingMode} />
                          <ModeButton label={t.modes.object} icon={<BrushIcon className="w-4 h-4" />} mode="object" activeMode={editingMode} onClick={setEditingMode} />
+                  </div>
+
+                  {/* Model Selection Dropdown */}
+                  <div className="mb-4 px-1">
+                      <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1"><CogIcon className="w-3 h-3"/> AI Model Selection</div>
+                      <div className="relative">
+                          <select
+                              value={selectedModel}
+                              onChange={(e) => setSelectedModel(e.target.value as any)}
+                              className="w-full bg-zinc-900/50 border border-zinc-700 text-zinc-300 text-xs font-medium rounded-lg p-2.5 focus:ring-1 focus:ring-red-500 focus:border-red-500 appearance-none cursor-pointer shadow-sm hover:bg-zinc-800/50 transition-colors"
+                          >
+                              <option value="auto">Auto (Smart Fallback)</option>
+                              <option value="gemini-3-pro">Gemini 3 Pro (Force High Quality)</option>
+                              <option value="gemini-2.5-flash">Gemini 2.5 Flash (Force Speed/Quota)</option>
+                          </select>
+                          <ChevronDownIcon className="absolute right-3 top-3 w-4 h-4 text-zinc-500 pointer-events-none" />
+                      </div>
                   </div>
                   
                    {/* Manual Adjustments Section */}
