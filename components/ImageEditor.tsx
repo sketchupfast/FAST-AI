@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { editImage, analyzeImage, suggestCameraAngles, type AnalysisResult, cropAndResizeImage } from '../services/geminiService';
 import { saveProjects, loadProjects, clearProjects } from '../services/dbService';
@@ -52,6 +53,7 @@ import { ArrowPathIcon } from './icons/ArrowPathIcon';
 import { KeyIcon } from './icons/KeyIcon';
 import { LineSegmentIcon } from './icons/LineSegmentIcon';
 import { CogIcon } from './icons/CogIcon';
+import { MagicWandIcon } from './icons/MagicWandIcon';
 
 
 export interface ImageState {
@@ -124,7 +126,9 @@ const translations = {
         clearMask: "Clear Mask",
         subtle: "Subtle",
         strong: "Strong",
-        applyManual: "Apply Adjustment"
+        applyManual: "Apply Adjustment",
+        tolerance: "Tolerance",
+        autoDescribe: "Auto-Describe"
     },
     buttons: {
         generate: "Generate Image",
@@ -202,7 +206,9 @@ const translations = {
         clearMask: "ล้างพื้นที่เลือก",
         subtle: "น้อย",
         strong: "มาก",
-        applyManual: "ยืนยันการปรับแต่ง"
+        applyManual: "ยืนยันการปรับแต่ง",
+        tolerance: "ความไวสี (Tolerance)",
+        autoDescribe: "ให้ AI เขียนคำสั่ง"
     },
     buttons: {
         generate: "สร้างรูปภาพ",
@@ -231,10 +237,27 @@ const translations = {
 const styleOptions = [{name:'Cinematic'},{name:'Vintage'},{name:'Watercolor'},{name:'3D Render'},{name:'Pixel Art'},{name:'Neon Punk'},{name:'Sketch'},{name:'Pop Art'}];
 const cameraAngleOptions = [{name:'Eye-Level',prompt:'Re-render the scene from a realistic eye-level angle'},{name:'High Angle',prompt:'Re-render the scene from a high angle looking down'},{name:'Low Angle',prompt:'Re-render the scene from a low angle looking up'},{name:'Close-up',prompt:'Re-frame the image as a close-up shot'},{name:'Wide Shot',prompt:'Re-frame the image as a wide-angle shot'},{name:'Isometric',prompt:'Re-render the scene in an isometric 3D projection'},{name:'Bird\'s Eye View',prompt:'Re-render the scene from a top-down bird\'s eye view'},{name:'Dutch Angle',prompt:'Tilt the camera angle to create a dramatic Dutch angle'},{name:'Long Shot',prompt:'Re-render the scene from a distance (long shot)'}];
 const gardenStyleOptions = [{name:'Thai Garden',description:'A lush, tropical rainforest garden featuring tall betel palms...'},{name:'Japanese Garden',description:'Reflects Zen philosophy...'},{name:'English Garden',description:'A romantic atmosphere...'},{name:'Tropical Garden',description:'Lush and jungle-like...'},{name:'Flower Garden',description:'A field of various flowers...'},{name:'Magical Garden',description:'A fairytale garden...'},{name:'Modern Tropical Garden',description:'Combines lush greenery with sharp, modern lines.'},{name:'Formal Garden',description:'Symmetrical, orderly...'},{name:'Modern Natural Garden',description:'Simple, clean...'},{name:'Tropical Pathway Garden',description:'A dense, resort-style pathway...'},{name:'Thai Stream Garden',description:'A clear stream flows...'},{name:'Tropical Stream Garden',description:'A lush rainforest garden...'}];
-const architecturalStyleOptions = [{name:'Modern',description:'Clean lines...'},{name:'Loft',description:'Exposed brick...'},{name:'Classic',description:'Symmetrical...'},{name:'Minimalist',description:'Extreme simplicity...'},{name:'Contemporary',description:'A mix of styles...'},{name:'Modern Thai',description:'Combines Thai elements...'},{name:'3D Render',description:'A hyper-realistic...'},{name:'Modern Wood',description:'Features natural wood siding...'}];
+const architecturalStyleOptions = [
+    {name:'Modern',description:'Clean lines, geometric shapes, minimal ornamentation.'},
+    {name:'Loft',description:'Exposed brick, steel beams, industrial aesthetic, raw materials.'},
+    {name:'Classic',description:'Symmetrical, grand columns, elegant moldings, traditional proportions.'},
+    {name:'Minimalist',description:'Extreme simplicity, clean spaces, lack of clutter, monochrome palette.'},
+    {name:'Contemporary',description:'Current trends, curved lines, eco-friendly materials, unconventional.'},
+    {name:'Modern Thai',description:'Combines modern architecture with traditional Thai gable roofs and wooden elements.'},
+    {name:'3D Render',description:'A hyper-realistic 3D visualization style with perfect lighting.'},
+    {name:'Modern Wood',description:'Features natural wood siding, warm tones, and modern forms.'},
+    {name:'Nordic',description:'Simple, functional, minimal, light wood, large windows, gable roof, cozy.'},
+    {name:'Tropical Modern',description:'Open spaces, large overhangs, ventilation blocks, integration with nature.'},
+    {name:'Mid-Century Modern',description:'Geometric lines, flat planes, large glass windows, integration with nature, retro.'},
+    {name:'Neo-Classical',description:'Grand columns, symmetry, elegant details, luxurious.'},
+    {name:'Futuristic',description:'Sleek curves, steel, glass, high-tech aesthetic, dynamic forms.'},
+    {name:'Mediterranean',description:'Warm colors, stucco walls, arches, terracotta roof tiles.'},
+    {name:'Brutalist',description:'Raw concrete, bold geometric shapes, monolithic, heavy massing.'},
+    {name:'Colonial',description:'Symmetrical, shutters, spacious porches, historical western influence.'}
+];
 const interiorStyleOptions = [{name:'Modern',description:'Sharp lines...'},{name:'Modern Luxury',description:'Combines modern simplicity...'},{name:'Contemporary',description:'Clean lines...'},{name:'Scandinavian',description:'Simple...'},{name:'Japanese',description:'Serene...'},{name:'Thai',description:'Uses teak wood...'},{name:'Chinese',description:'Lacquered wood...'},{name:'Moroccan',description:'Vibrant colors...'},{name:'Classic',description:'Elegant and formal...'},{name:'Industrial',description:'Raw aesthetic...'},{name:'Minimalist',description:'Extreme simplicity...'},{name:'Tropical',description:'Brings the outdoors in...'},{name:'Mid-Century Modern',description:'Retro style...'},{name:'Bohemian',description:'Eclectic...'},{name:'Rustic',description:'Natural beauty...'},{name:'Art Deco',description:'Glamorous and bold...'},{name:'Coastal',description:'Light, airy...'},{name:'Zen',description:'Focuses on harmony...'}];
-const backgrounds = ["No Change","Bangkok High-rise View","Mountain View","Bangkok Traffic View","Farmland View","Housing Estate View","Chao Phraya River View","View from Inside to Garden","Forest","Public Park","Beach","Cityscape","Outer Space","IMPACT Exhibition Hall","Luxury Shopping Mall","Forest Park with Pond","Limestone Mountain Valley"];
-const interiorBackgrounds = ["No Change","View from Inside to Garden","Ground Floor View (Hedge & House)","Upper Floor View (House)","Bangkok High-rise View","Mountain View","Cityscape","Beach","Forest","Chao Phraya River View","Public Park"];
+const backgrounds = ["No Change","Bangkok High-rise View","Mountain View","Distant Mountain View","Bangkok Traffic View","Farmland View","Housing Estate View","Chao Phraya River View","View from Inside to Garden","Forest","Public Park","Beach","Cityscape","Outer Space","IMPACT Exhibition Hall","Luxury Shopping Mall","Forest Park with Pond","Limestone Mountain Valley"];
+const interiorBackgrounds = ["No Change","View from Inside to Garden","Ground Floor View (Hedge & House)","Upper Floor View (House)","Bangkok High-rise View","Mountain View","Distant Mountain View","Cityscape","Beach","Forest","Chao Phraya River View","Public Park"];
 const foregrounds = ["Foreground Large Tree","Foreground River","Foreground Road","Foreground Flowers","Foreground Fence","Top Corner Leaves","Bottom Corner Bush","Foreground Lawn","Foreground Pathway","Foreground Water Feature","Foreground Low Wall","Foreground Bangkok Traffic","Foreground Bangkok Electric Poles"];
 const interiorForegrounds = ["Blurred Coffee Table","Indoor Plant","Sofa Edge","Armchair","Floor Lamp","Rug/Carpet","Curtains","Decorative Vase","Dining Table Edge","Magazine/Books"];
 const interiorLightingOptions = ['Natural Daylight','Warm Evening Light','Studio Light','Cinematic Light'];
@@ -249,8 +272,9 @@ type EditingMode = 'default' | 'object';
 type SceneType = 'exterior' | 'interior' | 'plan';
 
 const QUICK_ACTION_PROMPTS: Record<string, string> = {
+    // ... (same as before)
     localVillageDay: "Transform the image into a hyper-realistic daytime street view within a lively housing estate. STRICTLY MAINTAIN THE ORIGINAL CAMERA ANGLE AND PERSPECTIVE. The atmosphere should be bright, sunny, and natural. Crucially, generate a realistic concrete or asphalt road in the foreground. The house fence should be a neat green hedge combined with a modern black steel slatted sliding gate. Add authentic details such as standard electric poles with utility lines running along the street, and lush green trees providing shade. The overall look should capture the authentic, everyday vibe of a residential village neighborhood.",
-    bangkokStreetLife: "Transform the image into a hyper-realistic scene of a bustling Bangkok street. The atmosphere should be vibrant and chaotic yet charming. Crucially, include a tangle of electrical wires and utility poles in the foreground and background, typical of Bangkok. Add elements of street life such as a parked Tuk-Tuk or motorcycle, and perhaps some street food stalls in the distance. The lighting should be bright tropical daylight with sharp shadows.",
+    bangkokStreetLife: "Transform the image into a hyper-realistic scene of a bustling Bangkok street. The atmosphere should be vibrant and chaotic yet charming. Crucially, include a tangle of electrical wires and utility poles in the foreground and background, typical of a Bangkok street. Add elements of street life such as a parked Tuk-Tuk or motorcycle, and perhaps some street food stalls in the distance. The lighting should be bright tropical daylight with sharp shadows.",
     modernMinimalist: "Transform the architectural style of the house into a sleek, Modern Minimalist design. Use a pristine white color palette with simple, geometric forms. Remove any ornate details or clutter. The materials should be smooth white render, large frameless glass windows, and subtle light wood accents. The landscape should be equally minimalist, with a neat lawn and a few sculptural trees. The overall look should be clean, bright, and sophisticated.",
     modernVillageWithProps: "Transform the image into a high-quality, photorealistic architectural photograph capturing the atmosphere of a well-maintained, modern housing estate. The landscape should feature a lush, perfectly manicured green lawn and neat rows of shrubbery. Crucially, include a mix of large, mature trees to create a shady, established feel, alongside newly planted trees with visible wooden support stakes (tree props), typical of a new village development. The lighting should be bright and natural, enhancing the fresh and inviting community feel. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it; the landscape must not obstruct vehicle access to the garage.",
     modernVillageIsolated: "Transform the image into a high-quality, photorealistic architectural photograph capturing the atmosphere of a well-maintained, modern housing estate. The landscape should feature a lush, perfectly manicured green lawn and neat rows of shrubbery. Crucially, include a mix of large, mature trees to create a shady, established feel, alongside newly planted trees with visible wooden support stakes (tree props). **CRITICAL INSTRUCTION:** Remove any neighboring houses, buildings, or structures from the background. The background must be replaced with a clear sky or distant natural vegetation to make the house look secluded and private. The lighting should be bright and natural. It is critically important that if a garage is visible in the original image, you must generate a clear and functional driveway leading to it.",
@@ -293,12 +317,23 @@ const QUICK_ACTION_PROMPTS: Record<string, string> = {
 };
 
 const brushColors = [{name:'Red',value:'rgba(255, 59, 48, 0.7)',css:'bg-red-500'},{name:'Blue',value:'rgba(0, 122, 255, 0.7)',css:'bg-blue-500'},{name:'Green',value:'rgba(52, 199, 89, 0.7)',css:'bg-green-500'},{name:'Yellow',value:'rgba(255, 204, 0, 0.7)',css:'bg-yellow-400'}];
+// ... (Previous prompts remain unchanged)
 const ARCHITECTURAL_STYLE_PROMPTS = architecturalStyleOptions.reduce((acc,option)=>{acc[option.name]=`Change the architectural style to ${option.name}. ${option.description}`;return acc},{}as Record<string,string>);
 const GARDEN_STYLE_PROMPTS = gardenStyleOptions.reduce((acc,option)=>{acc[option.name]=`Change the garden to ${option.name}. ${option.description}`;return acc},{}as Record<string,string>);
 const INTERIOR_STYLE_PROMPTS = interiorStyleOptions.reduce((acc,option)=>{acc[option.name]=`Change the interior design style to ${option.name}. ${option.description}`;return acc},{}as Record<string,string>);
 const INTERIOR_LIGHTING_PROMPTS = interiorLightingOptions.reduce((acc,option)=>{acc[option]=`Change the lighting to ${option}.`;return acc},{}as Record<string,string>);
-const BACKGROUND_PROMPTS = backgrounds.reduce((acc,bg)=>{acc[bg]=bg==="No Change"?"":`Change the background to ${bg}.`;return acc},{}as Record<string,string>);
-const INTERIOR_BACKGROUND_PROMPTS = interiorBackgrounds.reduce((acc,bg)=>{acc[bg]=bg==="No Change"?"":`Change the view outside the window to ${bg}.`;return acc},{}as Record<string,string>);
+const BACKGROUND_PROMPTS = backgrounds.reduce((acc,bg)=>{
+    if(bg==="Distant Mountain View") acc[bg]="Change the background to a scenic view of distant mountains on the horizon, depicting the lush green mountains of Central Thailand with rich tropical vegetation.";
+    else if(bg==="Close Mountain View") acc[bg]="Change the background to a dramatic view of large, lush green mountains typical of Central Thailand up close, filled with dense tropical forest.";
+    else acc[bg]=bg==="No Change"?"":`Change the background to ${bg}.`;
+    return acc;
+},{}as Record<string,string>);
+const INTERIOR_BACKGROUND_PROMPTS = interiorBackgrounds.reduce((acc,bg)=>{
+    if(bg==="Distant Mountain View") acc[bg]="Change the view outside the window to a scenic view of distant mountains on the horizon, depicting the lush green mountains of Central Thailand with rich tropical vegetation.";
+    else if(bg==="Close Mountain View") acc[bg]="Change the view outside the window to a dramatic view of large, lush green mountains typical of Central Thailand up close, filled with dense tropical forest.";
+    else acc[bg]=bg==="No Change"?"":`Change the view outside the window to ${bg}.`;
+    return acc;
+},{}as Record<string,string>);
 const FOREGROUND_PROMPTS: Record<string,string> = {"Foreground Large Tree":"Add a large tree in the foreground.","Foreground River":"Add a river in the foreground.","Foreground Road":"Add a road in the foreground.","Foreground Flowers":"Add flowers in the foreground.","Foreground Fence":"Add a fence in the foreground.","Top Corner Leaves":"Add leaves in the top corners.","Bottom Corner Bush":"Add a bush in the bottom corner.","Foreground Lawn":"Add a lawn in the foreground.","Foreground Pathway":"Add a pathway in the foreground.","Foreground Water Feature":"Add a water feature in the foreground.","Foreground Low Wall":"Add a low wall in the foreground.","Foreground Bangkok Traffic":"Add busy Bangkok traffic in the foreground including cars, taxis, tuk-tuks, and motorcycles.","Foreground Bangkok Electric Poles":"Add a chaotic tangled web of electrical wires and utility poles in the foreground, typical of a Bangkok street scene.","Blurred Coffee Table":"Add a blurred coffee table surface in the immediate foreground to create depth of field.","Indoor Plant":"Add a large, healthy indoor potted plant in the foreground corner.","Sofa Edge":"Add the edge of a stylish sofa in the immediate foreground to frame the view.","Armchair":"Add a cozy armchair in the foreground.","Floor Lamp":"Add a modern floor lamp in the foreground.","Rug/Carpet":"Add a textured rug or carpet covering the floor in the foreground.","Curtains":"Add sheer curtains framing the sides of of the image in the foreground.","Decorative Vase":"Add a decorative vase on a surface in the foreground.","Dining Table Edge":"Add the edge of a dining table with place settings in the foreground.","Magazine/Books":"Add a stack of design magazines or books on a surface in the foreground."};
 
 const OptionButton:React.FC<{option:string,isSelected:boolean,onClick:(option:string)=>void,size?:'sm'|'md'}>=({option,isSelected,onClick,size='sm'})=>{const sizeClasses=size==='md'?'px-4 py-2 text-base':'px-3 py-1.5 text-xs font-medium uppercase tracking-wide';return(<button key={option} type="button" onClick={()=>onClick(option)} className={`${sizeClasses} rounded-lg transition-all duration-300 border backdrop-blur-sm ${isSelected?'bg-red-600/80 text-white border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.4)] ring-1 ring-red-400/50':'bg-zinc-800/40 text-zinc-400 hover:bg-zinc-700/60 border-zinc-700/50 hover:text-zinc-200 hover:border-zinc-500'}`}>{option}</button>)};
@@ -346,6 +381,7 @@ const ImageEditor: React.FC = () => {
   const [sketchIntensity, setSketchIntensity] = useState<number>(100);
   const [outputSize, setOutputSize] = useState<string>('Original');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [sceneType, setSceneType] = useState<SceneType>('exterior');
   
@@ -488,7 +524,8 @@ const ImageEditor: React.FC = () => {
   const [brushSize, setBrushSize] = useState<number>(30);
   const [brushColor, setBrushColor] = useState<string>(brushColors[0].value);
   const [isMaskEmpty, setIsMaskEmpty] = useState<boolean>(true);
-  const [maskTool, setMaskTool] = useState<'brush' | 'line'>('brush');
+  const [maskTool, setMaskTool] = useState<'brush' | 'line' | 'magic-wand'>('brush');
+  const [tolerance, setTolerance] = useState<number>(20);
 
   const mountedRef = useRef(true);
   
@@ -708,6 +745,35 @@ const ImageEditor: React.FC = () => {
   
   const handleForegroundToggle = (fg: string) => {
     setSelectedForegrounds(prev => prev.includes(fg) ? prev.filter(item => item !== fg) : [...prev, fg]);
+  };
+
+  const handleAutoDescribe = async () => {
+    if (!activeImage) return;
+    if (!hasApiKey && !(window as any).aistudio) { setIsKeyModalOpen(true); return; }
+    
+    setIsAnalyzing(true);
+    try {
+        const sourceUrl = (activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null) ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex] : activeImage.dataUrl;
+        if (!sourceUrl) return;
+
+        const base64Data = sourceUrl.split(',')[1];
+        const mimeType = sourceUrl.substring(5, sourceUrl.indexOf(';'));
+
+        // Use analyzeImage service
+        const result = await analyzeImage(base64Data, mimeType, userApiKey);
+        
+        let autoPrompt = "";
+        if (result.architecturalStyle) autoPrompt += `Style: ${result.architecturalStyle}. `;
+        if (result.keyMaterials && result.keyMaterials.length > 0) autoPrompt += `Materials: ${result.keyMaterials.join(', ')}. `;
+        if (result.lightingConditions) autoPrompt += `Lighting: ${result.lightingConditions}. `;
+        
+        setPrompt(prev => (prev ? prev + " " + autoPrompt : autoPrompt));
+    } catch (e) {
+        console.error("Auto-describe failed:", e);
+        setError("Could not analyze image. Please try again.");
+    } finally {
+        setIsAnalyzing(false);
+    }
   };
 
   const applyManualChanges = async () => {
@@ -951,7 +1017,7 @@ const ImageEditor: React.FC = () => {
   return (
     <div className="flex h-screen w-full bg-[#09090b] text-zinc-300 overflow-hidden font-sans">
       
-      {/* API Key Modal */}
+      {/* API Key Modal & Project Modal (Hidden for brevity, existing code) */}
       {isKeyModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-md p-4" onClick={() => hasApiKey ? setIsKeyModalOpen(false) : null}>
             <div className="bg-[#18181b] rounded-2xl border border-white/10 shadow-2xl w-full max-w-md p-6 overflow-hidden transform transition-all" onClick={e => e.stopPropagation()}>
@@ -1141,11 +1207,22 @@ const ImageEditor: React.FC = () => {
                   {sceneType === 'exterior' && (
                     <>
                         <CollapsibleSection title={t.sections.prompt} sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-4 h-4"/>}>
-                            <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={editingMode === 'object' ? t.placeholders.promptMask : t.placeholders.promptExterior} className="w-full bg-black/50 border border-zinc-700 rounded-xl p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none shadow-inner" rows={3} />
+                            <div className="relative">
+                                <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={editingMode === 'object' ? t.placeholders.promptMask : t.placeholders.promptExterior} className="w-full bg-black/50 border border-zinc-700 rounded-xl p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none shadow-inner" rows={3} />
+                                <button 
+                                    onClick={handleAutoDescribe} 
+                                    disabled={isAnalyzing}
+                                    className="absolute bottom-2 right-2 p-1.5 bg-zinc-800/80 hover:bg-red-500 text-zinc-400 hover:text-white rounded-lg transition-all border border-zinc-700 hover:border-red-400 disabled:opacity-50"
+                                    title={t.controls.autoDescribe}
+                                >
+                                    {isAnalyzing ? <Spinner className="w-4 h-4"/> : <SparklesIcon className="w-4 h-4" />}
+                                </button>
+                            </div>
                         </CollapsibleSection>
 
                         {editingMode === 'default' && (
                             <>
+                                {/* ... (Other sections like Moodboard, Quick Actions etc. remain unchanged) ... */}
                                 <CollapsibleSection title={t.sections.moodboard} sectionKey="moodboard" isOpen={openSections.moodboard} onToggle={() => toggleSection('moodboard')} icon={<TextureIcon className="w-4 h-4"/>}>
                                     <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-zinc-700 rounded-xl hover:border-red-500 hover:bg-red-500/5 transition-colors cursor-pointer group">
                                         {referenceImage ? (
@@ -1241,11 +1318,22 @@ const ImageEditor: React.FC = () => {
                   {sceneType === 'interior' && (
                     <>
                         <CollapsibleSection title={t.sections.prompt} sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-4 h-4"/>}>
-                            <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={editingMode === 'object' ? t.placeholders.promptMask : t.placeholders.promptInterior} className="w-full bg-black/50 border border-zinc-700 rounded-xl p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none shadow-inner" rows={3} />
+                            <div className="relative">
+                                <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={editingMode === 'object' ? t.placeholders.promptMask : t.placeholders.promptInterior} className="w-full bg-black/50 border border-zinc-700 rounded-xl p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none shadow-inner" rows={3} />
+                                <button 
+                                    onClick={handleAutoDescribe} 
+                                    disabled={isAnalyzing}
+                                    className="absolute bottom-2 right-2 p-1.5 bg-zinc-800/80 hover:bg-red-500 text-zinc-400 hover:text-white rounded-lg transition-all border border-zinc-700 hover:border-red-400 disabled:opacity-50"
+                                    title={t.controls.autoDescribe}
+                                >
+                                    {isAnalyzing ? <Spinner className="w-4 h-4"/> : <SparklesIcon className="w-4 h-4" />}
+                                </button>
+                            </div>
                         </CollapsibleSection>
 
                         {editingMode === 'default' && (
                             <>
+                                {/* ... (Interior sections remain mostly unchanged) ... */}
                                 <CollapsibleSection title={t.sections.moodboard} sectionKey="moodboard" isOpen={openSections.moodboard} onToggle={() => toggleSection('moodboard')} icon={<TextureIcon className="w-4 h-4"/>}>
                                     <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-zinc-700 rounded-xl hover:border-red-500 hover:bg-red-500/5 transition-colors cursor-pointer group">
                                         {referenceImage ? (
@@ -1285,7 +1373,7 @@ const ImageEditor: React.FC = () => {
                                     </div>
                                     {selectedInteriorStyle && <IntensitySlider value={styleIntensity} onChange={setStyleIntensity} t={t} />}
                                 </CollapsibleSection>
-
+                                
                                 <CollapsibleSection title={t.sections.lighting} sectionKey="lighting" isOpen={openSections.lighting} onToggle={() => toggleSection('lighting')} icon={<LightbulbIcon className="w-4 h-4"/>}>
                                     <div className="grid grid-cols-2 gap-2 mb-4">
                                         {interiorLightingOptions.map(opt => (
@@ -1343,11 +1431,22 @@ const ImageEditor: React.FC = () => {
                   {sceneType === 'plan' && (
                     <>
                         <CollapsibleSection title={t.sections.prompt} sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-4 h-4"/>}>
-                            <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={editingMode === 'object' ? t.placeholders.promptMask : t.placeholders.promptPlan} className="w-full bg-black/50 border border-zinc-700 rounded-xl p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none shadow-inner" rows={3} />
+                            <div className="relative">
+                                <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={editingMode === 'object' ? t.placeholders.promptMask : t.placeholders.promptPlan} className="w-full bg-black/50 border border-zinc-700 rounded-xl p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none shadow-inner" rows={3} />
+                                <button 
+                                    onClick={handleAutoDescribe} 
+                                    disabled={isAnalyzing}
+                                    className="absolute bottom-2 right-2 p-1.5 bg-zinc-800/80 hover:bg-red-500 text-zinc-400 hover:text-white rounded-lg transition-all border border-zinc-700 hover:border-red-400 disabled:opacity-50"
+                                    title={t.controls.autoDescribe}
+                                >
+                                    {isAnalyzing ? <Spinner className="w-4 h-4"/> : <SparklesIcon className="w-4 h-4" />}
+                                </button>
+                            </div>
                         </CollapsibleSection>
 
                         {editingMode === 'default' && (
                             <>
+                                {/* ... (Plan sections remain unchanged) ... */}
                                 <CollapsibleSection title={t.sections.moodboard} sectionKey="moodboard" isOpen={openSections.moodboard} onToggle={() => toggleSection('moodboard')} icon={<TextureIcon className="w-4 h-4"/>}>
                                     <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-zinc-700 rounded-xl hover:border-red-500 hover:bg-red-500/5 transition-colors cursor-pointer group">
                                         {referenceImage ? (
@@ -1413,14 +1512,25 @@ const ImageEditor: React.FC = () => {
                       <CollapsibleSection title={t.sections.brushSettings} sectionKey="brushSettings" isOpen={openSections.brushSettings} onToggle={() => toggleSection('brushSettings')} icon={<BrushIcon className="w-4 h-4"/>}>
                           <div className="space-y-4">
                               <div className="flex gap-2 mb-2">
-                                  <button onClick={() => setMaskTool('brush')} className={`flex-1 py-2 text-xs font-bold rounded-lg border ${maskTool === 'brush' ? 'bg-zinc-700 text-white border-zinc-500' : 'bg-transparent text-zinc-500 border-zinc-700'}`}>
-                                      <BrushIcon className="w-4 h-4 mx-auto mb-1"/> Freehand
+                                  <button onClick={() => setMaskTool('brush')} className={`flex-1 py-2 text-xs font-bold rounded-lg border flex items-center justify-center gap-2 ${maskTool === 'brush' ? 'bg-zinc-700 text-white border-zinc-500' : 'bg-transparent text-zinc-500 border-zinc-700'}`}>
+                                      <BrushIcon className="w-4 h-4"/> Brush
                                   </button>
-                                  <button onClick={() => setMaskTool('line')} className={`flex-1 py-2 text-xs font-bold rounded-lg border ${maskTool === 'line' ? 'bg-zinc-700 text-white border-zinc-500' : 'bg-transparent text-zinc-500 border-zinc-700'}`}>
-                                      <LineSegmentIcon className="w-4 h-4 mx-auto mb-1"/> Line Tool
+                                  <button onClick={() => setMaskTool('magic-wand')} className={`flex-1 py-2 text-xs font-bold rounded-lg border flex items-center justify-center gap-2 ${maskTool === 'magic-wand' ? 'bg-zinc-700 text-white border-zinc-500' : 'bg-transparent text-zinc-500 border-zinc-700'}`}>
+                                      <MagicWandIcon className="w-4 h-4"/> Magic Wand
+                                  </button>
+                                  <button onClick={() => setMaskTool('line')} className={`flex-1 py-2 text-xs font-bold rounded-lg border flex items-center justify-center gap-2 ${maskTool === 'line' ? 'bg-zinc-700 text-white border-zinc-500' : 'bg-transparent text-zinc-500 border-zinc-700'}`}>
+                                      <LineSegmentIcon className="w-4 h-4"/> Line
                                   </button>
                               </div>
-                              <div><div className="flex justify-between text-xs mb-1 text-zinc-400"><span>Size</span><span>{brushSize}px</span></div><input type="range" min="5" max="100" value={brushSize} onChange={(e) => setBrushSize(Number(e.target.value))} className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-white"/></div>
+                              
+                              {maskTool === 'brush' && (
+                                <div><div className="flex justify-between text-xs mb-1 text-zinc-400"><span>Size</span><span>{brushSize}px</span></div><input type="range" min="5" max="100" value={brushSize} onChange={(e) => setBrushSize(Number(e.target.value))} className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-white"/></div>
+                              )}
+                              
+                              {maskTool === 'magic-wand' && (
+                                <div><div className="flex justify-between text-xs mb-1 text-zinc-400"><span>{t.controls.tolerance}</span><span>{tolerance}</span></div><input type="range" min="1" max="100" value={tolerance} onChange={(e) => setTolerance(Number(e.target.value))} className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-white"/></div>
+                              )}
+
                               <div><div className="text-xs mb-2 text-zinc-400">Color</div><div className="flex gap-2">{brushColors.map(c => (<button key={c.name} onClick={() => setBrushColor(c.value)} className={`w-6 h-6 rounded-full ${c.css} ${brushColor === c.value ? 'ring-2 ring-white scale-110' : 'opacity-50 hover:opacity-100'} transition-all`}/>))}</div></div>
                               <button onClick={() => imageDisplayRef.current?.clearMask()} className="w-full py-2 text-xs font-bold text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/10 transition-colors">{t.controls.clearMask}</button>
                           </div>
@@ -1444,8 +1554,9 @@ const ImageEditor: React.FC = () => {
          )}
       </aside>
 
-      {/* MAIN CONTENT */}
+      {/* MAIN CONTENT (Header and ImageDisplay) - No changes needed here, existing code handles ImageDisplay props */}
       <main className="flex-1 flex flex-col min-w-0 relative bg-[#09090b]">
+         {/* ... (Existing header and main content structure) ... */}
          <div className="absolute inset-0 z-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
 
          <header className="h-16 flex items-center justify-between px-6 border-b border-white/5 bg-black/60 backdrop-blur-xl z-10">
@@ -1515,6 +1626,7 @@ const ImageEditor: React.FC = () => {
                         brushSize={brushSize}
                         brushColor={brushColor}
                         maskTool={maskTool}
+                        tolerance={tolerance}
                         onMaskChange={setIsMaskEmpty}
                       />
                   </div>

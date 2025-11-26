@@ -22,7 +22,8 @@ interface ImageDisplayProps {
   isMaskingMode?: boolean;
   brushSize?: number;
   brushColor?: string;
-  maskTool?: 'brush' | 'line';
+  maskTool?: 'brush' | 'line' | 'magic-wand';
+  tolerance?: number;
   onMaskChange?: (isMaskEmpty: boolean) => void;
 }
 
@@ -72,6 +73,7 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
   brushSize = 30,
   brushColor = 'rgba(255, 59, 48, 0.7)',
   maskTool = 'brush',
+  tolerance = 20,
   onMaskChange
 }, ref) => {
   const [scale, setScale] = useState(1);
@@ -273,10 +275,119 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
     const canvas = canvasRef.current;
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
+    // Since scale is 1 in mask mode, we don't need to divide by scale
     return {
       x: e.clientX - rect.left,
       y: e.clientY - rect.top,
     };
+  };
+
+  // Helper for flood fill
+  const floodFill = (ctx: CanvasRenderingContext2D, startX: number, startY: number, tolerance: number, fillColor: string) => {
+    const canvas = ctx.canvas;
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    // Create a temporary canvas to read the underlying image data
+    // We need the original image to determine color boundaries
+    const imageElement = imageRef.current;
+    if (!imageElement) return;
+
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = width;
+    tempCanvas.height = height;
+    const tempCtx = tempCanvas.getContext('2d');
+    if (!tempCtx) return;
+    
+    // Draw the image onto temp canvas to read pixel data
+    tempCtx.drawImage(imageElement, 0, 0, width, height);
+    
+    const imgData = tempCtx.getImageData(0, 0, width, height);
+    const pixelData = imgData.data;
+    
+    // Get starting color
+    const startPos = (Math.floor(startY) * width + Math.floor(startX)) * 4;
+    const startR = pixelData[startPos];
+    const startG = pixelData[startPos + 1];
+    const startB = pixelData[startPos + 2];
+    const startA = pixelData[startPos + 3];
+
+    // Stack based flood fill
+    const stack = [[Math.floor(startX), Math.floor(startY)]];
+    const visited = new Uint8Array(width * height); // keep track of visited pixels to avoid loops
+    
+    // We will draw on the MAIN mask canvas
+    // Parsing color string to RGBA for the mask
+    // Simple parsing for 'rgba(r,g,b,a)' format or named colors
+    // For simplicity, we'll just fill the visited set and then draw a single shape or manipulate pixels
+    // Direct pixel manipulation on the mask canvas is fastest
+    
+    const maskImgData = ctx.getImageData(0, 0, width, height);
+    const maskData = maskImgData.data;
+    
+    // Parse fill color (assuming rgba provided from parent, e.g. "rgba(255, 0, 0, 0.5)")
+    // If complex, we might need a helper. For now, let's hardcode red-ish if parsing fails or use the brushColor prop directly
+    // Let's assume brushColor is passed as prop
+    let fillR = 255, fillG = 0, fillB = 0, fillA = 128;
+    
+    if (fillColor.startsWith('rgba')) {
+        const match = fillColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+        if (match) {
+            fillR = parseInt(match[1]);
+            fillG = parseInt(match[2]);
+            fillB = parseInt(match[3]);
+            fillA = match[4] ? parseFloat(match[4]) * 255 : 255;
+        }
+    } else if (fillColor.startsWith('rgb')) {
+        const match = fillColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+        if (match) {
+            fillR = parseInt(match[1]);
+            fillG = parseInt(match[2]);
+            fillB = parseInt(match[3]);
+            fillA = 255;
+        }
+    }
+
+    const colorMatch = (pos: number) => {
+        const r = pixelData[pos];
+        const g = pixelData[pos + 1];
+        const b = pixelData[pos + 2];
+        const a = pixelData[pos + 3];
+        
+        // Euclidean distance or simple difference sum
+        const diff = Math.abs(r - startR) + Math.abs(g - startG) + Math.abs(b - startB) + Math.abs(a - startA);
+        return diff <= tolerance * 3; // Simplified tolerance check (0-100 scale roughly maps)
+    };
+
+    while (stack.length > 0) {
+        const pop = stack.pop();
+        if (!pop) continue;
+        const [x, y] = pop;
+
+        const pos = (y * width + x) * 4;
+        const visitedPos = y * width + x;
+
+        if (x < 0 || x >= width || y < 0 || y >= height || visited[visitedPos]) continue;
+
+        if (colorMatch(pos)) {
+            visited[visitedPos] = 1;
+            
+            // Fill mask pixel
+            maskData[pos] = fillR;
+            maskData[pos + 1] = fillG;
+            maskData[pos + 2] = fillB;
+            maskData[pos + 3] = fillA; // Semi-transparent
+
+            // Add neighbors
+            stack.push([x + 1, y]);
+            stack.push([x - 1, y]);
+            stack.push([x, y + 1]);
+            stack.push([x, y - 1]);
+        }
+    }
+    
+    ctx.putImageData(maskImgData, 0, 0);
+    onMaskChange?.(false);
   };
 
   const draw = (e: React.MouseEvent) => {
@@ -315,8 +426,21 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
   };
 
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
-    isDrawing.current = true;
     const coords = getCoords(e);
+    if (!coords) return;
+    
+    if (maskTool === 'magic-wand') {
+        const canvas = canvasRef.current;
+        const ctx = canvas?.getContext('2d', { willReadFrequently: true });
+        if (ctx) {
+            // Adjust tolerance scaling: slider 0-100 -> tolerance check
+            // 0 is very strict, 100 is very loose
+            floodFill(ctx, coords.x, coords.y, tolerance, brushColor);
+        }
+        return;
+    }
+
+    isDrawing.current = true;
     lastPosition.current = coords;
     
     if (maskTool === 'line' && coords) {
@@ -460,7 +584,7 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
                 <canvas
                   ref={canvasRef}
                   className="absolute top-0 left-0 z-20"
-                  style={{ cursor: 'crosshair' }}
+                  style={{ cursor: maskTool === 'magic-wand' ? 'copy' : 'crosshair' }}
                   onMouseDown={handleCanvasMouseDown}
                   onMouseMove={draw}
                   onMouseUp={handleCanvasMouseUp}
