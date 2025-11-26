@@ -1089,6 +1089,7 @@ const ImageEditor: React.FC = () => {
                     <button onClick={() => setIsHelpModalOpen(false)} className="px-6 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-sm font-medium transition-colors">
                         Close Guide
                     </button>
+                    <div className="mt-4 text-[10px] text-zinc-600 font-mono">v1.0.0 (Stable Release)</div>
                 </div>
             </div>
         </div>

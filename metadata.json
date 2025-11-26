@@ -1,5 +1,5 @@
 {
   "name": "FAST AI Image Editor",
-  "description": "An application for users to edit images using text commands, powered by the Gemini 3 Pro Image model. Users can describe changes, such as 'add a vintage filter,' to create a new version of the image.",
+  "description": "Professional AI-powered architectural image editor (v1.0.0). Features Exterior, Interior, and Plan modes with advanced object masking, intelligent prompt generation for Thai contexts, and seamless Gemini 3 Pro integration.",
   "requestFramePermissions": []
 }
