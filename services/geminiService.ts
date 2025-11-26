@@ -140,7 +140,7 @@ const generateImageWithModel = async (
       try {
           return await ai.models.generateContent({
             model: modelName,
-            contents: { parts: parts },
+            contents: [{ role: 'user', parts: parts }], // Correct structure: Array of Content objects
             config: config,
           });
       } catch (error: any) {
@@ -169,9 +169,7 @@ const parseGeminiError = (error: any): string => {
     let message = error instanceof Error ? error.message : String(error);
     
     if (typeof error === 'object' && error !== null) {
-        // Try to extract complex nested error details often sent by Google API
         if ('details' in error && Array.isArray(error.details)) {
-             // Look for quota failure details
              const quotaFailure = error.details.find((d: any) => d['@type']?.includes('QuotaFailure'));
              if (quotaFailure && quotaFailure.violations) {
                  return `Quota exceeded: ${quotaFailure.violations.map((v: any) => v.quotaMetric).join(', ')}`;
@@ -182,10 +180,9 @@ const parseGeminiError = (error: any): string => {
         }
     }
     
-    // Parse JSON string dumps in message
     if (message.includes('{') && message.includes('}')) {
         try {
-            const jsonMatch = message.match(/(\{.*\})/s); // naive json extraction
+            const jsonMatch = message.match(/(\{.*\})/s); 
             if (jsonMatch) {
                 const parsed = JSON.parse(jsonMatch[0]);
                 if (parsed.error) {
@@ -234,7 +231,6 @@ export const editImage = async (
         });
     }
 
-    // INJECT PRO QUALITY BOOSTER to the primary prompt
     const enhancedPrompt = prompt + PRO_QUALITY_BOOSTER;
     parts.push({ text: enhancedPrompt });
 
@@ -299,25 +295,18 @@ export const editImage = async (
         response = await generateImageWithModel('gemini-3-pro-image-preview', parts, config, apiKey);
     } catch (error: any) {
         const errorMessage = parseGeminiError(error);
-        console.warn(`Primary model failed: ${errorMessage}. Switching to fallback.`);
+        console.warn(`Primary model (Gemini 3 Pro) failed: ${errorMessage}. Switching to fallback.`);
 
-        // REMOVED STRICT ADMIN CHECK:
-        // We now allow fallback for EVERYONE (Admin & User) if Pro fails (e.g. Limit 0, Quota)
-        // This ensures the app works even if the Env Key doesn't have Pro access.
-        
         modelUsed = 'Gemini 2.5 Flash';
 
-        // Fallback Configuration: Gemini 2.5 Flash Image
         const fallbackConfig = { ...config };
         if (fallbackConfig.imageConfig) {
             delete fallbackConfig.imageConfig.imageSize; // Flash doesn't support 2K/4K flag
         }
 
-        // Enhance prompt AGGRESSIVELY for Flash
         const fallbackParts = JSON.parse(JSON.stringify(parts)); 
         const textPart = fallbackParts.find((p: any) => p.text);
         if (textPart) {
-            // Replace the Pro booster with Flash booster (appending)
             textPart.text += FLASH_QUALITY_BOOSTER;
         }
         
@@ -332,7 +321,7 @@ export const editImage = async (
                 throw new Error("System busy (Quota Exceeded). Please change API Key.");
             }
             if (fbErrorMsg.includes('403') || fbErrorMsg.includes('permission denied')) {
-                throw new Error("Access Denied. Please check your API Key.");
+                throw new Error("Access Denied. Please check your API Key permissions.");
             }
             throw new Error(fbErrorMsg);
         }
@@ -343,6 +332,15 @@ export const editImage = async (
     }
     
     const candidate = response.candidates[0];
+    
+    // Safety check for content
+    if (!candidate.content || !candidate.content.parts) {
+        if (candidate.finishReason) {
+             throw new Error(`Generation stopped. Reason: ${candidate.finishReason}`);
+        }
+        throw new Error("The AI response contained no image data.");
+    }
+
     for (const part of candidate.content.parts) {
       if (part.inlineData) {
         return { 
@@ -389,18 +387,14 @@ export const analyzeImage = async (
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-3-pro-preview',
-            contents: {
-                parts: [{ inlineData: { data: resizedBase64, mimeType: resizedMimeType } }, { text: prompt }],
-            },
+            contents: [{ parts: [{ inlineData: { data: resizedBase64, mimeType: resizedMimeType } }, { text: prompt }] }],
             config: { responseMimeType: "application/json", responseSchema: responseSchema },
         });
         return JSON.parse(response.text || "{}") as AnalysisResult;
     } catch (e) {
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash', 
-            contents: {
-                parts: [{ inlineData: { data: resizedBase64, mimeType: resizedMimeType } }, { text: prompt }],
-            },
+            contents: [{ parts: [{ inlineData: { data: resizedBase64, mimeType: resizedMimeType } }, { text: prompt }] }],
             config: { responseMimeType: "application/json", responseSchema: responseSchema },
         });
         return JSON.parse(response.text || "{}") as AnalysisResult;
@@ -431,14 +425,14 @@ export const suggestCameraAngles = async (
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-3-pro-preview',
-            contents: { parts: [{ inlineData: { data: resizedBase64, mimeType: resizedMimeType } }, { text: prompt }] },
+            contents: [{ parts: [{ inlineData: { data: resizedBase64, mimeType: resizedMimeType } }, { text: prompt }] }],
             config: { responseMimeType: "application/json", responseSchema: responseSchema },
         });
         return JSON.parse(response.text || "[]") as string[];
     } catch (e) {
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
-            contents: { parts: [{ inlineData: { data: resizedBase64, mimeType: resizedMimeType } }, { text: prompt }] },
+            contents: [{ parts: [{ inlineData: { data: resizedBase64, mimeType: resizedMimeType } }, { text: prompt }] }],
             config: { responseMimeType: "application/json", responseSchema: responseSchema },
         });
         return JSON.parse(response.text || "[]") as string[];
