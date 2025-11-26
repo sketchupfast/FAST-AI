@@ -54,6 +54,7 @@ import { KeyIcon } from './icons/KeyIcon';
 import { LineSegmentIcon } from './icons/LineSegmentIcon';
 import { CogIcon } from './icons/CogIcon';
 import { MagicWandIcon } from './icons/MagicWandIcon';
+import { QuestionMarkCircleIcon } from './icons/QuestionMarkCircleIcon';
 
 
 export interface ImageState {
@@ -78,7 +79,8 @@ const translations = {
         noProject: "No project loaded",
         saving: "Saving...",
         saved: "Auto-saved",
-        error: "Save Error"
+        error: "Save Error",
+        help: "Help / User Guide"
     },
     tabs: {
         exterior: "Exterior",
@@ -150,6 +152,17 @@ const translations = {
     modes: {
         general: "General",
         object: "Object"
+    },
+    help: {
+        title: "How to use FAST AI",
+        step1: "1. Getting Started",
+        step1desc: "Click the Key icon to set your Gemini API Key (Required). Then click 'Projects' to upload an image.",
+        step2: "2. Select Mode",
+        step2desc: "Choose Exterior (Facades), Interior (Rooms), or Plan (Floorplans) from the left sidebar tabs.",
+        step3: "3. Editing",
+        step3desc: "Use 'Quick Actions' for one-click styles, or type a custom command in the 'Prompt' box. Adjust sliders for intensity.",
+        step4: "4. Object Mode",
+        step4desc: "Switch to 'Object' mode to paint a mask over specific areas (like a wall or floor) to change only that part."
     }
   },
   th: {
@@ -158,7 +171,8 @@ const translations = {
         noProject: "ยังไม่ได้เลือกโปรเจค",
         saving: "กำลังบันทึก...",
         saved: "บันทึกอัตโนมัติ",
-        error: "บันทึกไม่สำเร็จ"
+        error: "บันทึกไม่สำเร็จ",
+        help: "คู่มือการใช้งาน"
     },
     tabs: {
         exterior: "ภายนอก (Exterior)",
@@ -230,6 +244,17 @@ const translations = {
     modes: {
         general: "ทั่วไป",
         object: "เฉพาะจุด"
+    },
+    help: {
+        title: "วิธีใช้งาน FAST AI",
+        step1: "1. เริ่มต้นใช้งาน",
+        step1desc: "กดไอคอนกุญแจเพื่อใส่ Gemini API Key (จำเป็น) จากนั้นกดปุ่ม 'โปรเจค' เพื่ออัปโหลดรูปภาพ",
+        step2: "2. เลือกโหมด",
+        step2desc: "เลือกแท็บ Exterior (ภายนอก), Interior (ภายใน), หรือ Plan (แปลน) จากเมนูด้านซ้ายตามประเภทงาน",
+        step3: "3. การสั่งงาน",
+        step3desc: "ใช้ 'คำสั่งด่วน' เพื่อเปลี่ยนสไตล์ในคลิกเดียว หรือพิมพ์คำสั่งเองในช่อง 'Prompt' ปรับความเข้มได้ตามต้องการ",
+        step4: "4. โหมดเฉพาะจุด",
+        step4desc: "เปลี่ยนเป็นโหมด 'เฉพาะจุด' (Object) เพื่อระบายสีพื้นที่ที่ต้องการแก้ไข (เช่น เปลี่ยนวัสดุพื้น หรือ ผนัง) โดย AI จะแก้เฉพาะส่วนนั้น"
     }
   }
 };
@@ -256,8 +281,8 @@ const architecturalStyleOptions = [
     {name:'Colonial',description:'Symmetrical, shutters, spacious porches, historical western influence.'}
 ];
 const interiorStyleOptions = [{name:'Modern',description:'Sharp lines...'},{name:'Modern Luxury',description:'Combines modern simplicity...'},{name:'Contemporary',description:'Clean lines...'},{name:'Scandinavian',description:'Simple...'},{name:'Japanese',description:'Serene...'},{name:'Thai',description:'Uses teak wood...'},{name:'Chinese',description:'Lacquered wood...'},{name:'Moroccan',description:'Vibrant colors...'},{name:'Classic',description:'Elegant and formal...'},{name:'Industrial',description:'Raw aesthetic...'},{name:'Minimalist',description:'Extreme simplicity...'},{name:'Tropical',description:'Brings the outdoors in...'},{name:'Mid-Century Modern',description:'Retro style...'},{name:'Bohemian',description:'Eclectic...'},{name:'Rustic',description:'Natural beauty...'},{name:'Art Deco',description:'Glamorous and bold...'},{name:'Coastal',description:'Light, airy...'},{name:'Zen',description:'Focuses on harmony...'}];
-const backgrounds = ["No Change","Bangkok High-rise View","Mountain View","Distant Mountain View","Bangkok Traffic View","Farmland View","Housing Estate View","Chao Phraya River View","View from Inside to Garden","Forest","Public Park","Beach","Cityscape","Outer Space","IMPACT Exhibition Hall","Luxury Shopping Mall","Forest Park with Pond","Limestone Mountain Valley"];
-const interiorBackgrounds = ["No Change","View from Inside to Garden","Ground Floor View (Hedge & House)","Upper Floor View (House)","Bangkok High-rise View","Mountain View","Distant Mountain View","Cityscape","Beach","Forest","Chao Phraya River View","Public Park"];
+const backgrounds = ["No Change","Bangkok High-rise View","Bangkok Traffic View","Farmland View","Housing Estate View","Chao Phraya River View","View from Inside to Garden","Forest","Public Park","Beach","Cityscape","Outer Space","IMPACT Exhibition Hall","Luxury Shopping Mall","Forest Park with Pond","Limestone Mountain Valley", "Distant Mountain View"];
+const interiorBackgrounds = ["No Change","View from Inside to Garden","Ground Floor View (Hedge & House)","Upper Floor View (House)","Bangkok High-rise View","Cityscape","Beach","Forest","Chao Phraya River View","Public Park", "Distant Mountain View"];
 const foregrounds = ["Foreground Large Tree","Foreground River","Foreground Road","Foreground Flowers","Foreground Fence","Top Corner Leaves","Bottom Corner Bush","Foreground Lawn","Foreground Pathway","Foreground Water Feature","Foreground Low Wall","Foreground Bangkok Traffic","Foreground Bangkok Electric Poles"];
 const interiorForegrounds = ["Blurred Coffee Table","Indoor Plant","Sofa Edge","Armchair","Floor Lamp","Rug/Carpet","Curtains","Decorative Vase","Dining Table Edge","Magazine/Books"];
 const interiorLightingOptions = ['Natural Daylight','Warm Evening Light','Studio Light','Cinematic Light'];
@@ -351,6 +376,7 @@ const ImageEditor: React.FC = () => {
   const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   
   const [language, setLanguage] = useState<'en' | 'th'>('th');
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
@@ -1017,7 +1043,58 @@ const ImageEditor: React.FC = () => {
   return (
     <div className="flex h-screen w-full bg-[#09090b] text-zinc-300 overflow-hidden font-sans">
       
-      {/* API Key Modal & Project Modal (Hidden for brevity, existing code) */}
+      {/* Help Modal */}
+      {isHelpModalOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 backdrop-blur-md p-4" onClick={() => setIsHelpModalOpen(false)}>
+            <div className="bg-[#18181b] rounded-2xl border border-white/10 shadow-2xl w-full max-w-lg p-6 overflow-hidden transform transition-all relative" onClick={e => e.stopPropagation()}>
+                <button onClick={() => setIsHelpModalOpen(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors"><XMarkIcon className="w-6 h-6"/></button>
+                
+                <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                    <QuestionMarkCircleIcon className="w-6 h-6 text-red-500" />
+                    {t.help.title}
+                </h2>
+                
+                <div className="space-y-6 overflow-y-auto max-h-[60vh] pr-2 custom-scrollbar">
+                    <div className="flex gap-4">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-red-500/20 text-red-400 font-bold flex items-center justify-center">1</div>
+                        <div>
+                            <h3 className="text-sm font-bold text-white mb-1">{t.help.step1}</h3>
+                            <p className="text-xs text-zinc-400 leading-relaxed">{t.help.step1desc}</p>
+                        </div>
+                    </div>
+                    <div className="flex gap-4">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 font-bold flex items-center justify-center">2</div>
+                        <div>
+                            <h3 className="text-sm font-bold text-white mb-1">{t.help.step2}</h3>
+                            <p className="text-xs text-zinc-400 leading-relaxed">{t.help.step2desc}</p>
+                        </div>
+                    </div>
+                    <div className="flex gap-4">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-green-500/20 text-green-400 font-bold flex items-center justify-center">3</div>
+                        <div>
+                            <h3 className="text-sm font-bold text-white mb-1">{t.help.step3}</h3>
+                            <p className="text-xs text-zinc-400 leading-relaxed">{t.help.step3desc}</p>
+                        </div>
+                    </div>
+                    <div className="flex gap-4">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-500/20 text-purple-400 font-bold flex items-center justify-center">4</div>
+                        <div>
+                            <h3 className="text-sm font-bold text-white mb-1">{t.help.step4}</h3>
+                            <p className="text-xs text-zinc-400 leading-relaxed">{t.help.step4desc}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div className="mt-6 pt-6 border-t border-white/5 text-center">
+                    <button onClick={() => setIsHelpModalOpen(false)} className="px-6 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-sm font-medium transition-colors">
+                        Close Guide
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
+
+      {/* API Key Modal & Project Modal (Existing code) */}
       {isKeyModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-md p-4" onClick={() => hasApiKey ? setIsKeyModalOpen(false) : null}>
             <div className="bg-[#18181b] rounded-2xl border border-white/10 shadow-2xl w-full max-w-md p-6 overflow-hidden transform transition-all" onClick={e => e.stopPropagation()}>
@@ -1141,7 +1218,7 @@ const ImageEditor: React.FC = () => {
          </div>
       )}
 
-      {/* LEFT SIDEBAR */}
+      {/* LEFT SIDEBAR (No changes except implicit styling) */}
       <aside className="w-80 flex flex-col border-r border-white/5 bg-black/80 backdrop-blur-xl flex-shrink-0 z-20 shadow-[4px_0_24px_rgba(0,0,0,0.5)]">
          {/* Logo and Tabs */}
          <div className="h-16 flex items-center px-6 border-b border-white/5 bg-gradient-to-r from-black/50 to-transparent">
@@ -1160,7 +1237,8 @@ const ImageEditor: React.FC = () => {
              <button onClick={() => handleSceneTypeSelect('plan')} className={`flex-1 py-2 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-300 ${sceneType === 'plan' ? 'text-white bg-zinc-800 shadow-lg' : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'}`}>{t.tabs.plan}</button>
            </div>
          )}
-
+         
+         {/* ... LEFT PANEL CONTENT ... */}
          <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3 bg-transparent">
             {!activeImage ? (
                <div className="flex flex-col items-center justify-center h-full text-zinc-500 space-y-6 animate-fade-in">
@@ -1175,7 +1253,9 @@ const ImageEditor: React.FC = () => {
                          <ModeButton label={t.modes.general} icon={<SparklesIcon className="w-4 h-4" />} mode="default" activeMode={editingMode} onClick={setEditingMode} />
                          <ModeButton label={t.modes.object} icon={<BrushIcon className="w-4 h-4" />} mode="object" activeMode={editingMode} onClick={setEditingMode} />
                   </div>
-
+                  
+                  {/* ... Rest of the left panel (Manual Adjust, Prompts, etc.) ... */}
+                  {/* ... Using previous code logic for sections ... */}
                   {/* Model Selection Dropdown */}
                   <div className="mb-4 px-1">
                       <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1"><CogIcon className="w-3 h-3"/> AI Model Selection</div>
@@ -1574,6 +1654,10 @@ const ImageEditor: React.FC = () => {
                     {saveStatus === 'saved' && <span className="text-green-500 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-500"/> {t.header.saved}</span>}
                     {saveStatus === 'error' && <span className="text-red-500 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500"/> {t.header.error}</span>}
                 </div>
+                
+                <button onClick={() => setIsHelpModalOpen(true)} className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors" title={t.header.help}>
+                    <QuestionMarkCircleIcon className="w-5 h-5"/>
+                </button>
                 
                 <button onClick={handleResetKey} className={`p-2 rounded-lg transition-all ${!hasApiKey ? 'text-red-500 bg-red-500/10 border border-red-500/50 hover:bg-red-500/20 animate-pulse shadow-[0_0_15px_rgba(220,38,38,0.3)]' : 'text-zinc-400 hover:text-white hover:bg-white/10'}`} title={!hasApiKey ? (language === 'th' ? 'กรุณาใส่ API Key' : 'API Key Required') : (language === 'th' ? 'เปลี่ยน API Key' : 'Change API Key')}>
                     <KeyIcon className="w-5 h-5"/>
