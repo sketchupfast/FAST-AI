@@ -386,6 +386,65 @@ export const editImage = async (
   }
 };
 
+export const generateVideo = async (
+    base64ImageData: string,
+    mimeType: string,
+    prompt: string,
+    apiKey?: string
+  ): Promise<string> => {
+    const ai = getAiClient(apiKey);
+    
+    try {
+        const { resizedBase64, resizedMimeType, width, height } = await resizeImage(
+            base64ImageData,
+            mimeType,
+        );
+        
+        // Determine aspect ratio for Veo (9:16 or 16:9)
+        const isPortrait = height > width;
+        const aspectRatio = isPortrait ? '9:16' : '16:9';
+
+        let operation = await ai.models.generateVideos({
+            model: 'veo-3.1-fast-generate-preview',
+            prompt: prompt,
+            image: {
+                imageBytes: resizedBase64,
+                mimeType: resizedMimeType,
+            },
+            config: {
+                numberOfVideos: 1,
+                resolution: '720p',
+                aspectRatio: aspectRatio,
+            }
+        });
+
+        // Polling loop
+        while (!operation.done) {
+            await new Promise(resolve => setTimeout(resolve, 5000)); // Poll every 5 seconds
+            operation = await ai.operations.getVideosOperation({operation: operation});
+        }
+
+        const videoResult = operation.response?.generatedVideos?.[0];
+        if (!videoResult || !videoResult.video || !videoResult.video.uri) {
+             throw new Error("Video generation failed. No URI returned.");
+        }
+
+        const downloadLink = videoResult.video.uri;
+        const key = apiKey || (process.env.API_KEY as string);
+        
+        // Fetch the actual video blob
+        const response = await fetch(`${downloadLink}&key=${key}`);
+        if (!response.ok) throw new Error("Failed to download video file.");
+        
+        const blob = await response.blob();
+        return URL.createObjectURL(blob);
+
+    } catch (error) {
+        console.error("Video Generation Error:", error);
+        throw parseGeminiError(error);
+    }
+};
+
 export const analyzeImage = async (
   base64ImageData: string,
   mimeType: string,

@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { editImage, analyzeImage, suggestCameraAngles, type AnalysisResult, cropAndResizeImage } from '../services/geminiService';
+import { editImage, analyzeImage, suggestCameraAngles, generateVideo, type AnalysisResult, cropAndResizeImage } from '../services/geminiService';
 import { saveProjects, loadProjects, clearProjects } from '../services/dbService';
 import ImageDisplay, { type ImageDisplayHandle } from './ImageDisplay';
 import { UndoIcon } from './icons/UndoIcon';
@@ -55,6 +55,7 @@ import { LineSegmentIcon } from './icons/LineSegmentIcon';
 import { CogIcon } from './icons/CogIcon';
 import { MagicWandIcon } from './icons/MagicWandIcon';
 import { QuestionMarkCircleIcon } from './icons/QuestionMarkCircleIcon';
+import { VideoCameraIcon } from './icons/VideoCameraIcon';
 
 
 export interface ImageState {
@@ -141,7 +142,8 @@ const translations = {
         download: "Download",
         reset: "Reset",
         upscale4k: "Upscale 4K",
-        regenerate: "Re-generate"
+        regenerate: "Re-generate",
+        veo: "Animate (Veo)"
     },
     placeholders: {
         promptExterior: "Describe your changes...",
@@ -233,7 +235,8 @@ const translations = {
         download: "ดาวน์โหลด",
         reset: "รีเซ็ต",
         upscale4k: "ขยายภาพ 4K",
-        regenerate: "สร้างซ้ำ (เดิม)"
+        regenerate: "สร้างซ้ำ (เดิม)",
+        veo: "สร้างวิดีโอ (Veo)"
     },
     placeholders: {
         promptExterior: "อธิบายสิ่งที่ต้องการแก้ไข...",
@@ -366,7 +369,7 @@ const IntensitySlider:React.FC<{value:number;onChange:(val:number)=>void;t:any}>
 const CollapsibleSection:React.FC<{title:string;sectionKey:string;isOpen:boolean;onToggle:()=>void;children:React.ReactNode;disabled?:boolean;icon?:React.ReactNode;actions?:React.ReactNode;}>=({title,isOpen,onToggle,children,disabled=false,icon,actions})=>(<div className={`bg-zinc-900/40 rounded-xl border border-zinc-800/50 overflow-hidden transition-all duration-300 ${disabled?'opacity-50 pointer-events-none':''}`}><button type="button" onClick={onToggle} disabled={disabled} className="w-full flex justify-between items-center p-3 text-left bg-zinc-900/40 hover:bg-zinc-800/60 transition-colors disabled:cursor-not-allowed backdrop-blur-sm" aria-expanded={isOpen} aria-controls={`section-content-${title.replace(/\s+/g,'-')}`}><h3 className="flex items-center gap-3 text-xs font-bold text-zinc-300 uppercase tracking-wider">{icon&&<span className="text-zinc-500">{icon}</span>}<span className="bg-gradient-to-r from-zinc-200 to-zinc-400 bg-clip-text text-transparent">{title}</span></h3><div className="flex items-center gap-2">{actions}<ChevronDownIcon className={`w-4 h-4 text-zinc-500 transition-transform duration-300 ${isOpen?'rotate-180':''}`}/></div></button><div id={`section-content-${title.replace(/\s+/g,'-')}`} className={`overflow-hidden transition-[max-height] duration-500 ease-in-out ${isOpen?'max-h-[1500px]':'max-h-0'}`}><div className={`p-4 ${isOpen?'border-t border-zinc-800/50 bg-black/20':''}`}>{children}</div></div></div>);
 const ModeButton:React.FC<{label:string;icon:React.ReactNode;mode:EditingMode;activeMode:EditingMode;onClick:(mode:EditingMode)=>void;}>=({label,icon,mode,activeMode,onClick})=>(<button type="button" onClick={()=>onClick(mode)} className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-2 p-2 text-xs font-bold uppercase tracking-wide rounded-lg transition-all duration-300 border ${activeMode===mode?'bg-gradient-to-br from-zinc-800 to-zinc-900 text-white border-zinc-600 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]':'bg-transparent text-zinc-500 border-zinc-800 hover:bg-zinc-800/50 hover:text-zinc-300'}`}>{icon}<span>{label}</span></button>);
 const PreviewCard:React.FC<{label:string;description?:string;isSelected:boolean;onClick:()=>void;isNested?:boolean;icon?:React.ReactNode;}>=({label,description,isSelected,onClick,isNested=false,icon})=>(<button type="button" onClick={onClick} className={`p-3 text-left rounded-xl border transition-all duration-300 group flex flex-col backdrop-blur-sm ${isSelected?'bg-red-900/10 border-red-500/50 shadow-[0_0_20px_rgba(220,38,38,0.15)] ring-1 ring-red-500/20':'bg-zinc-900/40 border-zinc-800/60 hover:border-zinc-600/80 hover:bg-zinc-800/60'} ${description?(isNested?'min-h-[5rem]':'min-h-[6rem]'):''} h-auto`}><div className="w-full"><div className={`flex items-center gap-2 ${description?'mb-1.5':''}`}>{icon&&<span className={`flex-shrink-0 transition-colors duration-300 ${isSelected?'text-red-400':'text-zinc-500 group-hover:text-zinc-400'}`}>{icon}</span>}<span className={`font-bold transition-colors text-xs uppercase tracking-wide break-words ${isSelected?'text-red-400':'text-zinc-300 group-hover:text-white'}`}>{label}</span></div>{description&&(<p className={`text-[10px] leading-relaxed transition-colors ${isSelected?'text-zinc-400':'text-zinc-500'}`}>{description}</p>)}</div></button>);
-const ImageToolbar:React.FC<{onUndo:()=>void;onRedo:()=>void;onReset:()=>void;onDownload:()=>void;onShare:()=>void;onUpscale:()=>void;onRegenerate:()=>void;onTransform:(type:'rotateLeft'|'rotateRight'|'flipHorizontal'|'flipVertical')=>void;canUndo:boolean;canRedo:boolean;canReset:boolean;canUpscaleAndSave:boolean;canRegenerate:boolean;isLoading:boolean;t:any;}>=({onUndo,onRedo,onReset,onDownload,onShare,onUpscale,onRegenerate,onTransform,canUndo,canRedo,canReset,canUpscaleAndSave,canRegenerate,isLoading,t})=>(<div className="flex items-center gap-2 bg-gray-500/20 backdrop-blur-md p-2 rounded-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] transform hover:scale-[1.02] transition-transform duration-300"><div className="flex items-center gap-1 px-2 border-r border-white/10"><button onClick={onUndo} disabled={!canUndo||isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><UndoIcon className="w-4 h-4"/></button><button onClick={onRedo} disabled={!canRedo||isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><RedoIcon className="w-4 h-4"/></button></div><div className="flex items-center gap-1 px-2 border-r border-white/10"><button onClick={()=>onTransform('rotateLeft')} disabled={!canUpscaleAndSave||isLoading} title="Rotate Left" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><RotateLeftIcon className="w-4 h-4"/></button><button onClick={()=>onTransform('rotateRight')} disabled={!canUpscaleAndSave||isLoading} title="Rotate Right" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><RotateRightIcon className="w-4 h-4"/></button><button onClick={()=>onTransform('flipHorizontal')} disabled={!canUpscaleAndSave||isLoading} title="Flip Horizontal" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><FlipHorizontalIcon className="w-4 h-4"/></button></div><div className="flex items-center gap-2 pl-2"><button onClick={onRegenerate} disabled={!canRegenerate||isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg" title={t.buttons.regenerate}><ArrowPathIcon className="w-4 h-4"/></button><div className="w-px h-4 bg-white/10 mx-1"></div><button onClick={onUpscale} disabled={!canUpscaleAndSave||isLoading} className="p-2 text-zinc-200 hover:text-white disabled:opacity-30 transition-colors flex items-center gap-1 hover:bg-white/10 rounded-lg" title={t.buttons.upscale4k}><UpscaleIcon className="w-4 h-4"/><span className="text-[10px] font-extrabold uppercase hidden sm:inline tracking-wider">{t.buttons.upscale4k}</span></button><div className="w-px h-4 bg-white/10 mx-1"></div><button onClick={onShare} disabled={!canUpscaleAndSave||isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg" title="Share"><ShareIcon className="w-4 h-4"/></button><button onClick={onDownload} disabled={!canUpscaleAndSave||isLoading} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-sm font-extrabold rounded-lg transition-all disabled:opacity-50 shadow-lg shadow-blue-900/30"><DownloadIcon className="w-3 h-3"/> {t.buttons.download}</button><button onClick={onReset} disabled={!canReset||isLoading} className="p-2 text-red-500 hover:text-red-400 disabled:opacity-30 transition-colors hover:bg-red-500/10 rounded-lg" title={t.buttons.reset}><ResetEditsIcon className="w-4 h-4"/></button></div></div>);
+const ImageToolbar:React.FC<{onUndo:()=>void;onRedo:()=>void;onReset:()=>void;onDownload:()=>void;onShare:()=>void;onUpscale:()=>void;onRegenerate:()=>void;onTransform:(type:'rotateLeft'|'rotateRight'|'flipHorizontal'|'flipVertical')=>void;onVeo:()=>void;canUndo:boolean;canRedo:boolean;canReset:boolean;canUpscaleAndSave:boolean;canRegenerate:boolean;isLoading:boolean;t:any;}>=({onUndo,onRedo,onReset,onDownload,onShare,onUpscale,onRegenerate,onTransform,onVeo,canUndo,canRedo,canReset,canUpscaleAndSave,canRegenerate,isLoading,t})=>(<div className="flex items-center gap-2 bg-gray-500/20 backdrop-blur-md p-2 rounded-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] transform hover:scale-[1.02] transition-transform duration-300"><div className="flex items-center gap-1 px-2 border-r border-white/10"><button onClick={onUndo} disabled={!canUndo||isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><UndoIcon className="w-4 h-4"/></button><button onClick={onRedo} disabled={!canRedo||isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><RedoIcon className="w-4 h-4"/></button></div><div className="flex items-center gap-1 px-2 border-r border-white/10"><button onClick={()=>onTransform('rotateLeft')} disabled={!canUpscaleAndSave||isLoading} title="Rotate Left" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><RotateLeftIcon className="w-4 h-4"/></button><button onClick={()=>onTransform('rotateRight')} disabled={!canUpscaleAndSave||isLoading} title="Rotate Right" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><RotateRightIcon className="w-4 h-4"/></button><button onClick={()=>onTransform('flipHorizontal')} disabled={!canUpscaleAndSave||isLoading} title="Flip Horizontal" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><FlipHorizontalIcon className="w-4 h-4"/></button></div><div className="flex items-center gap-2 pl-2"><button onClick={onRegenerate} disabled={!canRegenerate||isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg" title={t.buttons.regenerate}><ArrowPathIcon className="w-4 h-4"/></button><div className="w-px h-4 bg-white/10 mx-1"></div><button onClick={onUpscale} disabled={!canUpscaleAndSave||isLoading} className="p-2 text-zinc-200 hover:text-white disabled:opacity-30 transition-colors flex items-center gap-1 hover:bg-white/10 rounded-lg" title={t.buttons.upscale4k}><UpscaleIcon className="w-4 h-4"/><span className="text-[10px] font-extrabold uppercase hidden sm:inline tracking-wider">{t.buttons.upscale4k}</span></button><div className="w-px h-4 bg-white/10 mx-1"></div><button onClick={onVeo} disabled={!canUpscaleAndSave||isLoading} className="p-2 text-zinc-200 hover:text-white disabled:opacity-30 transition-colors flex items-center gap-1 hover:bg-white/10 rounded-lg" title={t.buttons.veo}><VideoCameraIcon className="w-4 h-4"/><span className="text-[10px] font-extrabold uppercase hidden sm:inline tracking-wider">Veo 3</span></button><button onClick={onShare} disabled={!canUpscaleAndSave||isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg" title="Share"><ShareIcon className="w-4 h-4"/></button><button onClick={onDownload} disabled={!canUpscaleAndSave||isLoading} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-sm font-extrabold rounded-lg transition-all disabled:opacity-50 shadow-lg shadow-blue-900/30"><DownloadIcon className="w-3 h-3"/> {t.buttons.download}</button><button onClick={onReset} disabled={!canReset||isLoading} className="p-2 text-red-500 hover:text-red-400 disabled:opacity-30 transition-colors hover:bg-red-500/10 rounded-lg" title={t.buttons.reset}><ResetEditsIcon className="w-4 h-4"/></button></div></div>);
 const downloadBase64AsFile = (base64Data:string,filename:string,mimeType:string='image/jpeg')=>{try{const byteCharacters=atob(base64Data);const byteNumbers=new Uint8Array(byteCharacters.length);for(let i=0;i<byteCharacters.length;i++){byteNumbers[i]=byteCharacters.charCodeAt(i)}const blob=new Blob([byteNumbers],{type:mimeType});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=filename;document.body.appendChild(link);link.click();document.body.removeChild(link);setTimeout(()=>URL.revokeObjectURL(url),100)}catch(e){console.error("Download failed:",e);throw new Error("Failed to download image. It might be too large.")}};
 
 const ImageEditor: React.FC = () => {
@@ -442,6 +445,12 @@ const ImageEditor: React.FC = () => {
   const [addWallTypeAC, setAddWallTypeAC] = useState<boolean>(false);
 
   const [selectedModel, setSelectedModel] = useState<'auto' | 'gemini-3-pro' | 'gemini-2.5-flash'>('auto');
+
+  // Video Generation State
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [videoPrompt, setVideoPrompt] = useState('');
+  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
+  const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     prompt: true,
@@ -962,6 +971,45 @@ const ImageEditor: React.FC = () => {
       } else { setError("Cannot regenerate this action."); }
   };
 
+  const handleVeoClick = () => {
+    setVideoPrompt(prompt || ''); // Use current prompt as default
+    setIsVideoModalOpen(true);
+    setGeneratedVideoUrl(null);
+  };
+
+  const handleGenerateVideo = async () => {
+    if (!activeImage) return;
+    if (!hasApiKey && !(window as any).aistudio) { setIsKeyModalOpen(true); return; }
+
+    const sourceDataUrl = (activeImage.history.length > 0 && activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null) 
+      ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex] 
+      : activeImage.dataUrl;
+
+    if (!sourceDataUrl) return;
+
+    setIsGeneratingVideo(true);
+    setError(null);
+    setGeneratedVideoUrl(null);
+
+    try {
+        const sourceMimeType = sourceDataUrl.substring(5, sourceDataUrl.indexOf(';'));
+        const sourceBase64 = sourceDataUrl.split(',')[1];
+        
+        // Use prompt from modal or a default if empty
+        const finalPrompt = videoPrompt.trim() || "Cinematic camera movement, high quality, realistic lighting";
+
+        const videoUrl = await generateVideo(sourceBase64, sourceMimeType, finalPrompt, userApiKey);
+        setGeneratedVideoUrl(videoUrl);
+
+    } catch (err) {
+        console.error("Video error:", err);
+        setError(err instanceof Error ? err.message : "Video generation failed.");
+        setIsVideoModalOpen(false); // Close modal on error to show error toast
+    } finally {
+        setIsGeneratingVideo(false);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // ... [Logic for prompt construction remains identical to previous file] ...
@@ -1093,6 +1141,97 @@ const ImageEditor: React.FC = () => {
                 </div>
             </div>
         </div>
+      )}
+
+      {/* Video Generation Modal */}
+      {isVideoModalOpen && (
+          <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/90 backdrop-blur-md p-4" onClick={() => !isGeneratingVideo && setIsVideoModalOpen(false)}>
+              <div className="bg-[#18181b] rounded-2xl border border-white/10 shadow-2xl w-full max-w-lg p-6 overflow-hidden transform transition-all relative" onClick={e => e.stopPropagation()}>
+                  <div className="flex justify-between items-center mb-6">
+                      <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                          <VideoCameraIcon className="w-6 h-6 text-indigo-500" />
+                          {t.buttons.veo}
+                      </h2>
+                      {!isGeneratingVideo && (
+                          <button onClick={() => setIsVideoModalOpen(false)} className="text-zinc-500 hover:text-white transition-colors">
+                              <XMarkIcon className="w-6 h-6"/>
+                          </button>
+                      )}
+                  </div>
+                  
+                  {generatedVideoUrl ? (
+                      <div className="space-y-4 animate-fade-in">
+                          <div className="aspect-video bg-black rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10">
+                              <video 
+                                  src={generatedVideoUrl} 
+                                  controls 
+                                  autoPlay 
+                                  className="w-full h-full object-contain"
+                              />
+                          </div>
+                          <div className="flex gap-3">
+                              <a 
+                                  href={generatedVideoUrl} 
+                                  download={`veo-video-${Date.now()}.mp4`}
+                                  className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-blue-900/30 transition-all"
+                              >
+                                  <DownloadIcon className="w-5 h-5" /> Download MP4
+                              </a>
+                              <button 
+                                  onClick={() => { setGeneratedVideoUrl(null); }}
+                                  className="px-4 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold rounded-xl border border-white/5 transition-colors"
+                              >
+                                  New Video
+                              </button>
+                          </div>
+                          <div className="text-[10px] text-zinc-500 text-center">Generated by Veo 3.1</div>
+                      </div>
+                  ) : (
+                      <div className="space-y-4">
+                           <div className="bg-gradient-to-br from-indigo-900/30 to-purple-900/30 border border-indigo-500/20 p-4 rounded-xl flex gap-3 items-start">
+                               <SparklesIcon className="w-5 h-5 text-indigo-400 mt-0.5 flex-shrink-0" />
+                               <div className="space-y-1">
+                                   <p className="text-sm font-bold text-indigo-200">AI Video Generation</p>
+                                   <p className="text-xs text-indigo-300/80 leading-relaxed">
+                                       Create a 5-second video from your image. Describe the motion you want (e.g., "Camera pans right", "Trees swaying in wind").
+                                   </p>
+                               </div>
+                           </div>
+
+                           <div className="space-y-2">
+                               <label className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Motion Prompt</label>
+                               <textarea 
+                                  value={videoPrompt}
+                                  onChange={(e) => setVideoPrompt(e.target.value)}
+                                  placeholder={language === 'th' ? "อธิบายการเคลื่อนไหว..." : "Describe the camera motion or scene changes..."}
+                                  className="w-full bg-black/50 border border-zinc-700 rounded-xl p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all resize-none shadow-inner"
+                                  rows={3}
+                                  disabled={isGeneratingVideo}
+                               />
+                           </div>
+
+                           <button 
+                              onClick={handleGenerateVideo}
+                              disabled={isGeneratingVideo || !videoPrompt.trim()}
+                              className="w-full py-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-size-200 animate-gradient hover:bg-right text-white font-bold rounded-xl shadow-[0_0_20px_rgba(79,70,229,0.4)] hover:shadow-[0_0_30px_rgba(79,70,229,0.6)] transition-all transform active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-3"
+                           >
+                              {isGeneratingVideo ? (
+                                  <>
+                                      <Spinner className="w-5 h-5 text-white" />
+                                      <span>Generating Video (Veo)...</span>
+                                  </>
+                              ) : (
+                                  <>
+                                      <VideoCameraIcon className="w-5 h-5" />
+                                      <span>Generate Video</span>
+                                  </>
+                              )}
+                           </button>
+                           {isGeneratingVideo && <p className="text-[10px] text-zinc-500 text-center animate-pulse">This process may take 1-2 minutes. Please do not close this window.</p>}
+                      </div>
+                  )}
+              </div>
+          </div>
       )}
 
       {/* API Key Modal & Project Modal (Existing code) */}
@@ -1734,7 +1873,7 @@ const ImageEditor: React.FC = () => {
                       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30">
                            <ImageToolbar
                                 onUndo={handleUndo} onRedo={handleRedo} onReset={handleResetEdits} onDownload={handleDownload}
-                                onShare={handleShare} onUpscale={handleUpscale} onRegenerate={handleRegenerate} onTransform={handleTransform}
+                                onShare={handleShare} onUpscale={handleUpscale} onRegenerate={handleRegenerate} onTransform={handleTransform} onVeo={handleVeoClick}
                                 canUndo={canUndo} canRedo={canRedo} canReset={canReset} canUpscaleAndSave={canUpscaleAndSave} canRegenerate={canRegenerate}
                                 isLoading={isLoading} t={t}
                            />
