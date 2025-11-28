@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { editImage, analyzeImage, suggestCameraAngles, generateVideo, type AnalysisResult, cropAndResizeImage } from '../services/geminiService';
 import { saveProjects, loadProjects, clearProjects } from '../services/dbService';
@@ -70,321 +71,183 @@ export interface ImageState {
   selectedResultIndex: number | null;
   promptHistory: string[];
   apiPromptHistory: string[];
-  lastGeneratedLabels: string[]; // Using this to store Model Name now
+  lastGeneratedLabels: string[]; 
   generationTypeHistory: ('style' | 'angle' | 'edit' | 'upscale' | 'variation' | 'transform')[];
 }
 
+export type EditingMode = 'default' | 'object';
+export type SceneType = 'exterior' | 'interior' | 'plan';
+
+const brushColors = [
+    { name: 'Red', value: 'rgba(239, 68, 68, 0.7)', css: 'bg-red-500' },
+    { name: 'Blue', value: 'rgba(59, 130, 246, 0.7)', css: 'bg-blue-500' },
+    { name: 'Green', value: 'rgba(34, 197, 94, 0.7)', css: 'bg-green-500' },
+    { name: 'Yellow', value: 'rgba(234, 179, 8, 0.7)', css: 'bg-yellow-500' },
+    { name: 'White', value: 'rgba(255, 255, 255, 0.7)', css: 'bg-white' },
+];
+
 const translations = {
   en: {
-    header: {
-        projects: "Projects",
-        noProject: "No project loaded",
-        saving: "Saving...",
-        saved: "Auto-saved",
-        error: "Save Error",
-        help: "Help / User Guide"
-    },
-    tabs: {
-        exterior: "Exterior",
-        interior: "Interior",
-        plan: "Plan"
-    },
-    sections: {
-        prompt: "Prompt",
-        quickActions: "Quick Actions",
-        cameraAngle: "Camera Angle",
-        artStyle: "Art Style",
-        archStyle: "Arch Style",
-        garden: "Garden",
-        lighting: "Lighting",
-        background: "Background",
-        foreground: "Foreground",
-        interiorStyle: "Interior Style",
-        systems: "Systems (Lighting & AC)",
-        viewOutside: "View Outside",
-        conversionMode: "Conversion Mode",
-        roomConfig: "Room Configuration",
-        brushSettings: "Brush Settings",
-        manualAdjustments: "Manual Adjustments (Offline)",
-        moodboard: "Moodboard & Materials",
-        flooring: "Flooring & Materials"
-    },
-    controls: {
-        turnOnLights: "Turn On Lights",
-        brightness: "Brightness",
-        contrast: "Contrast",
-        saturation: "Saturation",
-        sharpness: "Sharpness",
-        colorTemp: "Color Temp",
-        intensity: "Intensity",
-        soft: "Soft",
-        vibrant: "Vibrant",
-        warm: "Warm",
-        neutral: "Neutral",
-        cool: "Cool",
-        coveLight: "Cove Light (Hidden)",
-        downlight: "Downlight (Recessed)",
-        airConditioner: "Air Conditioner",
-        ac4way: "4-Way Cassette AC",
-        acWall: "Wall-Mounted AC",
-        clearMask: "Clear Mask",
-        subtle: "Subtle",
-        strong: "Strong",
-        applyManual: "Apply Adjustment",
-        tolerance: "Tolerance",
-        autoDescribe: "Auto-Describe"
-    },
-    buttons: {
-        generate: "Generate Image",
-        generating: "Generating...",
-        openProjects: "Open Projects",
-        clearAll: "Clear All Data",
-        newProject: "New Project",
-        download: "Download",
-        reset: "Reset",
-        upscale4k: "Upscale 4K",
-        regenerate: "Re-generate",
-        veo: "Animate (Veo)"
-    },
-    placeholders: {
-        promptExterior: "Describe your changes...",
-        promptInterior: "Describe interior changes...",
-        promptPlan: "Describe specific details for the plan...",
-        promptMask: "Draw the shape and describe the new element (e.g., 'Add a gable roof extension')..."
-    },
-    modes: {
-        general: "General",
-        object: "Object"
-    },
-    help: {
-        title: "How to use FAST AI",
-        step1: "1. Getting Started",
-        step1desc: "Click the Key icon to set your Gemini API Key (Required). Then click 'Projects' to upload an image.",
-        step2: "2. Select Mode",
-        step2desc: "Choose Exterior (Facades), Interior (Rooms), or Plan (Floorplans) from the left sidebar tabs.",
-        step3: "3. Editing",
-        step3desc: "Use 'Quick Actions' for one-click styles, or type a custom command in the 'Prompt' box. Adjust sliders for intensity.",
-        step4: "4. Object Mode",
-        step4desc: "Switch to 'Object' mode to paint a mask over specific areas (like a wall or floor) to change only that part."
-    }
+    header: { projects: "Projects", noProject: "No project loaded", saving: "Saving...", saved: "Auto-saved", error: "Save Error", help: "Help / User Guide" },
+    tabs: { exterior: "Exterior", interior: "Interior", plan: "Plan" },
+    sections: { prompt: "Prompt", quickActions: "Quick Actions", cameraAngle: "Camera Angle", artStyle: "Art Style", archStyle: "Arch Style", garden: "Garden", lighting: "Lighting", background: "Background", foreground: "Foreground", interiorStyle: "Interior Style", systems: "Systems (Lighting & AC)", viewOutside: "View Outside", conversionMode: "Conversion Mode", roomConfig: "Room Configuration", brushSettings: "Brush Settings", manualAdjustments: "Manual Adjustments (Offline)", moodboard: "Moodboard & Materials", flooring: "Flooring & Materials" },
+    controls: { turnOnLights: "Turn On Lights", brightness: "Brightness", contrast: "Contrast", saturation: "Saturation", sharpness: "Sharpness", colorTemp: "Color Temp", intensity: "Intensity", soft: "Soft", vibrant: "Vibrant", warm: "Warm", neutral: "Neutral", cool: "Cool", coveLight: "Cove Light (Hidden)", downlight: "Downlight (Recessed)", airConditioner: "Air Conditioner", ac4way: "4-Way Cassette AC", acWall: "Wall-Mounted AC", clearMask: "Clear Mask", subtle: "Subtle", strong: "Strong", applyManual: "Apply Adjustment", tolerance: "Tolerance", autoDescribe: "Auto-Describe" },
+    buttons: { generate: "Generate Image", generating: "Generating...", openProjects: "Open Projects", clearAll: "Clear All Data", newProject: "New Project", download: "Download", reset: "Reset", upscale4k: "Upscale 4K", regenerate: "Re-generate", veo: "Animate (Veo)" },
+    placeholders: { promptExterior: "Describe your changes...", promptInterior: "Describe interior changes...", promptPlan: "Describe specific details for the plan...", promptMask: "Draw the shape and describe the new element (e.g., 'Add a gable roof extension')...", customFlooring: "Describe a unique floor pattern (e.g., 'Geometric hexagon tiles in blue and white')..." },
+    modes: { general: "General", object: "Object" },
+    help: { title: "How to use FAST AI", step1: "1. Getting Started", step1desc: "Click the Key icon to set your Gemini API Key (Required). Then click 'Projects' to upload an image.", step2: "2. Select Mode", step2desc: "Choose Exterior (Facades), Interior (Rooms), or Plan (Floorplans) from the left sidebar tabs.", step3: "3. Editing", step3desc: "Use 'Quick Actions' for one-click styles, or type a custom command in the 'Prompt' box. Adjust sliders for intensity.", step4: "4. Object Mode", step4desc: "Switch to 'Object' mode to paint a mask over specific areas (like a wall or floor) to change only that part." }
   },
   th: {
-    header: {
-        projects: "โปรเจค",
-        noProject: "ยังไม่ได้เลือกโปรเจค",
-        saving: "กำลังบันทึก...",
-        saved: "บันทึกอัตโนมัติ",
-        error: "บันทึกไม่สำเร็จ",
-        help: "คู่มือการใช้งาน"
-    },
-    tabs: {
-        exterior: "ภายนอก (Exterior)",
-        interior: "ภายใน (Interior)",
-        plan: "แปลน (Plan)"
-    },
-    sections: {
-        prompt: "คำสั่ง (Prompt)",
-        quickActions: "คำสั่งด่วน",
-        cameraAngle: "มุมกล้อง",
-        artStyle: "สไตล์ศิลปะ",
-        archStyle: "สไตล์สถาปัตยกรรม",
-        garden: "สวน",
-        lighting: "แสงไฟ",
-        background: "พื้นหลัง",
-        foreground: "ฉากหน้า",
-        interiorStyle: "สไตล์ภายใน",
-        systems: "ระบบไฟและแอร์",
-        viewOutside: "วิวนอกหน้าต่าง",
-        conversionMode: "โหมดแปลงภาพ",
-        roomConfig: "ตั้งค่าห้อง",
-        brushSettings: "ตั้งค่าแปรง",
-        manualAdjustments: "ปรับแต่งภาพ (ไม่ต้องใช้เน็ต)",
-        moodboard: "มู้ดบอร์ดและวัสดุตัวอย่าง",
-        flooring: "วัสดุพื้น"
-    },
-    controls: {
-        turnOnLights: "เปิดไฟ",
-        brightness: "ความสว่าง",
-        contrast: "ความคมชัด (Contrast)",
-        saturation: "ความสดของสี (Saturation)",
-        sharpness: "ความคม (Sharpness)",
-        colorTemp: "อุณหภูมิแสง",
-        intensity: "ความเข้ม",
-        soft: "นุ่มนวล",
-        vibrant: "สดใส",
-        warm: "โทนอุ่น",
-        neutral: "ธรรมชาติ",
-        cool: "โทนเย็น",
-        coveLight: "ไฟหลืบ (Cove Light)",
-        downlight: "ไฟดาวน์ไลท์ (Downlight)",
-        airConditioner: "เครื่องปรับอากาศ",
-        ac4way: "แอร์ 4 ทิศทาง",
-        acWall: "แอร์ติดผนัง",
-        clearMask: "ล้างพื้นที่เลือก",
-        subtle: "น้อย",
-        strong: "มาก",
-        applyManual: "ยืนยันการปรับแต่ง",
-        tolerance: "ความไวสี (Tolerance)",
-        autoDescribe: "ให้ AI เขียนคำสั่ง"
-    },
-    buttons: {
-        generate: "สร้างรูปภาพ",
-        generating: "กำลังสร้าง...",
-        openProjects: "เปิดโปรเจค",
-        clearAll: "ลบข้อมูลทั้งหมด",
-        newProject: "โปรเจคใหม่",
-        download: "ดาวน์โหลด",
-        reset: "รีเซ็ต",
-        upscale4k: "ขยายภาพ 4K",
-        regenerate: "สร้างซ้ำ (เดิม)",
-        veo: "สร้างวิดีโอ (Veo)"
-    },
-    placeholders: {
-        promptExterior: "อธิบายสิ่งที่ต้องการแก้ไข...",
-        promptInterior: "อธิบายการตกแต่งภายใน...",
-        promptPlan: "อธิบายรายละเอียดของแปลน...",
-        promptMask: "วาดรูปร่างและอธิบายสิ่งที่ต้องการแก้ (เช่น 'ต่อเติมหลังคาหน้าจั่ว')..."
-    },
-    modes: {
-        general: "ทั่วไป",
-        object: "เฉพาะจุด"
-    },
-    help: {
-        title: "วิธีใช้งาน FAST AI",
-        step1: "1. เริ่มต้นใช้งาน",
-        step1desc: "กดไอคอนกุญแจเพื่อใส่ Gemini API Key (จำเป็น) จากนั้นกดปุ่ม 'โปรเจค' เพื่ออัปโหลดรูปภาพ",
-        step2: "2. เลือกโหมด",
-        step2desc: "เลือกแท็บ Exterior (ภายนอก), Interior (ภายใน), หรือ Plan (แปลน) จากเมนูด้านซ้ายตามประเภทงาน",
-        step3: "3. การสั่งงาน",
-        step3desc: "ใช้ 'คำสั่งด่วน' เพื่อเปลี่ยนสไตล์ในคลิกเดียว หรือพิมพ์คำสั่งเองในช่อง 'Prompt' ปรับความเข้มได้ตามต้องการ",
-        step4: "4. โหมดเฉพาะจุด",
-        step4desc: "เปลี่ยนเป็นโหมด 'เฉพาะจุด' (Object) เพื่อระบายสีพื้นที่ที่ต้องการแก้ไข (เช่น เปลี่ยนวัสดุพื้น หรือ ผนัง) โดย AI จะแก้เฉพาะส่วนนั้น"
-    }
+    header: { projects: "โปรเจค", noProject: "ยังไม่ได้เลือกโปรเจค", saving: "กำลังบันทึก...", saved: "บันทึกอัตโนมัติ", error: "บันทึกไม่สำเร็จ", help: "คู่มือการใช้งาน" },
+    tabs: { exterior: "ภายนอก (Exterior)", interior: "ภายใน (Interior)", plan: "แปลน (Plan)" },
+    sections: { prompt: "คำสั่ง (Prompt)", quickActions: "คำสั่งด่วน", cameraAngle: "มุมกล้อง", artStyle: "สไตล์ศิลปะ", archStyle: "สไตล์สถาปัตยกรรม", garden: "สวน", lighting: "แสงไฟ", background: "พื้นหลัง", foreground: "ฉากหน้า", interiorStyle: "สไตล์ภายใน", systems: "ระบบไฟและแอร์", viewOutside: "วิวนอกหน้าต่าง", conversionMode: "โหมดแปลงภาพ", roomConfig: "ตั้งค่าห้อง", brushSettings: "ตั้งค่าแปรง", manualAdjustments: "ปรับแต่งภาพ (ไม่ต้องใช้เน็ต)", moodboard: "มู้ดบอร์ดและวัสดุตัวอย่าง", flooring: "วัสดุพื้น" },
+    controls: { turnOnLights: "เปิดไฟ", brightness: "ความสว่าง", contrast: "ความคมชัด (Contrast)", saturation: "ความสดของสี (Saturation)", sharpness: "ความคม (Sharpness)", colorTemp: "อุณหภูมิแสง", intensity: "ความเข้ม", soft: "นุ่มนวล", vibrant: "สดใส", warm: "โทนอุ่น", neutral: "ธรรมชาติ", cool: "โทนเย็น", coveLight: "ไฟหลืบ (Cove Light)", downlight: "ไฟดาวน์ไลท์ (Downlight)", airConditioner: "เครื่องปรับอากาศ", ac4way: "แอร์ 4 ทิศทาง", acWall: "แอร์ติดผนัง", clearMask: "ล้างพื้นที่เลือก", subtle: "น้อย", strong: "มาก", applyManual: "ยืนยันการปรับแต่ง", tolerance: "ความไวสี (Tolerance)", autoDescribe: "ให้ AI เขียนคำสั่ง" },
+    buttons: { generate: "สร้างรูปภาพ", generating: "กำลังสร้าง...", openProjects: "เปิดโปรเจค", clearAll: "ลบข้อมูลทั้งหมด", newProject: "โปรเจคใหม่", download: "ดาวน์โหลด", reset: "รีเซ็ต", upscale4k: "ขยายภาพ 4K", regenerate: "สร้างซ้ำ (เดิม)", veo: "สร้างวิดีโอ (Veo)" },
+    placeholders: { promptExterior: "อธิบายสิ่งที่ต้องการแก้ไข...", promptInterior: "อธิบายการตกแต่งภายใน...", promptPlan: "อธิบายรายละเอียดของแปลน...", promptMask: "วาดรูปร่างและอธิบายสิ่งที่ต้องการแก้ (เช่น 'ต่อเติมหลังคาหน้าจั่ว')...", customFlooring: "อธิบายลวดลายพื้นพิเศษ (เช่น 'กระเบื้องหกเหลี่ยมสีน้ำเงินสลับขาว')..." },
+    modes: { general: "ทั่วไป", object: "เฉพาะจุด" },
+    help: { title: "วิธีใช้งาน FAST AI", step1: "1. เริ่มต้นใช้งาน", step1desc: "กดไอคอนกุญแจเพื่อใส่ Gemini API Key (จำเป็น) จากนั้นกดปุ่ม 'โปรเจค' เพื่ออัปโหลดรูปภาพ", step2: "2. เลือกโหมด", step2desc: "เลือกแท็บ Exterior (ภายนอก), Interior (ภายใน), หรือ Plan (แปลน) จากเมนูด้านซ้ายตามประเภทงาน", step3: "3. การสั่งงาน", step3desc: "ใช้ 'คำสั่งด่วน' เพื่อเปลี่ยนสไตล์ในคลิกเดียว หรือพิมพ์คำสั่งเองในช่อง 'Prompt' ปรับความเข้มได้ตามต้องการ", step4: "4. โหมดเฉพาะจุด", step4desc: "เปลี่ยนเป็นโหมด 'เฉพาะจุด' (Object) เพื่อระบายสีพื้นที่ที่ต้องการแก้ไข (เช่น เปลี่ยนวัสดุพื้น หรือ ผนัง) โดย AI จะแก้เฉพาะส่วนนั้น" }
   }
 };
 
 const styleOptions = [{name:'Cinematic'},{name:'Vintage'},{name:'Watercolor'},{name:'3D Render'},{name:'Pixel Art'},{name:'Neon Punk'},{name:'Sketch'},{name:'Pop Art'}];
 const cameraAngleOptions = [{name:'Eye-Level',prompt:'Re-render the scene from a realistic eye-level angle'},{name:'High Angle',prompt:'Re-render the scene from a high angle looking down'},{name:'Low Angle',prompt:'Re-render the scene from a low angle looking up'},{name:'Close-up',prompt:'Re-frame the image as a close-up shot'},{name:'Wide Shot',prompt:'Re-frame the image as a wide-angle shot'},{name:'Isometric',prompt:'Re-render the scene in an isometric 3D projection'},{name:'Bird\'s Eye View',prompt:'Re-render the scene from a top-down bird\'s eye view'},{name:'Dutch Angle',prompt:'Tilt the camera angle to create a dramatic Dutch angle'},{name:'Long Shot',prompt:'Re-render the scene from a distance (long shot)'}];
 const gardenStyleOptions = [{name:'Thai Garden',description:'A lush, tropical rainforest garden featuring tall betel palms...'},{name:'Japanese Garden',description:'Reflects Zen philosophy...'},{name:'English Garden',description:'A romantic atmosphere...'},{name:'Tropical Garden',description:'Lush and jungle-like...'},{name:'Flower Garden',description:'A field of various flowers...'},{name:'Magical Garden',description:'A fairytale garden...'},{name:'Modern Tropical Garden',description:'Combines lush greenery with sharp, modern lines.'},{name:'Formal Garden',description:'Symmetrical, orderly...'},{name:'Modern Natural Garden',description:'Simple, clean...'},{name:'Tropical Pathway Garden',description:'A dense, resort-style pathway...'},{name:'Thai Stream Garden',description:'A clear stream flows...'},{name:'Tropical Stream Garden',description:'A lush rainforest garden...'}];
-const architecturalStyleOptions = [
-    {name:'Modern',description:'Clean lines, geometric shapes, minimal ornamentation.'},
-    {name:'Loft',description:'Exposed brick, steel beams, industrial aesthetic, raw materials.'},
-    {name:'Classic',description:'Symmetrical, grand columns, elegant moldings, traditional proportions.'},
-    {name:'Minimalist',description:'Extreme simplicity, clean spaces, lack of clutter, monochrome palette.'},
-    {name:'Contemporary',description:'Current trends, curved lines, eco-friendly materials, unconventional.'},
-    {name:'Modern Thai',description:'Combines modern architecture with traditional Thai gable roofs and wooden elements.'},
-    {name:'3D Render',description:'A hyper-realistic 3D visualization style with perfect lighting.'},
-    {name:'Modern Wood',description:'Features natural wood siding, warm tones, and modern forms.'},
-    {name:'Nordic',description:'Simple, functional, minimal, light wood, large windows, gable roof, cozy.'},
-    {name:'Tropical Modern',description:'Open spaces, large overhangs, ventilation blocks, integration with nature.'},
-    {name:'Mid-Century Modern',description:'Geometric lines, flat planes, large glass windows, integration with nature, retro.'},
-    {name:'Neo-Classical',description:'Grand columns, symmetry, elegant details, luxurious.'},
-    {name:'Futuristic',description:'Sleek curves, steel, glass, high-tech aesthetic, dynamic forms.'},
-    {name:'Mediterranean',description:'Warm colors, stucco walls, arches, terracotta roof tiles.'},
-    {name:'Brutalist',description:'Raw concrete, bold geometric shapes, monolithic, heavy massing.'},
-    {name:'Colonial',description:'Symmetrical, shutters, spacious porches, historical western influence.'}
-];
-const interiorStyleOptions = [{name:'Modern',description:'Sharp lines...'},{name:'Modern Luxury',description:'Combines modern simplicity...'},{name:'Contemporary',description:'Clean lines...'},{name:'Scandinavian',description:'Simple...'},{name:'Japanese',description:'Serene...'},{name:'Thai',description:'Uses teak wood...'},{name:'Chinese',description:'Lacquered wood...'},{name:'Moroccan',description:'Vibrant colors...'},{name:'Classic',description:'Elegant and formal...'},{name:'Industrial',description:'Raw aesthetic...'},{name:'Minimalist',description:'Extreme simplicity...'},{name:'Tropical',description:'Brings the outdoors in...'},{name:'Mid-Century Modern',description:'Retro style...'},{name:'Bohemian',description:'Eclectic...'},{name:'Rustic',description:'Natural beauty...'},{name:'Art Deco',description:'Glamorous and bold...'},{name:'Coastal',description:'Light, airy...'},{name:'Zen',description:'Focuses on harmony...'}];
+const architecturalStyleOptions = [{name:'Modern',description:''},{name:'Loft',description:''},{name:'Classic',description:''},{name:'Minimalist',description:''},{name:'Contemporary',description:''},{name:'Modern Thai',description:''},{name:'3D Render',description:''},{name:'Modern Wood',description:''},{name:'Nordic',description:''},{name:'Tropical Modern',description:''},{name:'Mid-Century Modern',description:''},{name:'Neo-Classical',description:''},{name:'Futuristic',description:''},{name:'Mediterranean',description:''},{name:'Brutalist',description:''},{name:'Colonial',description:''}];
+const interiorStyleOptions = [{name:'Modern',description:''},{name:'Modern Luxury',description:''},{name:'Contemporary',description:''},{name:'Scandinavian',description:''},{name:'Japanese',description:''},{name:'Thai',description:''},{name:'Chinese',description:''},{name:'Moroccan',description:''},{name:'Classic',description:''},{name:'Industrial',description:''},{name:'Minimalist',description:''},{name:'Tropical',description:''},{name:'Mid-Century Modern',description:''},{name:'Bohemian',description:''},{name:'Rustic',description:''},{name:'Art Deco',description:''},{name:'Coastal',description:''},{name:'Zen',description:''}];
 const backgrounds = ["No Change","Bangkok High-rise View","Bangkok Traffic View","Farmland View","Housing Estate View","Chao Phraya River View","View from Inside to Garden","Forest","Public Park","Beach","Cityscape","Outer Space","IMPACT Exhibition Hall","Luxury Shopping Mall","Forest Park with Pond","Limestone Mountain Valley", "Distant Mountain View"];
 const interiorBackgrounds = ["No Change","View from Inside to Garden","Ground Floor View (Hedge & House)","Upper Floor View (House)","Bangkok High-rise View","Cityscape","Beach","Forest","Chao Phraya River View","Public Park", "Distant Mountain View"];
 const foregrounds = ["Foreground Large Tree","Foreground River","Foreground Road","Foreground Flowers","Foreground Fence","Top Corner Leaves","Bottom Corner Bush","Foreground Lawn","Foreground Pathway","Foreground Water Feature","Foreground Low Wall","Foreground Bangkok Traffic","Foreground Bangkok Electric Poles"];
 const interiorForegrounds = ["Blurred Coffee Table","Indoor Plant","Sofa Edge","Armchair","Floor Lamp","Rug/Carpet","Curtains","Decorative Vase","Dining Table Edge","Magazine/Books"];
 const interiorLightingOptions = ['Natural Daylight','Warm Evening Light','Studio Light','Cinematic Light'];
-const planConversionModes = [
-    {id:'2d_bw',label:'2D Black & White (CAD)',desc:'Professional B&W technical drawing.'},
-    {id:'2d_real',label:'2D Realistic (Color)',desc:'Colored textures and furniture.'},
-    {id:'2d_watercolor',label:'2D Watercolor',desc:'Artistic, soft watercolor style.'},
-    {id:'2d_photoshop',label:'2D Digital (Photoshop)',desc:'Marketing plan with vivid colors & shadows.'},
-    {id:'3d_iso',label:'3D Isometric',desc:'Cutaway 3D view with depth.'},
-    {id:'3d_top',label:'3D Top-Down',desc:'Realistic bird\'s eye view.'},
-    {id:'perspective',label:'Perspective View (Room)',desc:'Generate a room view from plan.'}
-];
+const planConversionModes = [{id:'2d_bw',label:'2D Black & White (CAD)',desc:''},{id:'2d_real',label:'2D Realistic (Color)',desc:''},{id:'2d_watercolor',label:'2D Watercolor',desc:''},{id:'2d_photoshop',label:'2D Digital (Photoshop)',desc:''},{id:'3d_iso',label:'3D Isometric',desc:''},{id:'3d_top',label:'3D Top-Down',desc:''},{id:'perspective',label:'Perspective View (Room)',desc:''}];
 const roomTypeOptions = ["Living Room","Master Bedroom","Kitchen","Dining Room","Bathroom","Home Office","Walk-in Closet","Balcony/Terrace","Kids Bedroom","Lobby/Entrance","Home Theater","Home Gym/Fitness","Game Room","Laundry Room","Prayer Room / Altar","Pantry","Garage (Interior)","Kids Playroom","Large Conference Room","Seminar Room","Hotel Lobby","Restaurant","Spa / Wellness Room"];
 const flooringOptions = ["Light Wood Parquet","Dark Wood Planks","White Marble","Black Marble","Polished Concrete","Beige Tiles","Grey Slate Tiles","Cream Carpet","Terrazzo","Herringbone Wood"];
-const exteriorQuickActionList = [
-    {id:'sketchupToRealismClean',label:'Sketchup to Photo (Clean)',desc:'100% complete, driveway, grass only.',icon:<PhotoIcon className="w-4 h-4"/>},
-    {id:'sketchupToRealismLush',label:'Sketchup to Photo (Lush)',desc:'Twilight, waterfall, koi pond.',icon:<PhotoIcon className="w-4 h-4"/>},
-    {id:'sketchupToRealismLushDay',label:'Sketchup to Photo (Lush Day)',desc:'Sunny day, waterfall, koi pond.',icon:<PhotoIcon className="w-4 h-4"/>},
-    {id:'constructionSite',label:'Construction Site',desc:'Almost finished, sand & rocks.', icon:<CogIcon className="w-4 h-4"/>},
-    {id:'localVillageDay',label:'Local Village Day',desc:'Sunny street, poles, trees.'},
-    {id:'bangkokStreetLife',label:'Bangkok Street Life',desc:'Traffic, poles, wires, vibrant.'},
-    {id:'modernMinimalist',label:'Modern Minimalist',desc:'Clean white, simple lines.'},
-    {id:'modernVillageWithProps',label:'New Village Estate',desc:'Mixed large & staked trees.'},
-    {id:'modernVillageIsolated',label:'New Village (Secluded)',desc:'No background houses.'},
-    {id:'grandVillageEstate',label:'Grand Village Estate',desc:'Hedge fence, propped trees, grand view.'},
-    {id:'poolVillaBright',label:'Pool Villa',desc:'Sparkling pool, sunny & vibrant.'},
-    {id:'modernTwilightHome',label:'Modern Twilight',desc:'Dusk setting, warm lights.'},
-    {id:'vibrantModernEstate',label:'Sunny Day',desc:'Bright, vibrant daylight.'},
-    {id:'sereneTwilightEstate',label:'Serene Twilight',desc:'Peaceful dusk atmosphere.'},
-    {id:'sereneHomeWithGarden',label:'Serene Garden',desc:'Peaceful garden setting.'},
-    {id:'modernPineEstate',label:'Pine Forest',desc:'Surrounded by tall pines.'},
-    {id:'luxuryHomeDusk',label:'Luxury Dusk',desc:'Wet ground reflections.'},
-    {id:'urbanSketch',label:'Urban Sketch',desc:'Watercolor and ink style.'},
-    {id:'architecturalSketch',label:'Arch Sketch',desc:'Blueprint and concept style.'},
-    {id:'midjourneyArtlineSketch',label:'Artline Sketch',desc:'Detailed artistic drawing.'},
-    {id:'pristineShowHome',label:'Show Home',desc:'Perfectly manicured.'},
-    {id:'highriseNature',label:'Eco Highrise',desc:'Building blended with nature.'},
-    {id:'fourSeasonsTwilight',label:'Riverside Twilight',desc:'Luxury high-rise at dusk.'},
-    {id:'urbanCondoDayHighAngle',label:'Urban Aerial',desc:'High angle city view.'},
-    {id:'modernWoodHouseTropical',label:'Modern Wood',desc:'Warm wood, tropical plants.'},
-    {id:'classicMansionFormalGarden',label:'Classic Mansion',desc:'Formal garden, elegant.'},
-    {id:'foregroundTreeFrame',label:'Tree Framing',desc:'Blurred foreground leaves.'},
-    {id:'aerialNatureView',label:'Aerial Nature View',desc:'High angle, atmosphere, trees.'},
-    {id:'tropicalStreamGarden',label:'Tropical Stream',desc:'Stream, rocks, lush trees.'},
-    {id:'tropicalPathwayGarden',label:'Tropical Pathway',desc:'Dense resort-style path.'},
-    {id:'thaiRiversideRetreat',label:'Thai Riverside',desc:'Coconut trees, Plumeria, river view.'},
-    {id:'luxuryThaiVillage',label:'Luxury Thai Village',desc:'Foxtail palms, staked trees, Ixora.'}
-];
-const interiorQuickActionList = [{id:'sketchupToPhotoreal',label:'Sketch to Real',desc:'Render 3D model to photo.'},{id:'modernLuxuryKitchen',label:'Modern Kitchen',desc:'Clean, marble island, high-end.'},{id:'luxurySpaBathroom',label:'Spa Bathroom',desc:'Stone, soaking tub, ambient light.'},{id:'modernHomeOffice',label:'Home Office',desc:'Productive, sleek, ergonomic.'},{id:'modernBedroom',label:'Modern Bedroom',desc:'Soft bed, hidden lights, cozy.'},{id:'modernLivingRoom',label:'Modern Living Room',desc:'Stylish sofa, rug, bright.'},{id:'luxuryDiningRoom',label:'Luxury Dining',desc:'Grand table, chandelier, elegant.'},{id:'darkMoodyLuxuryBedroom',label:'Dark Luxury',desc:'Moody, charcoal, gold.'},{id:'softModernSanctuary',label:'Soft Sanctuary',desc:'Light, curves, peaceful.'},{id:'geometricChicBedroom',label:'Geometric Chic',desc:'Patterns, modern, stylish.'},{id:'symmetricalGrandeurBedroom',label:'Grandeur',desc:'Balanced, opulent, classic.'},{id:'classicSymmetryLivingRoom',label:'Classic Living',desc:'Formal, symmetrical.'},{id:'modernDarkMarbleLivingRoom',label:'Dark Marble',desc:'Sophisticated, moody.'},{id:'contemporaryGoldAccentLivingRoom',label:'Gold Accents',desc:'Bright, airy, luxury.'},{id:'modernEclecticArtLivingRoom',label:'Eclectic Art',desc:'Creative, unique, modern.'},{id:'brightModernClassicLivingRoom',label:'Bright Classic',desc:'Marble, light, grand.'},{id:'parisianChicLivingRoom',label:'Parisian Chic',desc:'Paneling, high ceilings.'}];
-const planQuickActionList = [{id:'furnishEmptyPlan',label:'Furnish Plan',desc:'Populate empty plan with furniture.',icon:<HomeIcon className="w-4 h-4"/>},{id:'blueprintStyle',label:'Blueprint Style',desc:'Classic blue technical blueprint.',icon:<ArchitecturalSketchIcon className="w-4 h-4"/>},{id:'handDrawnPlan',label:'Hand-drawn Sketch',desc:'Artistic ink and marker style.',icon:<SketchWatercolorIcon className="w-4 h-4"/>},{id:'cleanCad',label:'Clean CAD',desc:'Sharp B&W technical drawing.',icon:<PlanIcon className="w-4 h-4"/>}];
+const exteriorQuickActionList = [{id:'sketchupToRealismClean',label:'Sketchup to Photo (Clean)',desc:'',icon:<PhotoIcon className="w-4 h-4"/>},{id:'sketchupToRealismLush',label:'Sketchup to Photo (Lush)',desc:'',icon:<PhotoIcon className="w-4 h-4"/>},{id:'sketchupToRealismLushDay',label:'Sketchup to Photo (Lush Day)',desc:'',icon:<PhotoIcon className="w-4 h-4"/>},{id:'constructionSite',label:'Construction Site',desc:'', icon:<CogIcon className="w-4 h-4"/>},{id:'localVillageDay',label:'Local Village Day',desc:''},{id:'modernMinimalist',label:'Modern Minimalist',desc:''},{id:'modernVillageWithProps',label:'New Village Estate',desc:''},{id:'modernVillageIsolated',label:'New Village (Secluded)',desc:''},{id:'grandVillageEstate',label:'Grand Village Estate',desc:''},{id:'poolVillaBright',label:'Pool Villa',desc:''},{id:'modernTwilightHome',label:'Modern Twilight',desc:''},{id:'vibrantModernEstate',label:'Sunny Day',desc:''},{id:'sereneTwilightEstate',label:'Serene Twilight',desc:''},{id:'sereneHomeWithGarden',label:'Serene Garden',desc:''},{id:'modernPineEstate',label:'Pine Forest',desc:''},{id:'luxuryHomeDusk',label:'Luxury Dusk',desc:''},{id:'urbanSketch',label:'Urban Sketch',desc:''},{id:'architecturalSketch',label:'Arch Sketch',desc:''},{id:'midjourneyArtlineSketch',label:'Artline Sketch',desc:''},{id:'pristineShowHome',label:'Show Home',desc:''},{id:'highriseNature',label:'Eco Highrise',desc:''},{id:'fourSeasonsTwilight',label:'Riverside Twilight',desc:''},{id:'urbanCondoDayHighAngle',label:'Urban Aerial',desc:''},{id:'modernWoodHouseTropical',label:'Modern Wood',desc:''},{id:'classicMansionFormalGarden',label:'Classic Mansion',desc:''},{id:'foregroundTreeFrame',label:'Tree Framing',desc:''},{id:'aerialNatureView',label:'Aerial Nature View',desc:''},{id:'tropicalStreamGarden',label:'Tropical Stream',desc:''},{id:'tropicalPathwayGarden',label:'Tropical Pathway',desc:''},{id:'thaiRiversideRetreat',label:'Thai Riverside',desc:''},{id:'luxuryThaiVillage',label:'Luxury Thai Village',desc:''}];
+const interiorQuickActionList = [{id:'sketchupToPhotoreal',label:'Sketch to Real',desc:''},{id:'modernLuxuryKitchen',label:'Modern Kitchen',desc:''},{id:'luxurySpaBathroom',label:'Spa Bathroom',desc:''},{id:'modernHomeOffice',label:'Home Office',desc:''},{id:'modernBedroom',label:'Modern Bedroom',desc:''},{id:'modernLivingRoom',label:'Modern Living Room',desc:''},{id:'luxuryDiningRoom',label:'Luxury Dining',desc:''},{id:'darkMoodyLuxuryBedroom',label:'Dark Luxury',desc:''},{id:'softModernSanctuary',label:'Soft Sanctuary',desc:''},{id:'geometricChicBedroom',label:'Geometric Chic',desc:''},{id:'symmetricalGrandeurBedroom',label:'Grandeur',desc:''},{id:'classicSymmetryLivingRoom',label:'Classic Living',desc:''},{id:'modernDarkMarbleLivingRoom',label:'Dark Marble',desc:''},{id:'contemporaryGoldAccentLivingRoom',label:'Gold Accents',desc:''},{id:'modernEclecticArtLivingRoom',label:'Eclectic Art',desc:''},{id:'brightModernClassicLivingRoom',label:'Bright Classic',desc:''},{id:'parisianChicLivingRoom',label:'Parisian Chic',desc:''}];
+const planQuickActionList = [{id:'furnishEmptyPlan',label:'Furnish Plan',desc:'',icon:<HomeIcon className="w-4 h-4"/>},{id:'blueprintStyle',label:'Blueprint Style',desc:'',icon:<ArchitecturalSketchIcon className="w-4 h-4"/>},{id:'handDrawnPlan',label:'Hand-drawn Sketch',desc:'',icon:<SketchWatercolorIcon className="w-4 h-4"/>},{id:'cleanCad',label:'Clean CAD',desc:'',icon:<PlanIcon className="w-4 h-4"/>}];
 
-type EditingMode = 'default' | 'object';
-type SceneType = 'exterior' | 'interior' | 'plan';
-
-// ... (PROMPT CONSTANTS omitted for brevity as they are unchanged) ...
 const QUICK_ACTION_PROMPTS: Record<string, string> = {
-    // ... (same as before)
-    sketchupToRealismClean: "Transform this image into a 100% completed, high-quality, photorealistic architectural photo. STRICTLY MAINTAIN the original camera angle, perspective, and building architectural design. Do not modify the house structure. Render the house with pristine, finished modern materials. Detect the garage or carport area and generate a clean concrete driveway connecting it to the foreground road. The landscaping must be minimal: strictly just a smooth, manicured green grass lawn. DO NOT add trees, bushes, flowers, or complex gardens. The background should depict a clean, new housing estate project under a bright blue sky. This is a clean base for further editing.",
-    sketchupToRealismLush: "Transform this image into a high-quality, photorealistic architectural photo at twilight. STRICTLY MAINTAIN the original camera angle, perspective, and building architectural design. Do not modify the house structure. Render the house with pristine materials and turn on warm interior lights to create a welcoming atmosphere. Detect the garage or carport area and generate a clean concrete driveway connecting it to the foreground road. The landscaping must be lush and beautiful: include vibrant flowers, large trees with wooden supports, and a luxury garden feature with a waterfall and a koi pond. The atmosphere should be a stunning twilight scene.",
-    sketchupToRealismLushDay: "Transform this image into a high-quality, photorealistic architectural photo on a bright sunny day. STRICTLY MAINTAIN the original camera angle, perspective, and building architectural design. Do not modify the house structure. Render the house with pristine materials. Detect the garage or carport area and generate a clean concrete driveway connecting it to the foreground road. The landscaping must be lush and beautiful: include vibrant flowers, large trees with wooden supports, and a luxury garden feature with a waterfall and a koi pond. The atmosphere should be bright, vibrant, and natural under a clear blue sky.",
-    constructionSite: "Transform the image into a realistic house construction site that is nearing completion (approx 90% finished). The main building structure should be complete and painted, but showing signs of ongoing work. Crucially, add large piles of construction sand, gravel mounds, and stacks of bricks or paving stones in the foreground and around the base of the house. The ground should be uneven dirt or soil, not yet landscaped. You may include a few pieces of wooden scaffolding, a ladder, or construction tools. The atmosphere is a messy but progressing construction site.",
-    localVillageDay: "Transform the image into a hyper-realistic daytime street view within a lively housing estate. STRICTLY MAINTAIN THE ORIGINAL CAMERA ANGLE AND PERSPECTIVE. The atmosphere should be bright, sunny, and natural. Crucially, generate a realistic concrete or asphalt road in the foreground. The house fence should be a neat green hedge combined with a modern black steel slatted sliding gate. Add authentic details such as standard electric poles with utility lines running along the street, and lush green trees providing shade. The overall look should capture the authentic, everyday vibe of a residential village neighborhood.",
-    // ... (Truncated for brevity, assuming standard prompts are here) ... 
+    // ... (Same as before)
+    sketchupToRealismClean: "เปลี่ยนภาพนี้ให้เป็นภาพถ่ายสถาปัตยกรรมที่เสร็จสมบูรณ์ 100% คุณภาพสูง สมจริง รักษามุมกล้องและดีไซน์เดิมไว้อย่างเคร่งครัด ห้ามแก้ไขโครงสร้างบ้าน สร้างถนนคอนกรีตเชื่อมต่อกับโรงจอดรถ ปรับภูมิทัศน์ให้เป็นสนามหญ้าเรียบสีเขียวเท่านั้น ห้ามมีต้นไม้ใหญ่ พุ่มไม้ หรือดอกไม้ พื้นหลังเป็นโครงการหมู่บ้านจัดสรรใหม่ ท้องฟ้าสดใส",
+    sketchupToRealismLush: "เปลี่ยนภาพนี้ให้เป็นภาพถ่ายสถาปัตยกรรมคุณภาพสูงในบรรยากาศช่วงค่ำ (Twilight) รักษามุมกล้องและดีไซน์เดิมไว้อย่างเคร่งครัด เปิดไฟในบ้านสีวอร์มไวท์ให้ดูอบอุ่น สร้างถนนคอนกรีตเชื่อมต่อโรงจอดรถ จัดสวนหรูหราอลังการ มีต้นไม้ใหญ่พร้อมไม้ค้ำยัน ดอกไม้สีสดใส น้ำตกจำลอง และบ่อปลาคราฟสวยงาม",
+    sketchupToRealismLushDay: "เปลี่ยนภาพนี้ให้เป็นภาพถ่ายสถาปัตยกรรมคุณภาพสูงในบรรยากาศกลางวัน แดดจ้า ท้องฟ้าสดใส รักษามุมกล้องและดีไซน์เดิมไว้อย่างเคร่งครัด สร้างถนนคอนกรีตเชื่อมต่อโรงจอดรถ จัดสวนหรูหราอลังการ มีต้นไม้ใหญ่พร้อมไม้ค้ำยัน ดอกไม้สีสดใส น้ำตกจำลอง และบ่อปลาคราฟสวยงาม",
+    constructionSite: "เปลี่ยนภาพนี้ให้เป็นไซต์ก่อสร้างบ้านที่ใกล้เสร็จ (ประมาณ 90%) ตัวบ้านทาสีแล้วแต่ยังมีร่องรอยการทำงาน เพิ่มกองทราย กองหิน และกองวัสดุก่อสร้างไว้หน้างาน พื้นดินขรุขระยังไม่จัดสวน มีนั่งร้านหรืออุปกรณ์ช่างวางอยู่",
+    localVillageDay: "เปลี่ยนภาพนี้ให้เป็นบรรยากาศหมู่บ้านจัดสรรในไทยตอนกลางวัน แสงแดดสดใส รักษามุมกล้องเดิม มีถนนคอนกรีตหรือลาดยางด้านหน้า รั้วบ้านเป็นพุ่มไม้ผสมรั้วเหล็กสีดำ มีเสาไฟฟ้าและสายไฟริมถนนตามแบบฉบับไทย ต้นไม้ให้ร่มเงา ดูเป็นธรรมชาติและน่าอยู่",
+    modernMinimalist: "เปลี่ยนสไตล์บ้านให้เป็นโมเดิร์นมินิมอล ทาสีขาวสะอาดตา เส้นสายเรียบง่าย ตัดทอนรายละเอียดฟุ่มเฟือย เน้นกระจกบานใหญ่และกรอบอลูมิเนียมสีดำ จัดสวนแบบเซนหรือสวนหินเรียบง่าย แสงธรรมชาติสว่างนวล",
+    modernVillageWithProps: "เปลี่ยนให้เป็นหมู่บ้านจัดสรรสมัยใหม่ที่มีชีวิตชีวา เพิ่มต้นไม้ใหญ่ที่ขุดล้อมและมีไม้ค้ำยันตามสไตล์การจัดสวนใหม่ สนามหญ้าเขียวขจี ถนนในหมู่บ้านสะอาดตา",
+    modernVillageIsolated: "เปลี่ยนให้เป็นบ้านโมเดิร์นที่ตั้งอยู่อย่างโดดเดี่ยว ตัดเพื่อนบ้านออก พื้นหลังเป็นท้องฟ้าสีครามกว้างใหญ่ สนามหญ้ากว้างขวาง ดูเป็นส่วนตัว",
+    grandVillageEstate: "เปลี่ยนให้เป็นคฤหาสน์หรูในโครงการหมู่บ้านระดับไฮเอนด์ รั้วต้นไม้สูงตัดแต่งเรียบร้อย ถนนกว้างขวาง ทัศนียภาพดูแพงและเป็นระเบียบ",
+    poolVillaBright: "เปลี่ยนให้เป็นพูลวิลล่าส่วนตัว เพิ่มสระว่ายน้ำสีฟ้าใสที่ระยิบระยับล้อแสงแดด เก้าอี้ริมสระ และร่มกันแดด บรรยากาศการพักผ่อนวันหยุด",
+    modernTwilightHome: "เปลี่ยนเป็นบรรยากาศยามเย็นช่วงโพล้เพล้ ท้องฟ้าไล่สีส้มม่วง เปิดไฟในบ้านและไฟสวนสีส้มอบอุ่น ให้ความรู้สึกโรแมนติกและน่าอยู่",
+    vibrantModernEstate: "ปรับภาพให้สดใส แสงแดดจ้า สีสันชัดเจน ท้องฟ้าสีฟ้าจัด หญ้าเขียวขจี ให้ความรู้สึกถึงพลังงานและความสดชื่น",
+    sereneTwilightEstate: "เปลี่ยนเป็นบรรยากาศยามเย็นที่เงียบสงบ แสงนุ่มนวล ท้องฟ้าสีม่วงคราม ไม่มีการจราจรพลุกพล่าน ดูผ่อนคลาย",
+    sereneHomeWithGarden: "เน้นการจัดสวนที่ร่มรื่นและเงียบสงบ มีต้นไม้ใหญ่ให้ร่มเงา ไม้พุ่มหนาแน่น ทางเดินในสวนคดเคี้ยว ดูเป็นธรรมชาติ",
+    modernPineEstate: "เปลี่ยนสภาพแวดล้อมให้เป็นป่าสนเมืองหนาว หรือบ้านพักตากอากาศบนเขา มีต้นสนสูงใหญ่ล้อมรอบ อากาศดูเย็นสบาย",
+    luxuryHomeDusk: "เปลี่ยนเป็นบรรยากาศค่ำคืนที่หรูหรา พื้นเปียกสะท้อนแสงไฟ (Wet look) ท้องฟ้ามืดสนิทแต่ตัวบ้านสว่างไสวด้วยไฟตกแต่ง architectural lighting",
+    urbanSketch: "เปลี่ยนภาพให้เป็นภาพวาดลายเส้นสไตล์ Urban Sketch ลงสีน้ำแบบหยาบๆ เน้นเส้นสายอิสระ ดูเป็นงานศิลปะ",
+    architecturalSketch: "เปลี่ยนภาพให้เป็นลายเส้นสถาปัตยกรรม (Architectural Sketch) เหมือนแบบร่างดินสอ เน้นสัดส่วนและรายละเอียดโครงสร้าง",
+    midjourneyArtlineSketch: "เปลี่ยนภาพให้เป็นลายเส้นศิลปะละเอียด (Artline) เส้นคมชัด รายละเอียดสูง ขาวดำหรือลงสีบางๆ สไตล์ภาพประกอบ",
+    pristineShowHome: "เปลี่ยนให้เป็นบ้านตัวอย่างที่สมบูรณ์แบบ (Show Home) ทุกอย่างดูใหม่และสะอาดกริบ สวนตัดแต่งเป๊ะ ไม่มีเศษขยะหรือความรก",
+    highriseNature: "เปลี่ยนเป็นตึกสูงที่เป็นมิตรกับสิ่งแวดล้อม (Eco-friendly) มีสวนแนวตั้ง (Vertical Garden) ตามระเบียงและผนังตึก ดูเขียวชอุ่ม",
+    fourSeasonsTwilight: "เปลี่ยนบรรยากาศให้เป็นโรงแรมหรูริมแม่น้ำยามค่ำคืน แสงไฟระยิบระยับ สะท้อนผิวน้ำ ดูแพงและโรแมนติก",
+    urbanCondoDayHighAngle: "เปลี่ยนมุมมองเป็นคอนโดในเมืองมุมสูง เห็นวิวเมืองกว้างไกล ท้องฟ้าสดใส ตึกระฟ้าเรียงราย",
+    modernWoodHouseTropical: "เปลี่ยนวัสดุบ้านเป็นไม้ระแนงและไม้จริง ให้ความรู้สึกอบอุ่น สไตล์รีสอร์ทเขตร้อน แทรกด้วยต้นไม้สีเขียว",
+    classicMansionFormalGarden: "เปลี่ยนเป็นคฤหาสน์คลาสสิกสไตล์ยุโรป พร้อมสวนฟอร์มอล (Formal Garden) ที่ตัดแต่งเป็นระเบียบสมมาตร มีน้ำพุตรงกลาง",
+    foregroundTreeFrame: "เพิ่มฉากหน้า (Foreground) เป็นกิ่งไม้และใบไม้เบลอๆ เพื่อสร้างกรอบภาพและมิติความลึก (Depth of Field)",
+    aerialNatureView: "เปลี่ยนมุมมองเป็นภาพมุมสูง (Aerial View) ที่รายล้อมด้วยธรรมชาติ ป่าไม้ และพื้นที่สีเขียวสุดลูกหูลูกตา",
+    tropicalStreamGarden: "จัดสวนป่าเมืองร้อน มีลำธารเล็กๆ ไหลผ่าน โขดหิน มอส และเฟิร์น บรรยากาศชุ่มชื้น",
+    tropicalPathwayGarden: "เพิ่มทางเดินในสวนสไตล์รีสอร์ท ปูหินหรือไม้ระแนง สองข้างทางเต็มไปด้วยต้นไม้เขียวชอุ่ม ให้ความรู้สึกน่าเดินสำรวจ",
+    thaiRiversideRetreat: "เปลี่ยนบรรยากาศเป็นบ้านริมน้ำแบบไทยๆ มีต้นมะพร้าว ต้นลีลาวดี และท่าน้ำ ให้ความรู้สึกผ่อนคลาย",
+    luxuryThaiVillage: "เปลี่ยนเป็นหมู่บ้านหรูสไตล์ไทยร่วมสมัย ปลูกต้นปาล์มหางกระรอก ต้นไม้ขุดล้อมฟอร์มสวย และดอกเข็มหลากสี",
+    sketchupToPhotoreal: "เปลี่ยนภาพร่าง 3D นี้ให้เป็นภาพถ่ายจริง (Photorealistic) เก็บรายละเอียดวัสดุ แสงเงา และพื้นผิวให้สมจริงที่สุด รักษามุมกล้องและการจัดวางเฟอร์นิเจอร์เดิม",
+    modernLuxuryKitchen: "ตกแต่งห้องครัวสไตล์ Modern Luxury ใช้ท็อปเคาน์เตอร์หินอ่อนลายสวย หน้าบานตู้ไฮกลอสหรือกระจกเงา ไฟซ่อน (Hidden Light) ใต้ตู้ เครื่องใช้ไฟฟ้าสแตนเลสเกรดพรีเมียม บรรยากาศหรูหราสะอาดตา",
+    luxurySpaBathroom: "ตกแต่งห้องน้ำให้เป็นสปาหรู ใช้กระเบื้องหินธรรมชาติ อ่างอาบน้ำแบบลอยตัว แสงไฟสลัวสร้างบรรยากาศผ่อนคลาย มีเทียนหอมและต้นไม้ประดับ",
+    modernHomeOffice: "ตกแต่งห้องทำงานสไตล์โมเดิร์น โต๊ะทำงานดีไซน์เรียบเท่ เก้าอี้ Ergonomic ชั้นวางของเป็นระเบียบ แสงไฟสว่างพอเหมาะดูโปรดัคทีฟ",
+    modernBedroom: "ตกแต่งห้องนอนสไตล์โมเดิร์น เตียงนอนหนานุ่ม หัวเตียงบุนวม ไฟซ่อนหัวเตียง บรรยากาศอบอุ่นน่านอน คุมโทนสีสบายตา",
+    modernLivingRoom: "ตกแต่งห้องนั่งเล่นสไตล์โมเดิร์น โซฟาผ้าตัวใหญ่ พรมลายนุ่มนวล โต๊ะกลางดีไซน์เก๋ ผนังตกแต่งด้วยกรอบรูปหรือทีวีจอใหญ่",
+    luxuryDiningRoom: "ตกแต่งห้องทานอาหารให้หรูหรา โต๊ะทานข้าวขนาดยาว เก้าอี้บุหนังหรือกำมะหยี่ โคมไฟระย้า (Chandelier) อลังการกลางห้อง",
+    darkMoodyLuxuryBedroom: "ตกแต่งห้องนอนสไตล์ Dark Luxury คุมโทนสีเข้ม ดำ เทา ตัดด้วยสีทอง แสงไฟสลัว ดูลึกลับและมีเสน่ห์",
+    softModernSanctuary: "ตกแต่งห้องให้ดูนุ่มนวล ผ่อนคลาย ใช้เฟอร์นิเจอร์ทรงโค้งมน โทนสีพาสเทลหรือครีม แสงธรรมชาติเข้าถึงได้ดี",
+    geometricChicBedroom: "ตกแต่งห้องนอนด้วยลวดลายเรขาคณิต (Geometric) ทั้งบนผนัง พรม หรือหมอนอิง สไตล์เก๋ไก๋ทันสมัย สีสันตัดกันอย่างลงตัว",
+    symmetricalGrandeurBedroom: "ตกแต่งห้องนอนให้ดูยิ่งใหญ่ด้วยความสมมาตร (Symmetry) วางเตียงไว้กึ่งกลาง โต๊ะหัวเตียงและโคมไฟเหมือนกันสองฝั่ง ดูสง่างาม",
+    classicSymmetryLivingRoom: "ตกแต่งห้องนั่งเล่นสไตล์คลาสสิก จัดวางเฟอร์นิเจอร์แบบสมมาตร ผนังคิ้วบัว (Moldings) ดูเป็นทางการและภูมิฐาน",
+    modernDarkMarbleLivingRoom: "ตกแต่งห้องนั่งเล่นโดยใช้หินอ่อนสีดำหรือสีเข้มเป็นหลัก ให้ความรู้สึกเท่ ขรึม และหรูหราในเวลาเดียวกัน",
+    contemporaryGoldAccentLivingRoom: "ตกแต่งห้องนั่งเล่นสไตล์ร่วมสมัย เน้นสีขาวสว่าง ตัดด้วยของตกแต่งสีทอง (Gold Accents) ให้ดูหรูหรามีระดับ",
+    modernEclecticArtLivingRoom: "ตกแต่งห้องนั่งเล่นสไตล์ Eclectic ผสมผสานของตกแต่งงานศิลปะ ภาพวาด รูปปั้น และเฟอร์นิเจอร์หลากสไตล์อย่างลงตัวและสร้างสรรค์",
+    brightModernClassicLivingRoom: "ตกแต่งห้องนั่งเล่นสไตล์ Modern Classic เน้นความสว่าง พื้นหินอ่อนสีขาว ผนังสีขาว เฟอร์นิเจอร์หรูหราแต่เรียบง่าย",
+    parisianChicLivingRoom: "ตกแต่งห้องนั่งเล่นสไตล์ปารีส (Parisian Chic) พื้นไม้ปาร์เก้ลายก้างปลา เพดานสูง หน้าต่างบานยาว ผนังคิ้วบัว ดูโรแมนติก",
+    furnishEmptyPlan: "เติมเฟอร์นิเจอร์ลงในแปลนห้องว่าง จัดวางเตียง โซฟา โต๊ะทานข้าว และสุขภัณฑ์ให้เหมาะสมกับพื้นที่และการใช้งาน แสดงรายละเอียดวัสดุปูพื้น ใส่เงาให้ดูมีมิติ",
+    blueprintStyle: "เปลี่ยนแปลนนี้ให้เป็นแบบพิมพ์เขียว (Blueprint) พื้นหลังสีน้ำเงินเข้ม เส้นสายสีขาว แสดงสัญลักษณ์ทางสถาปัตยกรรมชัดเจน ดูเป็นมืออาชีพ",
+    handDrawnPlan: "เปลี่ยนแปลนนี้ให้เป็นลายเส้นวาดมือ (Hand-drawn Sketch) ลงสีน้ำหรือสีมาร์คเกอร์บางๆ ให้ดูเป็นงานศิลปะ นุ่มนวล มีสไตล์",
+    cleanCad: "เปลี่ยนแปลนนี้ให้เป็นแบบ CAD ขาว-ดำ ที่คมชัด เส้นกำแพงหนาทึบ เส้นบอกระยะและสัญลักษณ์ต่างๆ ชัดเจน พื้นหลังขาวสะอาด"
 };
 
-// ... (Other constant definitions like brushColors, PROMPTS etc.) ...
-const brushColors = [{name:'Red',value:'rgba(255, 59, 48, 0.7)',css:'bg-red-500'},{name:'Blue',value:'rgba(0, 122, 255, 0.7)',css:'bg-blue-500'},{name:'Green',value:'rgba(52, 199, 89, 0.7)',css:'bg-green-500'},{name:'Yellow',value:'rgba(255, 204, 0, 0.7)',css:'bg-yellow-400'}];
-const ARCHITECTURAL_STYLE_PROMPTS = architecturalStyleOptions.reduce((acc,option)=>{acc[option.name]=`Change the architectural style to ${option.name}. ${option.description}`;return acc},{}as Record<string,string>);
-const GARDEN_STYLE_PROMPTS = gardenStyleOptions.reduce((acc,option)=>{acc[option.name]=`Change the garden to ${option.name}. ${option.description}`;return acc},{}as Record<string,string>);
-const INTERIOR_STYLE_PROMPTS = interiorStyleOptions.reduce((acc,option)=>{acc[option.name]=`Change the interior design style to ${option.name}. ${option.description}`;return acc},{}as Record<string,string>);
-const INTERIOR_LIGHTING_PROMPTS = interiorLightingOptions.reduce((acc,option)=>{acc[option]=`Change the lighting to ${option}.`;return acc},{}as Record<string,string>);
-const BACKGROUND_PROMPTS = backgrounds.reduce((acc,bg)=>{
+// ... (PROMPT AND CONSTANTS SAME AS BEFORE) ...
+const ARCHITECTURAL_STYLE_PROMPTS = architecturalStyleOptions.reduce((acc, style) => ({ ...acc, [style.name]: `Change the architectural style to ${style.name}. ${style.description}` }), {} as Record<string, string>);
+const GARDEN_STYLE_PROMPTS = gardenStyleOptions.reduce((acc, style) => ({ ...acc, [style.name]: `Change the garden to ${style.name}. ${style.description}` }), {} as Record<string, string>);
+const INTERIOR_STYLE_PROMPTS = interiorStyleOptions.reduce((acc, style) => ({ ...acc, [style.name]: `Change the interior design style to ${style.name}. ${style.description}` }), {} as Record<string, string>);
+const INTERIOR_LIGHTING_PROMPTS = interiorLightingOptions.reduce((acc, option) => ({ ...acc, [option]: `Change the lighting to ${option}.` }), {} as Record<string, string>);
+const BACKGROUND_PROMPTS = backgrounds.reduce((acc, bg) => {
     if(bg==="Distant Mountain View") acc[bg]="Change the background to a scenic view of distant mountains on the horizon, depicting the lush green mountains of Central Thailand with rich tropical vegetation.";
     else if(bg==="Close Mountain View") acc[bg]="Change the background to a dramatic view of large, lush green mountains typical of Central Thailand up close, filled with dense tropical forest.";
     else acc[bg]=bg==="No Change"?"":`Change the background to ${bg}.`;
     return acc;
-},{}as Record<string,string>);
-const INTERIOR_BACKGROUND_PROMPTS = interiorBackgrounds.reduce((acc,bg)=>{
+}, {} as Record<string, string>);
+const INTERIOR_BACKGROUND_PROMPTS = interiorBackgrounds.reduce((acc, bg) => {
     if(bg==="Distant Mountain View") acc[bg]="Change the view outside the window to a scenic view of distant mountains on the horizon, depicting the lush green mountains of Central Thailand with rich tropical vegetation.";
     else if(bg==="Close Mountain View") acc[bg]="Change the view outside the window to a dramatic view of large, lush green mountains typical of Central Thailand up close, filled with dense tropical forest.";
     else acc[bg]=bg==="No Change"?"":`Change the view outside the window to ${bg}.`;
     return acc;
-},{}as Record<string,string>);
-const FOREGROUND_PROMPTS: Record<string,string> = {"Foreground Large Tree":"Add a large tree in the foreground.","Foreground River":"Add a river in the foreground.","Foreground Road":"Add a road in the foreground.","Foreground Flowers":"Add flowers in the foreground.","Foreground Fence":"Add a fence in the foreground.","Top Corner Leaves":"Add leaves in the top corners.","Bottom Corner Bush":"Add a bush in the bottom corner.","Foreground Lawn":"Add a lawn in the foreground.","Foreground Pathway":"Add a pathway in the foreground.","Foreground Water Feature":"Add a water feature in the foreground.","Foreground Low Wall":"Add a low wall in the foreground.","Foreground Bangkok Traffic":"Add busy Bangkok traffic in the foreground including cars, taxis, tuk-tuks, and motorcycles.","Foreground Bangkok Electric Poles":"Add a chaotic tangled web of electrical wires and utility poles in the foreground, typical of a Bangkok street scene.","Blurred Coffee Table":"Add a blurred coffee table surface in the immediate foreground to create depth of field.","Indoor Plant":"Add a large, healthy indoor potted plant in the foreground corner.","Sofa Edge":"Add the edge of a stylish sofa in the immediate foreground to frame the view.","Armchair":"Add a cozy armchair in the foreground.","Floor Lamp":"Add a modern floor lamp in the foreground.","Rug/Carpet":"Add a textured rug or carpet covering the floor in the foreground.","Curtains":"Add sheer curtains framing the sides of of the image in the foreground.","Decorative Vase":"Add a decorative vase on a surface in the foreground.","Dining Table Edge":"Add the edge of a dining table with place settings in the foreground.","Magazine/Books":"Add a stack of design magazines or books on a surface in the foreground."};
+}, {} as Record<string, string>);
+const FOREGROUND_PROMPTS = foregrounds.reduce((acc, fg) => ({ ...acc, [fg]: `Add ${fg} in the foreground.` }), {} as Record<string, string>);
 
-const OptionButton:React.FC<{option:string,isSelected:boolean,onClick:(option:string)=>void,size?:'sm'|'md'}>=({option,isSelected,onClick,size='sm'})=>{const sizeClasses=size==='md'?'px-4 py-2 text-base':'px-3 py-1.5 text-xs font-medium uppercase tracking-wide';return(<button key={option} type="button" onClick={()=>onClick(option)} className={`${sizeClasses} rounded-lg transition-all duration-300 border backdrop-blur-sm ${isSelected?'bg-red-600/80 text-white border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.4)] ring-1 ring-red-400/50':'bg-zinc-800/40 text-zinc-400 hover:bg-zinc-700/60 border-zinc-700/50 hover:text-zinc-200 hover:border-zinc-500'}`}>{option}</button>)};
-// ... rest of the file
-const IntensitySlider:React.FC<{value:number;onChange:(val:number)=>void;t:any}>=({value,onChange,t})=>(<div className="mt-3 p-3 bg-zinc-900/50 rounded-lg animate-fade-in border border-zinc-700/50"><div className="flex justify-between text-xs mb-2 text-zinc-400"><span className="font-medium text-zinc-300">{t.controls.intensity}</span><span className="font-mono text-red-400">{value}% {value===100&&`(${t.controls.strong})`}</span></div><input type="range" min="10" max="100" value={value} onChange={(e)=>onChange(Number(e.target.value))} className="w-full h-1.5 bg-zinc-700/50 rounded-lg appearance-none cursor-pointer accent-red-500 hover:accent-red-400 transition-all"/><div className="flex justify-between text-[10px] text-zinc-500 mt-1 px-0.5"><span>{t.controls.subtle}</span><span>{t.controls.strong}</span></div></div>);
-const CollapsibleSection:React.FC<{title:string;sectionKey:string;isOpen:boolean;onToggle:()=>void;children:React.ReactNode;disabled?:boolean;icon?:React.ReactNode;actions?:React.ReactNode;}>=({title,isOpen,onToggle,children,disabled=false,icon,actions})=>(<div className={`bg-zinc-900/40 rounded-xl border border-zinc-800/50 overflow-hidden transition-all duration-300 ${disabled?'opacity-50 pointer-events-none':''}`}><button type="button" onClick={onToggle} disabled={disabled} className="w-full flex justify-between items-center p-3 text-left bg-zinc-900/40 hover:bg-zinc-800/60 transition-colors disabled:cursor-not-allowed backdrop-blur-sm" aria-expanded={isOpen} aria-controls={`section-content-${title.replace(/\s+/g,'-')}`}><h3 className="flex items-center gap-3 text-xs font-bold text-zinc-300 uppercase tracking-wider">{icon&&<span className="text-zinc-500">{icon}</span>}<span className="bg-gradient-to-r from-zinc-200 to-zinc-400 bg-clip-text text-transparent">{title}</span></h3><div className="flex items-center gap-2">{actions}<ChevronDownIcon className={`w-4 h-4 text-zinc-500 transition-transform duration-300 ${isOpen?'rotate-180':''}`}/></div></button><div id={`section-content-${title.replace(/\s+/g,'-')}`} className={`overflow-hidden transition-[max-height] duration-500 ease-in-out ${isOpen?'max-h-[1500px]':'max-h-0'}`}><div className={`p-4 ${isOpen?'border-t border-zinc-800/50 bg-black/20':''}`}>{children}</div></div></div>);
-const ModeButton:React.FC<{label:string;icon:React.ReactNode;mode:EditingMode;activeMode:EditingMode;onClick:(mode:EditingMode)=>void;}>=({label,icon,mode,activeMode,onClick})=>(<button type="button" onClick={()=>onClick(mode)} className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-2 p-2 text-xs font-bold uppercase tracking-wide rounded-lg transition-all duration-300 border ${activeMode===mode?'bg-gradient-to-br from-zinc-800 to-zinc-900 text-white border-zinc-600 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]':'bg-transparent text-zinc-500 border-zinc-800 hover:bg-zinc-800/50 hover:text-zinc-300'}`}>{icon}<span>{label}</span></button>);
-const PreviewCard:React.FC<{label:string;description?:string;isSelected:boolean;onClick:()=>void;isNested?:boolean;icon?:React.ReactNode;}>=({label,description,isSelected,onClick,isNested=false,icon})=>(<button type="button" onClick={onClick} className={`p-3 text-left rounded-xl border transition-all duration-300 group flex flex-col backdrop-blur-sm ${isSelected?'bg-red-900/10 border-red-500/50 shadow-[0_0_20px_rgba(220,38,38,0.15)] ring-1 ring-red-500/20':'bg-zinc-900/40 border-zinc-800/60 hover:border-zinc-600/80 hover:bg-zinc-800/60'} ${description?(isNested?'min-h-[5rem]':'min-h-[6rem]'):''} h-auto`}><div className="w-full"><div className={`flex items-center gap-2 ${description?'mb-1.5':''}`}>{icon&&<span className={`flex-shrink-0 transition-colors duration-300 ${isSelected?'text-red-400':'text-zinc-500 group-hover:text-zinc-400'}`}>{icon}</span>}<span className={`font-bold transition-colors text-xs uppercase tracking-wide break-words ${isSelected?'text-red-400':'text-zinc-300 group-hover:text-white'}`}>{label}</span></div>{description&&(<p className={`text-[10px] leading-relaxed transition-colors ${isSelected?'text-zinc-400':'text-zinc-500'}`}>{description}</p>)}</div></button>);
-const ImageToolbar:React.FC<{onUndo:()=>void;onRedo:()=>void;onReset:()=>void;onDownload:()=>void;onShare:()=>void;onUpscale:()=>void;onRegenerate:()=>void;onTransform:(type:'rotateLeft'|'rotateRight'|'flipHorizontal'|'flipVertical')=>void;onVeo:()=>void;canUndo:boolean;canRedo:boolean;canReset:boolean;canUpscaleAndSave:boolean;canRegenerate:boolean;isLoading:boolean;t:any;}>=({onUndo,onRedo,onReset,onDownload,onShare,onUpscale,onRegenerate,onTransform,onVeo,canUndo,canRedo,canReset,canUpscaleAndSave,canRegenerate,isLoading,t})=>(<div className="flex items-center gap-2 bg-gray-500/20 backdrop-blur-md p-2 rounded-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] transform hover:scale-[1.02] transition-transform duration-300"><div className="flex items-center gap-1 px-2 border-r border-white/10"><button onClick={onUndo} disabled={!canUndo||isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><UndoIcon className="w-4 h-4"/></button><button onClick={onRedo} disabled={!canRedo||isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><RedoIcon className="w-4 h-4"/></button></div><div className="flex items-center gap-1 px-2 border-r border-white/10"><button onClick={()=>onTransform('rotateLeft')} disabled={!canUpscaleAndSave||isLoading} title="Rotate Left" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><RotateLeftIcon className="w-4 h-4"/></button><button onClick={()=>onTransform('rotateRight')} disabled={!canUpscaleAndSave||isLoading} title="Rotate Right" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><RotateRightIcon className="w-4 h-4"/></button><button onClick={()=>onTransform('flipHorizontal')} disabled={!canUpscaleAndSave||isLoading} title="Flip Horizontal" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><FlipHorizontalIcon className="w-4 h-4"/></button></div><div className="flex items-center gap-2 pl-2"><button onClick={onRegenerate} disabled={!canRegenerate||isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg" title={t.buttons.regenerate}><ArrowPathIcon className="w-4 h-4"/></button><div className="w-px h-4 bg-white/10 mx-1"></div><button onClick={onUpscale} disabled={!canUpscaleAndSave||isLoading} className="p-2 text-zinc-200 hover:text-white disabled:opacity-30 transition-colors flex items-center gap-1 hover:bg-white/10 rounded-lg" title={t.buttons.upscale4k}><UpscaleIcon className="w-4 h-4"/><span className="text-[10px] font-extrabold uppercase hidden sm:inline tracking-wider">{t.buttons.upscale4k}</span></button><div className="w-px h-4 bg-white/10 mx-1"></div><button onClick={onVeo} disabled={!canUpscaleAndSave||isLoading} className="p-2 text-zinc-200 hover:text-white disabled:opacity-30 transition-colors flex items-center gap-1 hover:bg-white/10 rounded-lg" title={t.buttons.veo}><VideoCameraIcon className="w-4 h-4"/><span className="text-[10px] font-extrabold uppercase hidden sm:inline tracking-wider">Veo 3</span></button><button onClick={onShare} disabled={!canUpscaleAndSave||isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg" title="Share"><ShareIcon className="w-4 h-4"/></button><button onClick={onDownload} disabled={!canUpscaleAndSave||isLoading} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-sm font-extrabold rounded-lg transition-all disabled:opacity-50 shadow-lg shadow-blue-900/30"><DownloadIcon className="w-3 h-3"/> {t.buttons.download}</button><button onClick={onReset} disabled={!canReset||isLoading} className="p-2 text-red-500 hover:text-red-400 disabled:opacity-30 transition-colors hover:bg-red-500/10 rounded-lg" title={t.buttons.reset}><ResetEditsIcon className="w-4 h-4"/></button></div></div>);
-const downloadBase64AsFile = (base64Data:string,filename:string,mimeType:string='image/jpeg')=>{try{const byteCharacters=atob(base64Data);const byteNumbers=new Uint8Array(byteCharacters.length);for(let i=0;i<byteCharacters.length;i++){byteNumbers[i]=byteCharacters.charCodeAt(i)}const blob=new Blob([byteNumbers],{type:mimeType});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=filename;document.body.appendChild(link);link.click();document.body.removeChild(link);setTimeout(()=>URL.revokeObjectURL(url),100)}catch(e){console.error("Download failed:",e);throw new Error("Failed to download image. It might be too large.")}};
+const CollapsibleSection: React.FC<{ title: string; sectionKey: string; isOpen: boolean; onToggle: () => void; children: React.ReactNode; disabled?: boolean; icon?: React.ReactNode; actions?: React.ReactNode; }> = ({ title, isOpen, onToggle, children, disabled = false, icon, actions }) => (
+    <div className={`bg-zinc-900/40 rounded-xl border border-zinc-800/50 overflow-hidden transition-all duration-300 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
+        <button type="button" onClick={onToggle} disabled={disabled} className="w-full flex justify-between items-center p-3 text-left bg-zinc-900/40 hover:bg-zinc-800/60 transition-colors disabled:cursor-not-allowed backdrop-blur-sm" aria-expanded={isOpen}>
+            <h3 className="flex items-center gap-3 text-xs font-bold text-zinc-300 uppercase tracking-wider">{icon && <span className="text-zinc-500">{icon}</span>}<span className="bg-gradient-to-r from-zinc-200 to-zinc-400 bg-clip-text text-transparent">{title}</span></h3>
+            <div className="flex items-center gap-2">{actions}<ChevronDownIcon className={`w-4 h-4 text-zinc-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} /></div>
+        </button>
+        <div className={`overflow-hidden transition-[max-height] duration-500 ease-in-out ${isOpen ? 'max-h-[5000px]' : 'max-h-0'}`}><div className={`p-4 ${isOpen ? 'border-t border-zinc-800/50 bg-black/20' : ''}`}>{children}</div></div>
+    </div>
+);
+
+// ... (Components: PreviewCard, OptionButton, ModeButton, IntensitySlider, ImageToolbar, downloadBase64AsFile all same as before) ...
+const PreviewCard: React.FC<{ label: string; description?: string; isSelected: boolean; onClick: () => void; isNested?: boolean; icon?: React.ReactNode; }> = ({ label, description, isSelected, onClick, isNested = false, icon }) => (
+    <button type="button" onClick={onClick} className={`p-3 text-left rounded-xl border transition-all duration-300 group flex flex-col backdrop-blur-sm ${isSelected ? 'bg-red-900/10 border-red-500/50 shadow-[0_0_20px_rgba(220,38,38,0.15)] ring-1 ring-red-500/20' : 'bg-zinc-900/40 border-zinc-800/60 hover:border-zinc-600/80 hover:bg-zinc-800/60'} h-auto`}>
+        <div className="w-full"><div className={`flex items-center gap-2 ${description ? 'mb-1.5' : ''}`}>{icon && <span className={`flex-shrink-0 transition-colors duration-300 ${isSelected ? 'text-red-400' : 'text-zinc-500 group-hover:text-zinc-400'}`}>{icon}</span>}<span className={`font-bold transition-colors text-xs uppercase tracking-wide break-words ${isSelected ? 'text-red-400' : 'text-zinc-300 group-hover:text-white'}`}>{label}</span></div>{description && (<p className={`text-[10px] leading-relaxed transition-colors ${isSelected ? 'text-zinc-400' : 'text-zinc-500'}`}>{description}</p>)}</div>
+    </button>
+);
+
+const OptionButton: React.FC<{ option: string, isSelected: boolean, onClick: (option: string) => void, size?: 'sm' | 'md' }> = ({ option, isSelected, onClick, size = 'sm' }) => {
+    const sizeClasses = size === 'md' ? 'px-4 py-2 text-base' : 'px-3 py-1.5 text-xs font-medium uppercase tracking-wide';
+    return (<button key={option} type="button" onClick={() => onClick(option)} className={`${sizeClasses} rounded-lg transition-all duration-300 border backdrop-blur-sm ${isSelected ? 'bg-red-600/80 text-white border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.4)] ring-1 ring-red-400/50' : 'bg-zinc-800/40 text-zinc-400 hover:bg-zinc-700/60 border-zinc-700/50 hover:text-zinc-200 hover:border-zinc-500'}`}>{option}</button>);
+};
+
+const ModeButton: React.FC<{ label: string; icon: React.ReactNode; mode: EditingMode; activeMode: EditingMode; onClick: (mode: EditingMode) => void; }> = ({ label, icon, mode, activeMode, onClick }) => (
+    <button type="button" onClick={() => onClick(mode)} className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-2 p-2 text-xs font-bold uppercase tracking-wide rounded-lg transition-all duration-300 border ${activeMode === mode ? 'bg-gradient-to-br from-zinc-800 to-zinc-900 text-white border-zinc-600 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]' : 'bg-transparent text-zinc-500 border-zinc-800 hover:bg-zinc-800/50 hover:text-zinc-300'}`}>{icon}<span>{label}</span></button>
+);
+
+const IntensitySlider: React.FC<{ value: number; onChange: (val: number) => void; t: any }> = ({ value, onChange, t }) => (
+    <div className="mt-3 p-3 bg-zinc-900/50 rounded-lg animate-fade-in border border-zinc-700/50">
+        <div className="flex justify-between text-xs mb-2 text-zinc-400"><span className="font-medium text-zinc-300">{t.controls.intensity}</span><span className="font-mono text-red-400">{value}% {value === 100 && `(${t.controls.strong})`}</span></div>
+        <input type="range" min="10" max="100" value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full h-1.5 bg-zinc-700/50 rounded-lg appearance-none cursor-pointer accent-red-500 hover:accent-red-400 transition-all" />
+        <div className="flex justify-between text-[10px] text-zinc-500 mt-1 px-0.5"><span>{t.controls.subtle}</span><span>{t.controls.strong}</span></div>
+    </div>
+);
+
+const ImageToolbar: React.FC<{ onUndo: () => void; onRedo: () => void; onReset: () => void; onDownload: () => void; onShare: () => void; onUpscale: () => void; onRegenerate: () => void; onTransform: (type: 'rotateLeft' | 'rotateRight' | 'flipHorizontal' | 'flipVertical') => void; onVeo: () => void; canUndo: boolean; canRedo: boolean; canReset: boolean; canUpscaleAndSave: boolean; canRegenerate: boolean; isLoading: boolean; t: any; }> = ({ onUndo, onRedo, onReset, onDownload, onShare, onUpscale, onRegenerate, onTransform, onVeo, canUndo, canRedo, canReset, canUpscaleAndSave, canRegenerate, isLoading, t }) => (
+    <div className="flex items-center gap-2 bg-gray-500/20 backdrop-blur-md p-2 rounded-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] transform hover:scale-[1.02] transition-transform duration-300">
+        <div className="flex items-center gap-1 px-2 border-r border-white/10"><button onClick={onUndo} disabled={!canUndo || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><UndoIcon className="w-4 h-4" /></button><button onClick={onRedo} disabled={!canRedo || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><RedoIcon className="w-4 h-4" /></button></div>
+        <div className="flex items-center gap-1 px-2 border-r border-white/10"><button onClick={() => onTransform('rotateLeft')} disabled={!canUpscaleAndSave || isLoading} title="Rotate Left" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><RotateLeftIcon className="w-4 h-4" /></button><button onClick={() => onTransform('rotateRight')} disabled={!canUpscaleAndSave || isLoading} title="Rotate Right" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><RotateRightIcon className="w-4 h-4" /></button><button onClick={() => onTransform('flipHorizontal')} disabled={!canUpscaleAndSave || isLoading} title="Flip Horizontal" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><FlipHorizontalIcon className="w-4 h-4" /></button></div>
+        <div className="flex items-center gap-2 pl-2"><button onClick={onRegenerate} disabled={!canRegenerate || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg" title={t.buttons.regenerate}><ArrowPathIcon className="w-4 h-4" /></button><div className="w-px h-4 bg-white/10 mx-1"></div><button onClick={onUpscale} disabled={!canUpscaleAndSave || isLoading} className="p-2 text-zinc-200 hover:text-white disabled:opacity-30 transition-colors flex items-center gap-1 hover:bg-white/10 rounded-lg" title={t.buttons.upscale4k}><UpscaleIcon className="w-4 h-4" /><span className="text-[10px] font-extrabold uppercase hidden sm:inline tracking-wider">{t.buttons.upscale4k}</span></button><div className="w-px h-4 bg-white/10 mx-1"></div><button onClick={onVeo} disabled={!canUpscaleAndSave || isLoading} className="p-2 text-zinc-200 hover:text-white disabled:opacity-30 transition-colors flex items-center gap-1 hover:bg-white/10 rounded-lg" title={t.buttons.veo}><VideoCameraIcon className="w-4 h-4" /><span className="text-[10px] font-extrabold uppercase hidden sm:inline tracking-wider">Veo 3</span></button><button onClick={onShare} disabled={!canUpscaleAndSave || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg" title="Share"><ShareIcon className="w-4 h-4" /></button><button onClick={onDownload} disabled={!canUpscaleAndSave || isLoading} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-sm font-extrabold rounded-lg transition-all disabled:opacity-50 shadow-lg shadow-blue-900/30"><DownloadIcon className="w-3 h-3" /> {t.buttons.download}</button><button onClick={onReset} disabled={!canReset || isLoading} className="p-2 text-red-500 hover:text-red-400 disabled:opacity-30 transition-colors hover:bg-red-500/10 rounded-lg" title={t.buttons.reset}><ResetEditsIcon className="w-4 h-4" /></button></div>
+    </div>
+);
+
+const downloadBase64AsFile = (base64Data: string, filename: string, mimeType: string = 'image/jpeg') => { try { const byteCharacters = atob(base64Data); const byteNumbers = new Uint8Array(byteCharacters.length); for (let i = 0; i < byteCharacters.length; i++) { byteNumbers[i] = byteCharacters.charCodeAt(i) } const blob = new Blob([byteNumbers], { type: mimeType }); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = filename; document.body.appendChild(link); link.click(); document.body.removeChild(link); setTimeout(() => URL.revokeObjectURL(url), 100) } catch (e) { console.error("Download failed:", e); throw new Error("Failed to download image. It might be too large.") } };
 
 const ImageEditor: React.FC = () => {
   const [imageList, setImageList] = useState<ImageState[]>([]);
   const [activeImageIndex, setActiveImageIndex] = useState<number | null>(null);
-  
   const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
@@ -394,6 +257,7 @@ const ImageEditor: React.FC = () => {
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
 
   const [prompt, setPrompt] = useState<string>('');
+  const [customFlooringPrompt, setCustomFlooringPrompt] = useState<string>('');
   const [negativePrompt, setNegativePrompt] = useState<string>('');
   const [selectedStyle, setSelectedStyle] = useState<string>('');
   const [styleIntensity, setStyleIntensity] = useState<number>(100);
@@ -455,7 +319,6 @@ const ImageEditor: React.FC = () => {
 
   const [selectedModel, setSelectedModel] = useState<'auto' | 'gemini-3-pro' | 'gemini-2.5-flash'>('auto');
 
-  // Video Generation State
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [videoPrompt, setVideoPrompt] = useState('');
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
@@ -505,6 +368,7 @@ const ImageEditor: React.FC = () => {
   const [tempKey, setTempKey] = useState('');
   const [isKeyVisible, setIsKeyVisible] = useState(false);
 
+  // ... (API Key and Data Loading logic remains same as fixed) ...
   useEffect(() => {
       const checkKey = async () => {
           if ((window as any).aistudio) {
@@ -555,7 +419,6 @@ const ImageEditor: React.FC = () => {
     setIsKeyModalOpen(true);
   };
 
-  // ... (Other functions remain unchanged) ...
   const toggleSection = (sectionName: string) => {
     setOpenSections(prev => ({ ...prev, [sectionName]: !prev[sectionName] }));
   };
@@ -566,7 +429,6 @@ const ImageEditor: React.FC = () => {
 
   const imageDisplayRef = useRef<ImageDisplayHandle>(null);
 
-  // Masking state
   const [brushSize, setBrushSize] = useState<number>(30);
   const [brushColor, setBrushColor] = useState<string>(brushColors[0].value);
   const [isMaskEmpty, setIsMaskEmpty] = useState<boolean>(true);
@@ -577,7 +439,6 @@ const ImageEditor: React.FC = () => {
   
   useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false; }; }, []);
   
-  // ... (Rest of useEffects and logic identical to provided file) ...
   useEffect(() => {
     let isMounted = true;
     const loadData = async () => {
@@ -587,7 +448,6 @@ const ImageEditor: React.FC = () => {
         if (savedLang === 'th' || savedLang === 'en') { setLanguage(savedLang); } else { setLanguage('th'); }
 
         if (isMounted && Array.isArray(savedProjects)) {
-          // Initialize missing fields for backward compatibility
           const restoredProjects = savedProjects.map(p => ({ 
               ...p, 
               file: null,
@@ -755,6 +615,7 @@ const ImageEditor: React.FC = () => {
     setSceneType(type);
     setEditingMode('default');
     setSelectedQuickAction('');
+    setPrompt(''); 
     // ... reset all selections
     setSelectedStyle(''); setSelectedArchStyle(''); setSelectedGardenStyle(''); setSelectedInteriorStyle('');
     setSelectedInteriorLighting(''); setSelectedInteriorRoomType(''); setReferenceImage(null); 
@@ -780,8 +641,16 @@ const ImageEditor: React.FC = () => {
 
    const handleQuickActionClick = (action: string) => {
     const isDeselecting = selectedQuickAction === action;
-    setSelectedQuickAction(isDeselecting ? '' : action);
-    if (!isDeselecting) setSelectedCameraAngle('');
+    if (isDeselecting) {
+        setSelectedQuickAction('');
+    } else {
+        setSelectedQuickAction(action);
+        const promptText = QUICK_ACTION_PROMPTS[action];
+        if (promptText) {
+            setPrompt(promptText);
+        }
+        setSelectedCameraAngle('');
+    }
   };
   
   const handleBackgroundToggle = (bg: string) => {
@@ -841,7 +710,6 @@ const ImageEditor: React.FC = () => {
         updateActiveImage(img => {
             const newHistory = img.history.slice(0, img.historyIndex + 1);
             newHistory.push([newDataUrl]);
-            // SAFEGUARD: Default to [] if arrays are undefined
             const safePromptHistory = img.promptHistory || [];
             const safeApiPromptHistory = img.apiPromptHistory || [];
             const safeLastGeneratedLabels = img.lastGeneratedLabels || [];
@@ -886,7 +754,6 @@ const ImageEditor: React.FC = () => {
           updateActiveImage(img => {
               const newHistory = img.history.slice(0, img.historyIndex + 1);
               newHistory.push([newDataUrl]);
-              // SAFEGUARD: Default to [] if arrays are undefined
               const safePromptHistory = img.promptHistory || [];
               const safeApiPromptHistory = img.apiPromptHistory || [];
               const safeLastGeneratedLabels = img.lastGeneratedLabels || [];
@@ -943,7 +810,6 @@ const ImageEditor: React.FC = () => {
           updateActiveImage(img => {
               const newHistory = img.history.slice(0, img.historyIndex + 1);
               newHistory.push([newResult]);
-              // SAFEGUARD: Default to [] if arrays are undefined
               const safePromptHistory = img.promptHistory || [];
               const safeApiPromptHistory = img.apiPromptHistory || [];
               const safeLastGeneratedLabels = img.lastGeneratedLabels || [];
@@ -956,7 +822,6 @@ const ImageEditor: React.FC = () => {
                   selectedResultIndex: 0,
                   promptHistory: [...safePromptHistory.slice(0, img.historyIndex + 1), promptForHistory],
                   apiPromptHistory: [...safeApiPromptHistory.slice(0, img.historyIndex + 1), promptForGeneration],
-                  // STORE MODEL NAME IN LABELS
                   lastGeneratedLabels: [...safeLastGeneratedLabels.slice(0, img.historyIndex + 1), modelUsedLabel],
                   generationTypeHistory: [...safeGenerationTypeHistory.slice(0, img.historyIndex + 1), 'edit'],
               };
@@ -972,7 +837,6 @@ const ImageEditor: React.FC = () => {
   
   const handleRegenerate = () => {
       if (!activeImage) return;
-      // SAFEGUARD: Check if apiPromptHistory exists
       const safeApiPromptHistory = activeImage.apiPromptHistory || [];
       if (safeApiPromptHistory.length === 0) return;
 
@@ -984,7 +848,7 @@ const ImageEditor: React.FC = () => {
   };
 
   const handleVeoClick = () => {
-    setVideoPrompt(prompt || ''); // Use current prompt as default
+    setVideoPrompt(prompt || ''); 
     setIsVideoModalOpen(true);
     setGeneratedVideoUrl(null);
   };
@@ -1006,8 +870,6 @@ const ImageEditor: React.FC = () => {
     try {
         const sourceMimeType = sourceDataUrl.substring(5, sourceDataUrl.indexOf(';'));
         const sourceBase64 = sourceDataUrl.split(',')[1];
-        
-        // Use prompt from modal or a default if empty
         const finalPrompt = videoPrompt.trim() || "Cinematic camera movement, high quality, realistic lighting";
 
         const videoUrl = await generateVideo(sourceBase64, sourceMimeType, finalPrompt, userApiKey);
@@ -1016,7 +878,7 @@ const ImageEditor: React.FC = () => {
     } catch (err) {
         console.error("Video error:", err);
         setError(err instanceof Error ? err.message : "Video generation failed.");
-        setIsVideoModalOpen(false); // Close modal on error to show error toast
+        setIsVideoModalOpen(false); 
     } finally {
         setIsGeneratingVideo(false);
     }
@@ -1025,30 +887,38 @@ const ImageEditor: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!hasApiKey && !(window as any).aistudio) { setIsKeyModalOpen(true); return; }
-    // ... (Prompt generation logic unchanged) ...
-    // Shortened for brevity as logic is unchanged
+    
+    // PRIMARY LOGIC CHANGE: Rely solely on the user-editable 'prompt' state.
     const promptParts: string[] = [];
     if (prompt.trim()) promptParts.push(prompt.trim());
+    
     let constructedHistory = prompt || "Generated Image";
     
     if (sceneType === 'plan') {
         if (editingMode !== 'object') {
-            if (selectedQuickAction) { promptParts.push(QUICK_ACTION_PROMPTS[selectedQuickAction]); constructedHistory = "Plan Action: " + selectedQuickAction; } else {
+            if (selectedQuickAction) { 
+                if (!constructedHistory.includes("Plan Action:")) constructedHistory = "Plan Action: " + selectedQuickAction; 
+            } else {
                 let planPrompt = "";
-                if (planConversionMode === '2d_bw') { planPrompt = "Transform this image into a professional, high-contrast black and white 2D architectural floor plan. Remove all colors and textures. Emphasize clear wall lines, door swings, and window symbols. The result should look like a clean CAD drawing or technical blueprint."; constructedHistory = "Plan: 2D Black & White"; } 
-                else if (planConversionMode === '2d_real') { planPrompt = "Transform this into a realistic colored 2D floor plan. Top-down view. Apply realistic textures to floors. Show furniture layout clearly with realistic top-down symbols and soft drop shadows. Keep architectural lines crisp."; constructedHistory = "Plan: 2D Realistic"; } 
-                else if (planConversionMode === '2d_watercolor') { planPrompt = "Transform this floor plan into a beautiful 2D watercolor architectural rendering. Use soft, artistic brush strokes, pastel tones, and paper texture. The result should look like a hand-painted presentation plan."; constructedHistory = "Plan: 2D Watercolor"; }
-                else if (planConversionMode === '2d_photoshop') { planPrompt = "Transform this floor plan into a professional 2D digital marketing plan (Photoshop style). Use vibrant but realistic colors for flooring, clear distinct furniture symbols, and soft drop shadows to create depth. The look should be clean, modern, and suitable for real estate brochures."; constructedHistory = "Plan: 2D Photoshop"; }
-                else if (planConversionMode === '3d_iso') { planPrompt = "Transform this 2D floor plan into a stunning 3D isometric cutaway render. Extrude the walls to show height. Furnish the rooms with modern furniture appropriate for the layout. Add realistic lighting and shadows to create depth. The style should be photorealistic and architectural."; constructedHistory = "Plan: 3D Isometric"; } 
-                else if (planConversionMode === '3d_top') { planPrompt = "Transform this 2D floor plan into a realistic 3D top-down view (bird's eye view). Render realistic floor materials, 3D furniture models from above, and soft ambient occlusion shadows. It should look like a photograph of a roofless model house from directly above."; constructedHistory = "Plan: 3D Top-Down"; } 
-                else if (planConversionMode === 'perspective') { const styleText = selectedInteriorStyle ? `in a ${selectedInteriorStyle} style` : "in a modern style"; planPrompt = `Transform this floor plan into a photorealistic eye-level interior perspective view of the ${selectedRoomType} ${styleText}. Interpret the layout from the plan to generate the room. Use photorealistic materials, natural lighting, and detailed furniture. The view should be immersive, as if standing inside the room.`; constructedHistory = `Plan: ${selectedRoomType} Perspective`; }
-                if (planPrompt) promptParts.push(planPrompt);
+                if (planConversionMode === '2d_bw') { planPrompt = "Transform this image into a professional, high-contrast black and white 2D architectural floor plan. Remove all colors and textures. Emphasize clear wall lines, door swings, and window symbols. The result should look like a clean CAD drawing or technical blueprint."; if (!prompt.trim()) constructedHistory = "Plan: 2D Black & White"; } 
+                else if (planConversionMode === '2d_real') { planPrompt = "Transform this into a realistic colored 2D floor plan. Top-down view. Apply realistic textures to floors. Show furniture layout clearly with realistic top-down symbols and soft drop shadows. Keep architectural lines crisp."; if (!prompt.trim()) constructedHistory = "Plan: 2D Realistic"; } 
+                else if (planConversionMode === '2d_watercolor') { planPrompt = "Transform this floor plan into a beautiful 2D watercolor architectural rendering. Use soft, artistic brush strokes, pastel tones, and paper texture. The result should look like a hand-painted presentation plan."; if (!prompt.trim()) constructedHistory = "Plan: 2D Watercolor"; }
+                else if (planConversionMode === '2d_photoshop') { planPrompt = "Transform this floor plan into a professional 2D digital marketing plan (Photoshop style). Use vibrant but realistic colors for flooring, clear distinct furniture symbols, and soft drop shadows to create depth. The look should be clean, modern, and suitable for real estate brochures."; if (!prompt.trim()) constructedHistory = "Plan: 2D Photoshop"; }
+                else if (planConversionMode === '3d_iso') { planPrompt = "Transform this 2D floor plan into a stunning 3D isometric cutaway render. Extrude the walls to show height. Furnish the rooms with modern furniture appropriate for the layout. Add realistic lighting and shadows to create depth. The style should be photorealistic and architectural."; if (!prompt.trim()) constructedHistory = "Plan: 3D Isometric"; } 
+                else if (planConversionMode === '3d_top') { planPrompt = "Transform this 2D floor plan into a realistic 3D top-down view (bird's eye view). Render realistic floor materials, 3D furniture models from above, and soft ambient occlusion shadows. It should look like a photograph of a roofless model house from directly above."; if (!prompt.trim()) constructedHistory = "Plan: 3D Top-Down"; } 
+                else if (planConversionMode === 'perspective') { const styleText = selectedInteriorStyle ? `in a ${selectedInteriorStyle} style` : "in a modern style"; planPrompt = `Transform this floor plan into a photorealistic eye-level interior perspective view of the ${selectedRoomType} ${styleText}. Interpret the layout from the plan to generate the room. Use photorealistic materials, natural lighting, and detailed furniture. The view should be immersive, as if standing inside the room.`; if (!prompt.trim()) constructedHistory = `Plan: ${selectedRoomType} Perspective`; }
+                
+                if (planPrompt && !prompt.trim()) promptParts.push(planPrompt);
+
                 if (selectedFlooring && planConversionMode !== '2d_bw') { promptParts.push(`Use ${selectedFlooring} for the flooring material.`); if(!constructedHistory.includes("Flooring")) constructedHistory += `, Floor: ${selectedFlooring}`; }
+                if (customFlooringPrompt && planConversionMode !== '2d_bw') { promptParts.push(`Flooring pattern details: ${customFlooringPrompt}.`); if(!constructedHistory.includes("Custom Floor")) constructedHistory += `, Floor: Custom`; }
             }
         } else { if (!constructedHistory) constructedHistory = "Plan Edit: Object"; }
         if (referenceImage) { promptParts.push("Use the provided reference image as a strict guide for the architectural style, flooring materials, and color palette of the floor plan."); constructedHistory += `, Moodboard: Attached`; }
     } else {
-        if (selectedQuickAction) { promptParts.push(QUICK_ACTION_PROMPTS[selectedQuickAction]); constructedHistory = "Quick Action: " + selectedQuickAction; }
+        if (selectedQuickAction) { 
+            if (!constructedHistory.includes("Quick Action")) constructedHistory = "Quick Action: " + selectedQuickAction; 
+        }
         if (sceneType === 'interior' && selectedInteriorRoomType) { promptParts.push(`Transform the room into a ${selectedInteriorRoomType}.`); if (!constructedHistory.includes("Quick Action")) constructedHistory += `, Room: ${selectedInteriorRoomType}`; }
         if (selectedArchStyle) { promptParts.push(ARCHITECTURAL_STYLE_PROMPTS[selectedArchStyle]); if (!constructedHistory.includes("Quick Action")) constructedHistory = "Arch Style: " + selectedArchStyle; }
         if (selectedGardenStyle) { promptParts.push(GARDEN_STYLE_PROMPTS[selectedGardenStyle]); if (!constructedHistory.includes("Quick Action") && !constructedHistory.includes("Arch Style")) constructedHistory = "Garden: " + selectedGardenStyle; }
@@ -1072,7 +942,7 @@ const ImageEditor: React.FC = () => {
     const constructedPrompt = promptParts.join(' ');
     executeGeneration(constructedPrompt, constructedHistory);
   };
-  
+
   const handleUndo = () => { if (activeImage && activeImage.historyIndex > -1) updateActiveImage(img => ({ ...img, historyIndex: img.historyIndex - 1, selectedResultIndex: 0 })); };
   const handleRedo = () => { if (activeImage && activeImage.historyIndex < activeImage.history.length - 1) updateActiveImage(img => ({ ...img, historyIndex: img.historyIndex + 1, selectedResultIndex: 0 })); };
   const handleResetEdits = () => { if (window.confirm("Reset?")) updateActiveImage(img => ({ ...img, history: [], historyIndex: -1, selectedResultIndex: null, promptHistory: [] })); };
@@ -1091,7 +961,6 @@ const ImageEditor: React.FC = () => {
 
   const selectedImageUrl = activeImage ? activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex] : activeImage.dataUrl : null;
   const currentResults = (activeImage && activeImage.historyIndex > -1) ? activeImage.history[activeImage.historyIndex] : [];
-  // SAFEGUARD: Check if lastGeneratedLabels exists before accessing
   const currentModelLabel = (activeImage && activeImage.historyIndex > -1 && activeImage.lastGeneratedLabels) ? activeImage.lastGeneratedLabels[activeImage.historyIndex] : null;
 
   const canUndo = activeImage ? activeImage.historyIndex > -1 : false;
@@ -1104,18 +973,15 @@ const ImageEditor: React.FC = () => {
 
   return (
     <div className="flex h-screen w-full bg-[#09090b] text-zinc-300 overflow-hidden font-sans">
-      
       {/* Help Modal */}
       {isHelpModalOpen && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 backdrop-blur-md p-4" onClick={() => setIsHelpModalOpen(false)}>
             <div className="bg-[#18181b] rounded-2xl border border-white/10 shadow-2xl w-full max-w-lg p-6 overflow-hidden transform transition-all relative" onClick={e => e.stopPropagation()}>
                 <button onClick={() => setIsHelpModalOpen(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors"><XMarkIcon className="w-6 h-6"/></button>
-                
                 <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                     <QuestionMarkCircleIcon className="w-6 h-6 text-red-500" />
                     {t.help.title}
                 </h2>
-                
                 <div className="space-y-6 overflow-y-auto max-h-[60vh] pr-2 custom-scrollbar">
                     <div className="flex gap-4">
                         <div className="flex-shrink-0 w-8 h-8 rounded-full bg-red-500/20 text-red-400 font-bold flex items-center justify-center">1</div>
@@ -1146,7 +1012,6 @@ const ImageEditor: React.FC = () => {
                         </div>
                     </div>
                 </div>
-                
                 <div className="mt-6 pt-6 border-t border-white/5 text-center">
                     <button onClick={() => setIsHelpModalOpen(false)} className="px-6 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-sm font-medium transition-colors">
                         Close Guide
@@ -1172,7 +1037,6 @@ const ImageEditor: React.FC = () => {
                           </button>
                       )}
                   </div>
-                  
                   {generatedVideoUrl ? (
                       <div className="space-y-4 animate-fade-in">
                           <div className="aspect-video bg-black rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10">
@@ -1211,7 +1075,6 @@ const ImageEditor: React.FC = () => {
                                    </p>
                                </div>
                            </div>
-
                            <div className="space-y-2">
                                <label className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Motion Prompt</label>
                                <textarea 
@@ -1223,7 +1086,6 @@ const ImageEditor: React.FC = () => {
                                   disabled={isGeneratingVideo}
                                />
                            </div>
-
                            <button 
                               onClick={handleGenerateVideo}
                               disabled={isGeneratingVideo || !videoPrompt.trim()}
@@ -1248,7 +1110,7 @@ const ImageEditor: React.FC = () => {
           </div>
       )}
 
-      {/* API Key Modal & Project Modal (Existing code) */}
+      {/* API Key Modal */}
       {isKeyModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-md p-4" onClick={() => hasApiKey ? setIsKeyModalOpen(false) : null}>
             <div className="bg-[#18181b] rounded-2xl border border-white/10 shadow-2xl w-full max-w-md p-6 overflow-hidden transform transition-all" onClick={e => e.stopPropagation()}>
@@ -1268,13 +1130,11 @@ const ImageEditor: React.FC = () => {
                          </button>
                      )}
                 </div>
-                
                 <p className="text-zinc-300 text-sm leading-relaxed mb-6 font-light">
                    {language === 'th' 
                     ? 'กรุณาเชื่อมต่อ API Key เพื่อเริ่มการสร้างภาพ AI ความละเอียดสูง' 
                     : 'Please connect your API Key to enable high-resolution AI generation.'}
                 </p>
-                
                 <div className="bg-zinc-900/50 rounded-xl p-4 mb-6 border border-white/5">
                     <h3 className="text-xs font-bold text-zinc-400 uppercase mb-2">
                         {language === 'th' ? 'วิธีขอ Key ฟรี (1 นาที)' : 'How to get a Free Key'}
@@ -1290,7 +1150,6 @@ const ImageEditor: React.FC = () => {
                         {language === 'th' && <p><strong>*คำเตือน:</strong> คีย์ฟรีมีการจำกัดจำนวนต่อวัน (ประมาณ 50-100 ภาพ) ถ้าใช้ไม่ได้ให้รอวันพรุ่งนี้หรือเปลี่ยนบัญชี Google เพื่อขอคีย์ใหม่</p>}
                     </div>
                 </div>
-                
                 {(window as any).aistudio ? (
                     <button 
                         onClick={handleApiKeySelect}
@@ -1325,7 +1184,6 @@ const ImageEditor: React.FC = () => {
                         </button>
                     </form>
                 )}
-                
                 <div className="text-center mt-6 pt-6 border-t border-white/5">
                     <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:text-blue-300 hover:underline flex items-center justify-center gap-1">
                         {language === 'th' ? 'ขอกุญแจ API Key (ฟรี)' : 'Get a free API Key'}
@@ -1376,9 +1234,8 @@ const ImageEditor: React.FC = () => {
          </div>
       )}
 
-      {/* LEFT SIDEBAR (No changes except implicit styling) */}
+      {/* LEFT SIDEBAR */}
       <aside className="w-80 flex flex-col border-r border-white/5 bg-black/80 backdrop-blur-xl flex-shrink-0 z-20 shadow-[4px_0_24px_rgba(0,0,0,0.5)]">
-         {/* Logo and Tabs */}
          <div className="h-16 flex items-center px-6 border-b border-white/5 bg-gradient-to-r from-black/50 to-transparent">
              <div className="flex items-center gap-2">
                  <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-red-600 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
@@ -1396,7 +1253,6 @@ const ImageEditor: React.FC = () => {
            </div>
          )}
          
-         {/* ... LEFT PANEL CONTENT ... */}
          <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3 bg-transparent">
             {!activeImage ? (
                <div className="flex flex-col items-center justify-center h-full text-zinc-500 space-y-6 animate-fade-in">
@@ -1406,15 +1262,11 @@ const ImageEditor: React.FC = () => {
                </div>
             ) : (
                <>
-                  {/* Mode Buttons */}
                   <div className="flex gap-2 mb-4 p-1 bg-black/30 rounded-xl border border-white/5">
                          <ModeButton label={t.modes.general} icon={<SparklesIcon className="w-4 h-4" />} mode="default" activeMode={editingMode} onClick={setEditingMode} />
                          <ModeButton label={t.modes.object} icon={<BrushIcon className="w-4 h-4" />} mode="object" activeMode={editingMode} onClick={setEditingMode} />
                   </div>
                   
-                  {/* ... Rest of the left panel (Manual Adjust, Prompts, etc.) ... */}
-                  {/* ... Using previous code logic for sections ... */}
-                  {/* Model Selection Dropdown */}
                   <div className="mb-4 px-1">
                       <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1"><CogIcon className="w-3 h-3"/> AI Model Selection</div>
                       <div className="relative">
@@ -1431,7 +1283,6 @@ const ImageEditor: React.FC = () => {
                       </div>
                   </div>
                   
-                   {/* Manual Adjustments Section */}
                    <CollapsibleSection title={t.sections.manualAdjustments} sectionKey="manualAdjustments" isOpen={openSections.manualAdjustments} onToggle={() => toggleSection('manualAdjustments')} icon={<AdjustmentsIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
                        <div className="space-y-4">
                            <div><div className="flex justify-between text-xs mb-1 text-zinc-400"><span>{t.controls.brightness}</span><span>{brightness}%</span></div><input type="range" min="50" max="150" value={brightness} onChange={(e) => setBrightness(Number(e.target.value))} className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-red-500"/></div>
@@ -1460,7 +1311,6 @@ const ImageEditor: React.FC = () => {
 
                         {editingMode === 'default' && (
                             <>
-                                {/* ... (Other sections like Moodboard, Quick Actions etc. remain unchanged) ... */}
                                 <CollapsibleSection title={t.sections.moodboard} sectionKey="moodboard" isOpen={openSections.moodboard} onToggle={() => toggleSection('moodboard')} icon={<TextureIcon className="w-4 h-4"/>}>
                                     <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-zinc-700 rounded-xl hover:border-red-500 hover:bg-red-500/5 transition-colors cursor-pointer group">
                                         {referenceImage ? (
@@ -1477,7 +1327,7 @@ const ImageEditor: React.FC = () => {
                                 </CollapsibleSection>
 
                                 <CollapsibleSection title={t.sections.quickActions} sectionKey="quickActions" isOpen={openSections.quickActions} onToggle={() => toggleSection('quickActions')} icon={<SparklesIcon className="w-4 h-4"/>}>
-                                    <div className="grid grid-cols-2 gap-2">
+                                    <div className="grid grid-cols-1 gap-2">
                                         {exteriorQuickActionList.map(action => (
                                             <PreviewCard key={action.id} label={action.label} description={action.desc} isSelected={selectedQuickAction === action.id} onClick={() => handleQuickActionClick(action.id)} isNested icon={action.icon} />
                                         ))}
@@ -1571,7 +1421,6 @@ const ImageEditor: React.FC = () => {
 
                         {editingMode === 'default' && (
                             <>
-                                {/* ... (Interior sections remain mostly unchanged) ... */}
                                 <CollapsibleSection title={t.sections.moodboard} sectionKey="moodboard" isOpen={openSections.moodboard} onToggle={() => toggleSection('moodboard')} icon={<TextureIcon className="w-4 h-4"/>}>
                                     <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-zinc-700 rounded-xl hover:border-red-500 hover:bg-red-500/5 transition-colors cursor-pointer group">
                                         {referenceImage ? (
@@ -1596,13 +1445,14 @@ const ImageEditor: React.FC = () => {
                                 </CollapsibleSection>
 
                                 <CollapsibleSection title={t.sections.quickActions} sectionKey="interiorQuickActions" isOpen={openSections.interiorQuickActions} onToggle={() => toggleSection('interiorQuickActions')} icon={<SparklesIcon className="w-4 h-4"/>}>
-                                    <div className="grid grid-cols-2 gap-2">
+                                    <div className="grid grid-cols-1 gap-2">
                                         {interiorQuickActionList.map(action => (
                                             <PreviewCard key={action.id} label={action.label} description={action.desc} isSelected={selectedQuickAction === action.id} onClick={() => handleQuickActionClick(action.id)} isNested />
                                         ))}
                                     </div>
                                 </CollapsibleSection>
 
+                                {/* ... Other interior sections (style, lighting, etc.) ... */}
                                 <CollapsibleSection title={t.sections.interiorStyle} sectionKey="interiorStyle" isOpen={openSections.interiorStyle} onToggle={() => toggleSection('interiorStyle')} icon={<HomeModernIcon className="w-4 h-4"/>}>
                                     <div className="flex flex-wrap gap-2 mb-3">
                                         {interiorStyleOptions.map(style => (
@@ -1684,7 +1534,6 @@ const ImageEditor: React.FC = () => {
 
                         {editingMode === 'default' && (
                             <>
-                                {/* ... (Plan sections remain unchanged) ... */}
                                 <CollapsibleSection title={t.sections.moodboard} sectionKey="moodboard" isOpen={openSections.moodboard} onToggle={() => toggleSection('moodboard')} icon={<TextureIcon className="w-4 h-4"/>}>
                                     <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-zinc-700 rounded-xl hover:border-red-500 hover:bg-red-500/5 transition-colors cursor-pointer group">
                                         {referenceImage ? (
@@ -1701,7 +1550,7 @@ const ImageEditor: React.FC = () => {
                                 </CollapsibleSection>
 
                                 <CollapsibleSection title={t.sections.quickActions} sectionKey="planQuickActions" isOpen={openSections.planQuickActions} onToggle={() => toggleSection('planQuickActions')} icon={<SparklesIcon className="w-4 h-4"/>}>
-                                    <div className="grid grid-cols-2 gap-2">
+                                    <div className="grid grid-cols-1 gap-2">
                                         {planQuickActionList.map(action => (
                                             <PreviewCard key={action.id} label={action.label} description={action.desc} isSelected={selectedQuickAction === action.id} onClick={() => handleQuickActionClick(action.id)} isNested icon={action.icon} />
                                         ))}
@@ -1717,11 +1566,18 @@ const ImageEditor: React.FC = () => {
                                 </CollapsibleSection>
 
                                 <CollapsibleSection title={t.sections.flooring} sectionKey="planFlooring" isOpen={openSections.planFlooring} onToggle={() => toggleSection('planFlooring')} icon={<TextureIcon className="w-4 h-4"/>} disabled={planConversionMode === '2d_bw'}>
-                                    <div className="flex flex-wrap gap-2">
+                                    <div className="flex flex-wrap gap-2 mb-3">
                                         {flooringOptions.map(floor => (
                                             <OptionButton key={floor} option={floor} isSelected={selectedFlooring === floor} onClick={() => setSelectedFlooring(selectedFlooring === floor ? '' : floor)} />
                                         ))}
                                     </div>
+                                     <textarea
+                                        value={customFlooringPrompt}
+                                        onChange={(e) => setCustomFlooringPrompt(e.target.value)}
+                                        placeholder={t.placeholders.customFlooring}
+                                        className="w-full bg-black/30 border border-zinc-700 rounded-lg p-2 text-xs text-zinc-300 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none"
+                                        rows={2}
+                                    />
                                 </CollapsibleSection>
 
                                 <CollapsibleSection title={t.sections.roomConfig} sectionKey="perspectiveConfig" isOpen={openSections.perspectiveConfig} onToggle={() => toggleSection('perspectiveConfig')} icon={<HomeIcon className="w-4 h-4"/>} disabled={planConversionMode !== 'perspective'}>
@@ -1792,9 +1648,8 @@ const ImageEditor: React.FC = () => {
          )}
       </aside>
 
-      {/* MAIN CONTENT (Header and ImageDisplay) - No changes needed here, existing code handles ImageDisplay props */}
+      {/* MAIN CONTENT */}
       <main className="flex-1 flex flex-col min-w-0 relative bg-[#09090b]">
-         {/* ... (Existing header and main content structure) ... */}
          <div className="absolute inset-0 z-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
 
          <header className="h-16 flex items-center justify-between px-6 border-b border-white/5 bg-black/60 backdrop-blur-xl z-10">
@@ -1840,7 +1695,7 @@ const ImageEditor: React.FC = () => {
                           {error}
                       </span>
                       <div className="flex items-center gap-3">
-                          {(error.includes('Quota') || error.includes('Limit') || error.includes('Key') || error.includes('403') || error.includes('429')) && (
+                          {(error.includes('Quota') || error.includes('Limit') || error.includes('Key') || error.toLowerCase().includes('expired') || error.includes('403') || error.includes('429')) && (
                               <button onClick={handleResetKey} className="px-3 py-1.5 bg-white text-red-600 text-xs font-bold rounded-lg hover:bg-zinc-200 transition-colors shadow-sm">
                                   {language === 'th' ? 'เปลี่ยนคีย์' : 'Change Key'}
                               </button>
@@ -1873,7 +1728,6 @@ const ImageEditor: React.FC = () => {
                       />
                   </div>
                   
-                  {/* Model Used Badge */}
                   {currentModelLabel && (
                       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
                           <div className={`px-3 py-1.5 rounded-full backdrop-blur-md border text-[10px] font-bold uppercase tracking-widest shadow-lg flex items-center gap-2 ${
