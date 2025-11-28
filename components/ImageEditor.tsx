@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { editImage, analyzeImage, suggestCameraAngles, generateVideo, type AnalysisResult, cropAndResizeImage } from '../services/geminiService';
 import { saveProjects, loadProjects, clearProjects } from '../services/dbService';
@@ -121,11 +122,12 @@ const interiorLightingOptions = ['Natural Daylight','Warm Evening Light','Studio
 const planConversionModes = [{id:'2d_bw',label:'2D Black & White (CAD)',desc:''},{id:'2d_real',label:'2D Realistic (Color)',desc:''},{id:'2d_watercolor',label:'2D Watercolor',desc:''},{id:'2d_photoshop',label:'2D Digital (Photoshop)',desc:''},{id:'3d_iso',label:'3D Isometric',desc:''},{id:'3d_top',label:'3D Top-Down',desc:''},{id:'perspective',label:'Perspective View (Room)',desc:''}];
 const roomTypeOptions = ["Living Room","Master Bedroom","Kitchen","Dining Room","Bathroom","Home Office","Walk-in Closet","Balcony/Terrace","Kids Bedroom","Lobby/Entrance","Home Theater","Home Gym/Fitness","Game Room","Laundry Room","Prayer Room / Altar","Pantry","Garage (Interior)","Kids Playroom","Large Conference Room","Seminar Room","Hotel Lobby","Restaurant","Spa / Wellness Room"];
 const flooringOptions = ["Light Wood Parquet","Dark Wood Planks","White Marble","Black Marble","Polished Concrete","Beige Tiles","Grey Slate Tiles","Cream Carpet","Terrazzo","Herringbone Wood"];
-const exteriorQuickActionList = [{id:'sketchupToRealismClean',label:'Sketchup to Photo (Clean)',desc:'',icon:<PhotoIcon className="w-4 h-4"/>},{id:'sketchupToRealismLush',label:'Sketchup to Photo (Lush)',desc:'',icon:<PhotoIcon className="w-4 h-4"/>},{id:'sketchupToRealismLushDay',label:'Sketchup to Photo (Lush Day)',desc:'',icon:<PhotoIcon className="w-4 h-4"/>},{id:'constructionSite',label:'Construction Site',desc:'', icon:<CogIcon className="w-4 h-4"/>},{id:'localVillageDay',label:'Local Village Day',desc:''},{id:'modernMinimalist',label:'Modern Minimalist',desc:''},{id:'modernVillageWithProps',label:'New Village Estate',desc:''},{id:'newVillageNatureOnly',label:'New Village (Nature Only)',desc:''},{id:'grandVillageEstate',label:'Grand Village Estate',desc:''},{id:'poolVillaBright',label:'Pool Villa',desc:''},{id:'modernTwilightHome',label:'Modern Twilight',desc:''},{id:'vibrantModernEstate',label:'Sunny Day',desc:''},{id:'sereneTwilightEstate',label:'Serene Twilight',desc:''},{id:'sereneHomeWithGarden',label:'Serene Garden',desc:''},{id:'modernPineEstate',label:'Pine Forest',desc:''},{id:'luxuryHomeDusk',label:'Luxury Dusk',desc:''},{id:'urbanSketch',label:'Urban Sketch',desc:''},{id:'architecturalSketch',label:'Arch Sketch',desc:''},{id:'midjourneyArtlineSketch',label:'Artline Sketch',desc:''},{id:'pristineShowHome',label:'Show Home',desc:''},{id:'highriseNature',label:'Eco Highrise',desc:''},{id:'fourSeasonsTwilight',label:'Riverside Twilight',desc:''},{id:'urbanCondoDayHighAngle',label:'Urban Aerial',desc:''},{id:'modernWoodHouseTropical',label:'Modern Wood',desc:''},{id:'classicMansionFormalGarden',label:'Classic Mansion',desc:''},{id:'foregroundTreeFrame',label:'Tree Framing',desc:''},{id:'aerialNatureView',label:'Aerial Nature View',desc:''},{id:'tropicalStreamGarden',label:'Tropical Stream',desc:''},{id:'tropicalPathwayGarden',label:'Tropical Pathway',desc:''},{id:'thaiRiversideRetreat',label:'Thai Riverside',desc:''},{id:'luxuryThaiVillage',label:'Luxury Thai Village',desc:''}];
+const exteriorQuickActionList = [{id:'sketchupToRealismClean',label:'Sketchup to Photo (Clean)',desc:'',icon:<PhotoIcon className="w-4 h-4"/>},{id:'sketchupToRealismLush',label:'Sketchup to Photo (Lush)',desc:'',icon:<PhotoIcon className="w-4 h-4"/>},{id:'sketchupToRealismLushDay',label:'Sketchup to Photo (Lush Day)',desc:'',icon:<PhotoIcon className="w-4 h-4"/>},{id:'constructionSite',label:'Construction Site',desc:'', icon:<CogIcon className="w-4 h-4"/>},{id:'localVillageDay',label:'Local Village Day',desc:''},{id:'modernMinimalist',label:'Modern Minimalist',desc:''},{id:'modernVillageWithProps',label:'New Village Estate',desc:''},{id:'modernVillageIsolated',label:'New Village (Secluded)',desc:''},{id:'grandVillageEstate',label:'Grand Village Estate',desc:''},{id:'poolVillaBright',label:'Pool Villa',desc:''},{id:'modernTwilightHome',label:'Modern Twilight',desc:''},{id:'vibrantModernEstate',label:'Sunny Day',desc:''},{id:'sereneTwilightEstate',label:'Serene Twilight',desc:''},{id:'sereneHomeWithGarden',label:'Serene Garden',desc:''},{id:'modernPineEstate',label:'Pine Forest',desc:''},{id:'luxuryHomeDusk',label:'Luxury Dusk',desc:''},{id:'urbanSketch',label:'Urban Sketch',desc:''},{id:'architecturalSketch',label:'Arch Sketch',desc:''},{id:'midjourneyArtlineSketch',label:'Artline Sketch',desc:''},{id:'pristineShowHome',label:'Show Home',desc:''},{id:'highriseNature',label:'Eco Highrise',desc:''},{id:'fourSeasonsTwilight',label:'Riverside Twilight',desc:''},{id:'urbanCondoDayHighAngle',label:'Urban Aerial',desc:''},{id:'modernWoodHouseTropical',label:'Modern Wood',desc:''},{id:'classicMansionFormalGarden',label:'Classic Mansion',desc:''},{id:'foregroundTreeFrame',label:'Tree Framing',desc:''},{id:'aerialNatureView',label:'Aerial Nature View',desc:''},{id:'tropicalStreamGarden',label:'Tropical Stream',desc:''},{id:'tropicalPathwayGarden',label:'Tropical Pathway',desc:''},{id:'thaiRiversideRetreat',label:'Thai Riverside',desc:''},{id:'luxuryThaiVillage',label:'Luxury Thai Village',desc:''}];
 const interiorQuickActionList = [{id:'sketchupToPhotoreal',label:'Sketch to Real',desc:''},{id:'modernLuxuryKitchen',label:'Modern Kitchen',desc:''},{id:'luxurySpaBathroom',label:'Spa Bathroom',desc:''},{id:'modernHomeOffice',label:'Home Office',desc:''},{id:'modernBedroom',label:'Modern Bedroom',desc:''},{id:'modernLivingRoom',label:'Modern Living Room',desc:''},{id:'luxuryDiningRoom',label:'Luxury Dining',desc:''},{id:'darkMoodyLuxuryBedroom',label:'Dark Luxury',desc:''},{id:'softModernSanctuary',label:'Soft Sanctuary',desc:''},{id:'geometricChicBedroom',label:'Geometric Chic',desc:''},{id:'symmetricalGrandeurBedroom',label:'Grandeur',desc:''},{id:'classicSymmetryLivingRoom',label:'Classic Living',desc:''},{id:'modernDarkMarbleLivingRoom',label:'Dark Marble',desc:''},{id:'contemporaryGoldAccentLivingRoom',label:'Gold Accents',desc:''},{id:'modernEclecticArtLivingRoom',label:'Eclectic Art',desc:''},{id:'brightModernClassicLivingRoom',label:'Bright Classic',desc:''},{id:'parisianChicLivingRoom',label:'Parisian Chic',desc:''}];
 const planQuickActionList = [{id:'furnishEmptyPlan',label:'Furnish Plan',desc:'',icon:<HomeIcon className="w-4 h-4"/>},{id:'blueprintStyle',label:'Blueprint Style',desc:'',icon:<ArchitecturalSketchIcon className="w-4 h-4"/>},{id:'handDrawnPlan',label:'Hand-drawn Sketch',desc:'',icon:<SketchWatercolorIcon className="w-4 h-4"/>},{id:'cleanCad',label:'Clean CAD',desc:'',icon:<PlanIcon className="w-4 h-4"/>}];
 
 const QUICK_ACTION_PROMPTS: Record<string, string> = {
+    // ... (Same as before)
     sketchupToRealismClean: "เปลี่ยนภาพนี้ให้เป็นภาพถ่ายสถาปัตยกรรมที่เสร็จสมบูรณ์ 100% คุณภาพสูง สมจริง รักษามุมกล้องและดีไซน์เดิมไว้อย่างเคร่งครัด ห้ามแก้ไขโครงสร้างบ้าน สร้างถนนคอนกรีตเชื่อมต่อกับโรงจอดรถ ปรับภูมิทัศน์ให้เป็นสนามหญ้าเรียบสีเขียวเท่านั้น ห้ามมีต้นไม้ใหญ่ พุ่มไม้ หรือดอกไม้ พื้นหลังเป็นโครงการหมู่บ้านจัดสรรใหม่ ท้องฟ้าสดใส",
     sketchupToRealismLush: "เปลี่ยนภาพนี้ให้เป็นภาพถ่ายสถาปัตยกรรมคุณภาพสูงในบรรยากาศช่วงค่ำ (Twilight) รักษามุมกล้องและดีไซน์เดิมไว้อย่างเคร่งครัด เปิดไฟในบ้านสีวอร์มไวท์ให้ดูอบอุ่น สร้างถนนคอนกรีตเชื่อมต่อโรงจอดรถ จัดสวนหรูหราอลังการ มีต้นไม้ใหญ่พร้อมไม้ค้ำยัน ดอกไม้สีสดใส น้ำตกจำลอง และบ่อปลาคราฟสวยงาม",
     sketchupToRealismLushDay: "เปลี่ยนภาพนี้ให้เป็นภาพถ่ายสถาปัตยกรรมคุณภาพสูงในบรรยากาศกลางวัน แดดจ้า ท้องฟ้าสดใส รักษามุมกล้องและดีไซน์เดิมไว้อย่างเคร่งครัด สร้างถนนคอนกรีตเชื่อมต่อโรงจอดรถ จัดสวนหรูหราอลังการ มีต้นไม้ใหญ่พร้อมไม้ค้ำยัน ดอกไม้สีสดใส น้ำตกจำลอง และบ่อปลาคราฟสวยงาม",
@@ -133,7 +135,7 @@ const QUICK_ACTION_PROMPTS: Record<string, string> = {
     localVillageDay: "เปลี่ยนภาพนี้ให้เป็นบรรยากาศหมู่บ้านจัดสรรในไทยตอนกลางวัน แสงแดดสดใส รักษามุมกล้องเดิม มีถนนคอนกรีตหรือลาดยางด้านหน้า รั้วบ้านเป็นพุ่มไม้ผสมรั้วเหล็กสีดำ มีเสาไฟฟ้าและสายไฟริมถนนตามแบบฉบับไทย ต้นไม้ให้ร่มเงา ดูเป็นธรรมชาติและน่าอยู่",
     modernMinimalist: "เปลี่ยนสไตล์บ้านให้เป็นโมเดิร์นมินิมอล ทาสีขาวสะอาดตา เส้นสายเรียบง่าย ตัดทอนรายละเอียดฟุ่มเฟือย เน้นกระจกบานใหญ่และกรอบอลูมิเนียมสีดำ จัดสวนแบบเซนหรือสวนหินเรียบง่าย แสงธรรมชาติสว่างนวล",
     modernVillageWithProps: "เปลี่ยนให้เป็นหมู่บ้านจัดสรรสมัยใหม่ที่มีชีวิตชีวา เพิ่มต้นไม้ใหญ่ที่ขุดล้อมและมีไม้ค้ำยันตามสไตล์การจัดสวนใหม่ สนามหญ้าเขียวขจี ถนนในหมู่บ้านสะอาดตา",
-    newVillageNatureOnly: "เปลี่ยนภาพนี้ให้เป็นบรรยากาศโครงการหมู่บ้านจัดสรรใหม่ (New Village Estate) ที่มีความร่มรื่น สวยงาม ฉากหน้ามีถนนและสนามหญ้าที่ดูแลอย่างดี มีต้นไม้ใหญ่ขุดล้อมพร้อมไม้ค้ำยันตามจุดต่างๆ แต่จุดสำคัญคือ **ฉากหลังต้องไม่มีบ้านหลังอื่นหรือสิ่งปลูกสร้างใดๆ ปรากฏอยู่เลย** ให้แทนที่ด้วยแนวต้นไม้สีเขียวชอุ่มและธรรมชาติล้วนๆ เพื่อให้ดูเงียบสงบและเป็นส่วนตัวที่สุด",
+    modernVillageIsolated: "เปลี่ยนให้เป็นบ้านโมเดิร์นที่ตั้งอยู่อย่างโดดเดี่ยว ตัดเพื่อนบ้านออก พื้นหลังเป็นท้องฟ้าสีครามกว้างใหญ่ สนามหญ้ากว้างขวาง ดูเป็นส่วนตัว",
     grandVillageEstate: "เปลี่ยนให้เป็นคฤหาสน์หรูในโครงการหมู่บ้านระดับไฮเอนด์ รั้วต้นไม้สูงตัดแต่งเรียบร้อย ถนนกว้างขวาง ทัศนียภาพดูแพงและเป็นระเบียบ",
     poolVillaBright: "เปลี่ยนให้เป็นพูลวิลล่าส่วนตัว เพิ่มสระว่ายน้ำสีฟ้าใสที่ระยิบระยับล้อแสงแดด เก้าอี้ริมสระ และร่มกันแดด บรรยากาศการพักผ่อนวันหยุด",
     modernTwilightHome: "เปลี่ยนเป็นบรรยากาศยามเย็นช่วงโพล้เพล้ ท้องฟ้าไล่สีส้มม่วง เปิดไฟในบ้านและไฟสวนสีส้มอบอุ่น ให้ความรู้สึกโรแมนติกและน่าอยู่",
@@ -157,8 +159,6 @@ const QUICK_ACTION_PROMPTS: Record<string, string> = {
     tropicalPathwayGarden: "เพิ่มทางเดินในสวนสไตล์รีสอร์ท ปูหินหรือไม้ระแนง สองข้างทางเต็มไปด้วยต้นไม้เขียวชอุ่ม ให้ความรู้สึกน่าเดินสำรวจ",
     thaiRiversideRetreat: "เปลี่ยนบรรยากาศเป็นบ้านริมน้ำแบบไทยๆ มีต้นมะพร้าว ต้นลีลาวดี และท่าน้ำ ให้ความรู้สึกผ่อนคลาย",
     luxuryThaiVillage: "เปลี่ยนเป็นหมู่บ้านหรูสไตล์ไทยร่วมสมัย ปลูกต้นปาล์มหางกระรอก ต้นไม้ขุดล้อมฟอร์มสวย และดอกเข็มหลากสี",
-    
-    // INTERIOR
     sketchupToPhotoreal: "เปลี่ยนภาพร่าง 3D นี้ให้เป็นภาพถ่ายจริง (Photorealistic) เก็บรายละเอียดวัสดุ แสงเงา และพื้นผิวให้สมจริงที่สุด รักษามุมกล้องและการจัดวางเฟอร์นิเจอร์เดิม",
     modernLuxuryKitchen: "ตกแต่งห้องครัวสไตล์ Modern Luxury ใช้ท็อปเคาน์เตอร์หินอ่อนลายสวย หน้าบานตู้ไฮกลอสหรือกระจกเงา ไฟซ่อน (Hidden Light) ใต้ตู้ เครื่องใช้ไฟฟ้าสแตนเลสเกรดพรีเมียม บรรยากาศหรูหราสะอาดตา",
     luxurySpaBathroom: "ตกแต่งห้องน้ำให้เป็นสปาหรู ใช้กระเบื้องหินธรรมชาติ อ่างอาบน้ำแบบลอยตัว แสงไฟสลัวสร้างบรรยากาศผ่อนคลาย มีเทียนหอมและต้นไม้ประดับ",
@@ -176,14 +176,13 @@ const QUICK_ACTION_PROMPTS: Record<string, string> = {
     modernEclecticArtLivingRoom: "ตกแต่งห้องนั่งเล่นสไตล์ Eclectic ผสมผสานของตกแต่งงานศิลปะ ภาพวาด รูปปั้น และเฟอร์นิเจอร์หลากสไตล์อย่างลงตัวและสร้างสรรค์",
     brightModernClassicLivingRoom: "ตกแต่งห้องนั่งเล่นสไตล์ Modern Classic เน้นความสว่าง พื้นหินอ่อนสีขาว ผนังสีขาว เฟอร์นิเจอร์หรูหราแต่เรียบง่าย",
     parisianChicLivingRoom: "ตกแต่งห้องนั่งเล่นสไตล์ปารีส (Parisian Chic) พื้นไม้ปาร์เก้ลายก้างปลา เพดานสูง หน้าต่างบานยาว ผนังคิ้วบัว ดูโรแมนติก",
-
-    // PLAN
     furnishEmptyPlan: "เติมเฟอร์นิเจอร์ลงในแปลนห้องว่าง จัดวางเตียง โซฟา โต๊ะทานข้าว และสุขภัณฑ์ให้เหมาะสมกับพื้นที่และการใช้งาน แสดงรายละเอียดวัสดุปูพื้น ใส่เงาให้ดูมีมิติ",
     blueprintStyle: "เปลี่ยนแปลนนี้ให้เป็นแบบพิมพ์เขียว (Blueprint) พื้นหลังสีน้ำเงินเข้ม เส้นสายสีขาว แสดงสัญลักษณ์ทางสถาปัตยกรรมชัดเจน ดูเป็นมืออาชีพ",
     handDrawnPlan: "เปลี่ยนแปลนนี้ให้เป็นลายเส้นวาดมือ (Hand-drawn Sketch) ลงสีน้ำหรือสีมาร์คเกอร์บางๆ ให้ดูเป็นงานศิลปะ นุ่มนวล มีสไตล์",
     cleanCad: "เปลี่ยนแปลนนี้ให้เป็นแบบ CAD ขาว-ดำ ที่คมชัด เส้นกำแพงหนาทึบ เส้นบอกระยะและสัญลักษณ์ต่างๆ ชัดเจน พื้นหลังขาวสะอาด"
 };
 
+// ... (PROMPT AND CONSTANTS SAME AS BEFORE) ...
 const ARCHITECTURAL_STYLE_PROMPTS = architecturalStyleOptions.reduce((acc, style) => ({ ...acc, [style.name]: `Change the architectural style to ${style.name}. ${style.description}` }), {} as Record<string, string>);
 const GARDEN_STYLE_PROMPTS = gardenStyleOptions.reduce((acc, style) => ({ ...acc, [style.name]: `Change the garden to ${style.name}. ${style.description}` }), {} as Record<string, string>);
 const INTERIOR_STYLE_PROMPTS = interiorStyleOptions.reduce((acc, style) => ({ ...acc, [style.name]: `Change the interior design style to ${style.name}. ${style.description}` }), {} as Record<string, string>);
@@ -212,6 +211,7 @@ const CollapsibleSection: React.FC<{ title: string; sectionKey: string; isOpen: 
     </div>
 );
 
+// ... (Components: PreviewCard, OptionButton, ModeButton, IntensitySlider, ImageToolbar, downloadBase64AsFile all same as before) ...
 const PreviewCard: React.FC<{ label: string; description?: string; isSelected: boolean; onClick: () => void; isNested?: boolean; icon?: React.ReactNode; }> = ({ label, description, isSelected, onClick, isNested = false, icon }) => (
     <button type="button" onClick={onClick} className={`p-3 text-left rounded-xl border transition-all duration-300 group flex flex-col backdrop-blur-sm ${isSelected ? 'bg-red-900/10 border-red-500/50 shadow-[0_0_20px_rgba(220,38,38,0.15)] ring-1 ring-red-500/20' : 'bg-zinc-900/40 border-zinc-800/60 hover:border-zinc-600/80 hover:bg-zinc-800/60'} h-auto`}>
         <div className="w-full"><div className={`flex items-center gap-2 ${description ? 'mb-1.5' : ''}`}>{icon && <span className={`flex-shrink-0 transition-colors duration-300 ${isSelected ? 'text-red-400' : 'text-zinc-500 group-hover:text-zinc-400'}`}>{icon}</span>}<span className={`font-bold transition-colors text-xs uppercase tracking-wide break-words ${isSelected ? 'text-red-400' : 'text-zinc-300 group-hover:text-white'}`}>{label}</span></div>{description && (<p className={`text-[10px] leading-relaxed transition-colors ${isSelected ? 'text-zinc-400' : 'text-zinc-500'}`}>{description}</p>)}</div>
@@ -248,7 +248,6 @@ const downloadBase64AsFile = (base64Data: string, filename: string, mimeType: st
 const ImageEditor: React.FC = () => {
   const [imageList, setImageList] = useState<ImageState[]>([]);
   const [activeImageIndex, setActiveImageIndex] = useState<number | null>(null);
-  
   const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
@@ -320,7 +319,6 @@ const ImageEditor: React.FC = () => {
 
   const [selectedModel, setSelectedModel] = useState<'auto' | 'gemini-3-pro' | 'gemini-2.5-flash'>('auto');
 
-  // Video Generation State
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [videoPrompt, setVideoPrompt] = useState('');
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
@@ -370,6 +368,7 @@ const ImageEditor: React.FC = () => {
   const [tempKey, setTempKey] = useState('');
   const [isKeyVisible, setIsKeyVisible] = useState(false);
 
+  // ... (API Key and Data Loading logic remains same as fixed) ...
   useEffect(() => {
       const checkKey = async () => {
           if ((window as any).aistudio) {
@@ -430,7 +429,6 @@ const ImageEditor: React.FC = () => {
 
   const imageDisplayRef = useRef<ImageDisplayHandle>(null);
 
-  // Masking state
   const [brushSize, setBrushSize] = useState<number>(30);
   const [brushColor, setBrushColor] = useState<string>(brushColors[0].value);
   const [isMaskEmpty, setIsMaskEmpty] = useState<boolean>(true);
@@ -450,7 +448,6 @@ const ImageEditor: React.FC = () => {
         if (savedLang === 'th' || savedLang === 'en') { setLanguage(savedLang); } else { setLanguage('th'); }
 
         if (isMounted && Array.isArray(savedProjects)) {
-          // Initialize missing fields for backward compatibility
           const restoredProjects = savedProjects.map(p => ({ 
               ...p, 
               file: null,
@@ -521,7 +518,6 @@ const ImageEditor: React.FC = () => {
   
   useEffect(() => {
     setPrompt('');
-    setCustomFlooringPrompt('');
     setNegativePrompt('');
     setBrightness(100);
     setContrast(100);
@@ -690,11 +686,7 @@ const ImageEditor: React.FC = () => {
         setPrompt(prev => (prev ? prev + " " + autoPrompt : autoPrompt));
     } catch (e) {
         console.error("Auto-describe failed:", e);
-        const msg = e instanceof Error ? e.message : "Could not analyze image.";
-        setError(msg);
-        if (msg.toLowerCase().includes('key') || msg.toLowerCase().includes('expired')) {
-            setIsKeyModalOpen(true);
-        }
+        setError("Could not analyze image. Please try again.");
     } finally {
         setIsAnalyzing(false);
     }
@@ -838,13 +830,7 @@ const ImageEditor: React.FC = () => {
           setPrompt(''); setSelectedQuickAction('');
           if (imageDisplayRef.current) imageDisplayRef.current.clearMask();
 
-      } catch (err) { 
-          const msg = err instanceof Error ? err.message : "Error.";
-          setError(msg);
-          if (msg.toLowerCase().includes('key') || msg.toLowerCase().includes('expired') || msg.includes('403') || msg.includes('500') || msg.includes('429') || msg.toLowerCase().includes('quota')) {
-              setIsKeyModalOpen(true);
-          }
-      } finally { setIsLoading(false); }
+      } catch (err) { setError(err instanceof Error ? err.message : "Error."); } finally { setIsLoading(false); }
   };
   
   const handleUpscale = () => { executeGeneration("Upscale this image to 4K resolution. Enhance details, clarity, and sharpness for large format display. Do not change the composition or aspect ratio.", "Upscale 4K", '4K', false); };
@@ -891,12 +877,8 @@ const ImageEditor: React.FC = () => {
 
     } catch (err) {
         console.error("Video error:", err);
-        const msg = err instanceof Error ? err.message : "Video generation failed.";
-        setError(msg);
+        setError(err instanceof Error ? err.message : "Video generation failed.");
         setIsVideoModalOpen(false); 
-        if (msg.toLowerCase().includes('key') || msg.toLowerCase().includes('expired')) {
-            setIsKeyModalOpen(true);
-        }
     } finally {
         setIsGeneratingVideo(false);
     }
@@ -935,8 +917,6 @@ const ImageEditor: React.FC = () => {
         if (referenceImage) { promptParts.push("Use the provided reference image as a strict guide for the architectural style, flooring materials, and color palette of the floor plan."); constructedHistory += `, Moodboard: Attached`; }
     } else {
         if (selectedQuickAction) { 
-            // DO NOT push QUICK_ACTION_PROMPTS[selectedQuickAction] here if prompt is already populated.
-            // The prompt box already contains the text.
             if (!constructedHistory.includes("Quick Action")) constructedHistory = "Quick Action: " + selectedQuickAction; 
         }
         if (sceneType === 'interior' && selectedInteriorRoomType) { promptParts.push(`Transform the room into a ${selectedInteriorRoomType}.`); if (!constructedHistory.includes("Quick Action")) constructedHistory += `, Room: ${selectedInteriorRoomType}`; }
@@ -1347,7 +1327,7 @@ const ImageEditor: React.FC = () => {
                                 </CollapsibleSection>
 
                                 <CollapsibleSection title={t.sections.quickActions} sectionKey="quickActions" isOpen={openSections.quickActions} onToggle={() => toggleSection('quickActions')} icon={<SparklesIcon className="w-4 h-4"/>}>
-                                    <div className="grid grid-cols-2 gap-2">
+                                    <div className="grid grid-cols-1 gap-2">
                                         {exteriorQuickActionList.map(action => (
                                             <PreviewCard key={action.id} label={action.label} description={action.desc} isSelected={selectedQuickAction === action.id} onClick={() => handleQuickActionClick(action.id)} isNested icon={action.icon} />
                                         ))}
@@ -1465,7 +1445,7 @@ const ImageEditor: React.FC = () => {
                                 </CollapsibleSection>
 
                                 <CollapsibleSection title={t.sections.quickActions} sectionKey="interiorQuickActions" isOpen={openSections.interiorQuickActions} onToggle={() => toggleSection('interiorQuickActions')} icon={<SparklesIcon className="w-4 h-4"/>}>
-                                    <div className="grid grid-cols-2 gap-2">
+                                    <div className="grid grid-cols-1 gap-2">
                                         {interiorQuickActionList.map(action => (
                                             <PreviewCard key={action.id} label={action.label} description={action.desc} isSelected={selectedQuickAction === action.id} onClick={() => handleQuickActionClick(action.id)} isNested />
                                         ))}
@@ -1570,7 +1550,7 @@ const ImageEditor: React.FC = () => {
                                 </CollapsibleSection>
 
                                 <CollapsibleSection title={t.sections.quickActions} sectionKey="planQuickActions" isOpen={openSections.planQuickActions} onToggle={() => toggleSection('planQuickActions')} icon={<SparklesIcon className="w-4 h-4"/>}>
-                                    <div className="grid grid-cols-2 gap-2">
+                                    <div className="grid grid-cols-1 gap-2">
                                         {planQuickActionList.map(action => (
                                             <PreviewCard key={action.id} label={action.label} description={action.desc} isSelected={selectedQuickAction === action.id} onClick={() => handleQuickActionClick(action.id)} isNested icon={action.icon} />
                                         ))}
@@ -1772,7 +1752,7 @@ const ImageEditor: React.FC = () => {
                       </div>
                   )}
                </div>
-               
+
                {currentResults.length > 1 && (
                   <div className="mt-8">
                       <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4 flex items-center gap-2"><SparklesIcon className="w-4 h-4 text-red-500"/> Generated Variations</h3>
