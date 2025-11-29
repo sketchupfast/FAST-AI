@@ -166,7 +166,7 @@ const QUICK_ACTION_PROMPTS: Record<string, string> = {
     luxurySpaBathroom: "ตกแต่งห้องน้ำให้เป็นสปาหรู ใช้กระเบื้องหินธรรมชาติ อ่างอาบน้ำแบบลอยตัว แสงไฟสลัวสร้างบรรยากาศผ่อนคลาย มีเทียนหอมและต้นไม้ประดับ",
     modernHomeOffice: "ตกแต่งห้องทำงานสไตล์โมเดิร์น โต๊ะทำงานดีไซน์เรียบเท่ เก้าอี้ Ergonomic ชั้นวางของเป็นระเบียบ แสงไฟสว่างพอเหมาะดูโปรดัคทีฟ",
     modernBedroom: "ตกแต่งห้องนอนสไตล์โมเดิร์น เตียงนอนหนานุ่ม หัวเตียงบุนวม ไฟซ่อนหัวเตียง บรรยากาศอบอุ่นน่านอน คุมโทนสีสบายตา",
-    modernLivingRoom: "ตกแต่งห้องนั่งเล่นสไตล์โมเดิร์น โโซฟาผ้าตัวใหญ่ พรมลายนุ่มนวล โต๊ะกลางดีไซน์เก๋ ผนังตกแต่งด้วยกรอบรูปหรือทีวีจอใหญ่",
+    modernLivingRoom: "ตกแต่งห้องนั่งเล่นสไตล์โมเดิร์น โซฟาผ้าตัวใหญ่ พรมลายนุ่มนวล โต๊ะกลางดีไซน์เก๋ ผนังตกแต่งด้วยกรอบรูปหรือทีวีจอใหญ่",
     luxuryDiningRoom: "ตกแต่งห้องทานอาหารให้หรูหรา โต๊ะทานข้าวขนาดยาว เก้าอี้บุหนังหรือกำมะหยี่ โคมไฟระย้า (Chandelier) อลังการกลางห้อง",
     darkMoodyLuxuryBedroom: "ตกแต่งห้องนอนสไตล์ Dark Luxury คุมโทนสีเข้ม ดำ เทา ตัดด้วยสีทอง แสงไฟสลัว ดูลึกลับและมีเสน่ห์",
     softModernSanctuary: "ตกแต่งห้องให้ดูนุ่มนวล ผ่อนคลาย ใช้เฟอร์นิเจอร์ทรงโค้งมน โทนสีพาสเทลหรือครีม แสงธรรมชาติเข้าถึงได้ดี",
@@ -378,6 +378,7 @@ const ImageEditor: React.FC = () => {
                const has = await (window as any).aistudio.hasSelectedApiKey();
                setHasApiKey(has);
           } else {
+              // SECURITY UPDATE: Only check local storage. Do not check process.env.
               const storedKey = localStorage.getItem('fast-ai-user-key');
               if (storedKey) {
                   setUserApiKey(storedKey);
@@ -389,6 +390,16 @@ const ImageEditor: React.FC = () => {
       }
       checkKey();
   }, []);
+
+  // Helper to determine the actual key to use
+  const getEffectiveApiKey = () => {
+      if (userApiKey) return userApiKey;
+      // Only fallback to process.env.API_KEY if running inside Google AI Studio to prevent leaking local env vars in public builds
+      if ((window as any).aistudio) {
+          return process.env.API_KEY || '';
+      }
+      return '';
+  };
 
   const handleApiKeySelect = async () => {
       if((window as any).aistudio) {
@@ -404,13 +415,16 @@ const ImageEditor: React.FC = () => {
 
   const handleManualKeySubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      const trimmedKey = tempKey.trim();
-      if (trimmedKey.length > 0) {
-          localStorage.setItem('fast-ai-user-key', trimmedKey);
-          setUserApiKey(trimmedKey);
+      // Aggressive cleaning: remove spaces, newlines, quotes to fix "cannot put every key" issue
+      const cleanKey = tempKey.replace(/[\s"']/g, ''); 
+      if (cleanKey.length > 5) { // Basic length check
+          localStorage.setItem('fast-ai-user-key', cleanKey);
+          setUserApiKey(cleanKey);
           setHasApiKey(true);
           setIsKeyModalOpen(false);
           setError(null); 
+      } else {
+          setError("Invalid API Key format");
       }
   };
 
@@ -667,7 +681,8 @@ const ImageEditor: React.FC = () => {
 
   const handleAutoDescribe = async () => {
     if (!activeImage) return;
-    if (!hasApiKey && !(window as any).aistudio) { setIsKeyModalOpen(true); return; }
+    const key = getEffectiveApiKey();
+    if (!key) { setIsKeyModalOpen(true); return; }
     
     setIsAnalyzing(true);
     try {
@@ -678,7 +693,7 @@ const ImageEditor: React.FC = () => {
         const mimeType = sourceUrl.substring(5, sourceUrl.indexOf(';'));
 
         // Use analyzeImage service
-        const result = await analyzeImage(base64Data, mimeType, userApiKey);
+        const result = await analyzeImage(base64Data, mimeType, key);
         
         let autoPrompt = "";
         if (result.architecturalStyle) autoPrompt += `Style: ${result.architecturalStyle}. `;
@@ -780,7 +795,8 @@ const ImageEditor: React.FC = () => {
   };
 
   const executeGeneration = async (promptForGeneration: string, promptForHistory: string, size?: '1K' | '2K' | '4K', autoDownload = false) => {
-      if (!hasApiKey && !(window as any).aistudio) { setIsKeyModalOpen(true); return; }
+      const key = getEffectiveApiKey();
+      if (!key) { setIsKeyModalOpen(true); return; }
       if (!activeImage) return;
       let maskBase64: string | null = null;
       if (editingMode === 'object') {
@@ -805,7 +821,7 @@ const ImageEditor: React.FC = () => {
           }
 
           // Call API with Model Preference
-          const result = await editImage(sourceBase64, sourceMimeType, promptForGeneration, maskBase64, targetSize, refImg, selectedModel, userApiKey);
+          const result = await editImage(sourceBase64, sourceMimeType, promptForGeneration, maskBase64, targetSize, refImg, selectedModel, key);
           const generatedImageBase64 = result.data;
           const generatedMimeType = result.mimeType;
           const modelUsedLabel = result.modelUsed || 'AI';
@@ -873,7 +889,8 @@ const ImageEditor: React.FC = () => {
 
   const handleGenerateVideo = async () => {
     if (!activeImage) return;
-    if (!hasApiKey && !(window as any).aistudio) { setIsKeyModalOpen(true); return; }
+    const key = getEffectiveApiKey();
+    if (!key) { setIsKeyModalOpen(true); return; }
 
     const sourceDataUrl = (activeImage.history.length > 0 && activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null) 
       ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex] 
@@ -890,7 +907,7 @@ const ImageEditor: React.FC = () => {
         const sourceBase64 = sourceDataUrl.split(',')[1];
         const finalPrompt = videoPrompt.trim() || "Cinematic camera movement, high quality, realistic lighting";
 
-        const videoUrl = await generateVideo(sourceBase64, sourceMimeType, finalPrompt, userApiKey);
+        const videoUrl = await generateVideo(sourceBase64, sourceMimeType, finalPrompt, key);
         setGeneratedVideoUrl(videoUrl);
 
     } catch (err) {
@@ -908,7 +925,8 @@ const ImageEditor: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!hasApiKey && !(window as any).aistudio) { setIsKeyModalOpen(true); return; }
+    const key = getEffectiveApiKey();
+    if (!key) { setIsKeyModalOpen(true); return; }
     
     // PRIMARY LOGIC CHANGE: Rely solely on the user-editable 'prompt' state.
     const promptParts: string[] = [];
@@ -1318,9 +1336,9 @@ const ImageEditor: React.FC = () => {
                               className="w-full bg-zinc-900/50 border border-zinc-700 text-zinc-300 text-xs font-medium rounded-lg p-2.5 focus:ring-1 focus:ring-red-500 focus:border-red-500 appearance-none cursor-pointer shadow-sm hover:bg-zinc-800/50 transition-colors"
                           >
                               <option value="auto">Auto (Smart Fallback)</option>
-                              <option value="gemini-3-pro">Gemini 3.0 Pro (Quality • ~1.4 THB/img)</option>
-                              <option value="gemini-3-pro-speed">Gemini 3.0 Pro (Speed • ~1.4 THB/img)</option>
-                              <option value="gemini-3-pro-4k">Gemini 3.0 Pro (4K UHD • ~1.4 THB/img)</option>
+                              <option value="gemini-3-pro">Gemini 3.0 Pro (~1.40 THB/img)</option>
+                              <option value="gemini-3-pro-speed">Gemini 3.0 Pro Speed (~1.40 THB/img)</option>
+                              <option value="gemini-3-pro-4k">Gemini 3.0 Pro 4K (~1.40 THB/img)</option>
                           </select>
                           <ChevronDownIcon className="absolute right-3 top-3 w-4 h-4 text-zinc-500 pointer-events-none" />
                       </div>
