@@ -1,12 +1,14 @@
+
 import { GoogleGenAI, Modality, Type, GenerateContentResponse } from "@google/genai";
 
-// Helper to get a fresh client instance with the provided API key or fallback to env
+// Helper to get a fresh client instance with the provided API key
+// STRICT SECURITY: Only accept the key passed from the UI.
+// Do not fallback to process.env.API_KEY to prevent public usage of the developer's quota/billing.
 const getAiClient = (apiKey?: string) => {
-  const key = apiKey || (process.env.API_KEY as string);
-  if (!key) {
-      throw new Error("API Key is missing. Please provide a valid Gemini API Key.");
+  if (!apiKey) {
+      throw new Error("API Key is missing. Please click the Key icon to enter your Gemini API Key.");
   }
-  return new GoogleGenAI({ apiKey: key });
+  return new GoogleGenAI({ apiKey });
 };
 
 const MAX_IMAGE_DIMENSION = 2048; 
@@ -430,10 +432,11 @@ export const generateVideo = async (
         }
 
         const downloadLink = videoResult.video.uri;
-        const key = apiKey || (process.env.API_KEY as string);
+        
+        if (!apiKey) throw new Error("API Key is missing for video download.");
         
         // Fetch the actual video blob
-        const response = await fetch(`${downloadLink}&key=${key}`);
+        const response = await fetch(`${downloadLink}&key=${apiKey}`);
         if (!response.ok) throw new Error("Failed to download video file.");
         
         const blob = await response.blob();

@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { editImage, analyzeImage, suggestCameraAngles, generateVideo, type AnalysisResult, cropAndResizeImage } from '../services/geminiService';
 import { saveProjects, loadProjects, clearProjects } from '../services/dbService';
@@ -165,7 +166,7 @@ const QUICK_ACTION_PROMPTS: Record<string, string> = {
     luxurySpaBathroom: "ตกแต่งห้องน้ำให้เป็นสปาหรู ใช้กระเบื้องหินธรรมชาติ อ่างอาบน้ำแบบลอยตัว แสงไฟสลัวสร้างบรรยากาศผ่อนคลาย มีเทียนหอมและต้นไม้ประดับ",
     modernHomeOffice: "ตกแต่งห้องทำงานสไตล์โมเดิร์น โต๊ะทำงานดีไซน์เรียบเท่ เก้าอี้ Ergonomic ชั้นวางของเป็นระเบียบ แสงไฟสว่างพอเหมาะดูโปรดัคทีฟ",
     modernBedroom: "ตกแต่งห้องนอนสไตล์โมเดิร์น เตียงนอนหนานุ่ม หัวเตียงบุนวม ไฟซ่อนหัวเตียง บรรยากาศอบอุ่นน่านอน คุมโทนสีสบายตา",
-    modernLivingRoom: "ตกแต่งห้องนั่งเล่นสไตล์โมเดิร์น โซฟาผ้าตัวใหญ่ พรมลายนุ่มนวล โต๊ะกลางดีไซน์เก๋ ผนังตกแต่งด้วยกรอบรูปหรือทีวีจอใหญ่",
+    modernLivingRoom: "ตกแต่งห้องนั่งเล่นสไตล์โมเดิร์น โโซฟาผ้าตัวใหญ่ พรมลายนุ่มนวล โต๊ะกลางดีไซน์เก๋ ผนังตกแต่งด้วยกรอบรูปหรือทีวีจอใหญ่",
     luxuryDiningRoom: "ตกแต่งห้องทานอาหารให้หรูหรา โต๊ะทานข้าวขนาดยาว เก้าอี้บุหนังหรือกำมะหยี่ โคมไฟระย้า (Chandelier) อลังการกลางห้อง",
     darkMoodyLuxuryBedroom: "ตกแต่งห้องนอนสไตล์ Dark Luxury คุมโทนสีเข้ม ดำ เทา ตัดด้วยสีทอง แสงไฟสลัว ดูลึกลับและมีเสน่ห์",
     softModernSanctuary: "ตกแต่งห้องให้ดูนุ่มนวล ผ่อนคลาย ใช้เฟอร์นิเจอร์ทรงโค้งมน โทนสีพาสเทลหรือครีม แสงธรรมชาติเข้าถึงได้ดี",
@@ -378,11 +379,8 @@ const ImageEditor: React.FC = () => {
                setHasApiKey(has);
           } else {
               const storedKey = localStorage.getItem('fast-ai-user-key');
-              const envKey = process.env.API_KEY;
               if (storedKey) {
                   setUserApiKey(storedKey);
-                  setHasApiKey(true);
-              } else if (envKey && envKey !== 'undefined') {
                   setHasApiKey(true);
               } else {
                   setHasApiKey(false);
@@ -1320,9 +1318,9 @@ const ImageEditor: React.FC = () => {
                               className="w-full bg-zinc-900/50 border border-zinc-700 text-zinc-300 text-xs font-medium rounded-lg p-2.5 focus:ring-1 focus:ring-red-500 focus:border-red-500 appearance-none cursor-pointer shadow-sm hover:bg-zinc-800/50 transition-colors"
                           >
                               <option value="auto">Auto (Smart Fallback)</option>
-                              <option value="gemini-3-pro">Gemini 3.0 Pro (High Quality/Detail)</option>
-                              <option value="gemini-3-pro-speed">Gemini 3.0 Pro (Fast/Free Tier Optimized)</option>
-                              <option value="gemini-3-pro-4k">Gemini 3.0 Pro (4K UHD / High Quality)</option>
+                              <option value="gemini-3-pro">Gemini 3.0 Pro (Quality • ~1.4 THB/img)</option>
+                              <option value="gemini-3-pro-speed">Gemini 3.0 Pro (Speed • ~1.4 THB/img)</option>
+                              <option value="gemini-3-pro-4k">Gemini 3.0 Pro (4K UHD • ~1.4 THB/img)</option>
                           </select>
                           <ChevronDownIcon className="absolute right-3 top-3 w-4 h-4 text-zinc-500 pointer-events-none" />
                       </div>
