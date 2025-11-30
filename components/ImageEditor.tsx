@@ -58,6 +58,7 @@ import { QuestionMarkCircleIcon } from './icons/QuestionMarkCircleIcon';
 import { VideoCameraIcon } from './icons/VideoCameraIcon';
 import { EyeIcon } from './icons/EyeIcon';
 import { EyeSlashIcon } from './icons/EyeSlashIcon';
+import { ClipboardIcon } from './icons/ClipboardIcon';
 
 
 export interface ImageState {
@@ -92,7 +93,7 @@ const translations = {
     tabs: { exterior: "Exterior", interior: "Interior", plan: "Plan" },
     sections: { prompt: "Prompt", quickActions: "Quick Actions", cameraAngle: "Camera Angle", artStyle: "Art Style", archStyle: "Arch Style", garden: "Garden", lighting: "Lighting", background: "Background", foreground: "Foreground", interiorStyle: "Interior Style", systems: "Systems (Lighting & AC)", viewOutside: "View Outside", conversionMode: "Conversion Mode", roomConfig: "Room Configuration", brushSettings: "Brush Settings", manualAdjustments: "Manual Adjustments (Offline)", moodboard: "Moodboard & Materials", flooring: "Flooring & Materials" },
     controls: { turnOnLights: "Turn On Lights", brightness: "Brightness", contrast: "Contrast", saturation: "Saturation", sharpness: "Sharpness", colorTemp: "Color Temp", intensity: "Intensity", soft: "Soft", vibrant: "Vibrant", warm: "Warm", neutral: "Neutral", cool: "Cool", coveLight: "Cove Light (Hidden)", downlight: "Downlight (Recessed)", airConditioner: "Air Conditioner", ac4way: "4-Way Cassette AC", acWall: "Wall-Mounted AC", clearMask: "Clear Mask", subtle: "Subtle", strong: "Strong", applyManual: "Apply Adjustment", tolerance: "Tolerance", autoDescribe: "Auto-Describe" },
-    buttons: { generate: "Generate Image", generating: "Generating...", openProjects: "Open Projects", clearAll: "Clear All Data", newProject: "New Project", download: "Download", closeProject: "Close Project", upscale4k: "Upscale 4K", regenerate: "Re-generate", veo: "Animate (Veo)" },
+    buttons: { generate: "Generate Image", generating: "Generating...", openProjects: "Open Projects", clearAll: "Clear All Data", newProject: "New Project", download: "Download", closeProject: "Close Project", upscale4k: "Upscale 4K", regenerate: "Re-generate", veo: "Animate (Veo)", copy: "Copy", copied: "Copied!" },
     placeholders: { promptExterior: "Describe your changes...", promptInterior: "Describe interior changes...", promptPlan: "Describe specific details for the plan...", promptMask: "Draw the shape and describe the new element (e.g., 'Add a gable roof extension')...", customFlooring: "Describe a unique floor pattern (e.g., 'Geometric hexagon tiles in blue and white')..." },
     modes: { general: "General", object: "Object" },
     help: { title: "How to use FAST AI", step1: "1. Getting Started", step1desc: "Click the Key icon to set your Gemini API Key (Required). Then click 'Projects' to upload an image.", step2: "2. Select Mode", step2desc: "Choose Exterior (Facades), Interior (Rooms), or Plan (Floorplans) from the left sidebar tabs.", step3: "3. Editing", step3desc: "Use 'Quick Actions' for one-click styles, or type a custom command in the 'Prompt' box. Adjust sliders for intensity.", step4: "4. Object Mode", step4desc: "Switch to 'Object' mode to paint a mask over specific areas (like a wall or floor) to change only that part." }
@@ -102,7 +103,7 @@ const translations = {
     tabs: { exterior: "ภายนอก (Exterior)", interior: "ภายใน (Interior)", plan: "แปลน (Plan)" },
     sections: { prompt: "คำสั่ง (Prompt)", quickActions: "คำสั่งด่วน", cameraAngle: "มุมกล้อง", artStyle: "สไตล์ศิลปะ", archStyle: "สไตล์สถาปัตยกรรม", garden: "สวน", lighting: "แสงไฟ", background: "พื้นหลัง", foreground: "ฉากหน้า", interiorStyle: "สไตล์ภายใน", systems: "ระบบไฟและแอร์", viewOutside: "วิวนอกหน้าต่าง", conversionMode: "โหมดแปลงภาพ", roomConfig: "ตั้งค่าห้อง", brushSettings: "ตั้งค่าแปรง", manualAdjustments: "ปรับแต่งภาพ (ไม่ต้องใช้เน็ต)", moodboard: "มู้ดบอร์ดและวัสดุตัวอย่าง", flooring: "วัสดุพื้น" },
     controls: { turnOnLights: "เปิดไฟ", brightness: "ความสว่าง", contrast: "ความคมชัด (Contrast)", saturation: "ความสดของสี (Saturation)", sharpness: "ความคม (Sharpness)", colorTemp: "อุณหภูมิแสง", intensity: "ความเข้ม", soft: "นุ่มนวล", vibrant: "สดใส", warm: "โทนอุ่น", neutral: "ธรรมชาติ", cool: "โทนเย็น", coveLight: "ไฟหลืบ (Cove Light)", downlight: "ไฟดาวน์ไลท์ (Downlight)", airConditioner: "เครื่องปรับอากาศ", ac4way: "แอร์ 4 ทิศทาง", acWall: "แอร์ติดผนัง", clearMask: "ล้างพื้นที่เลือก", subtle: "น้อย", strong: "มาก", applyManual: "ยืนยันการปรับแต่ง", tolerance: "ความไวสี (Tolerance)", autoDescribe: "ให้ AI เขียนคำสั่ง" },
-    buttons: { generate: "สร้างรูปภาพ", generating: "กำลังสร้าง...", openProjects: "เปิดโปรเจค", clearAll: "ลบข้อมูลทั้งหมด", newProject: "โปรเจคใหม่", download: "ดาวน์โหลด", closeProject: "ปิดโปรเจค", upscale4k: "ขยายภาพ 4K", regenerate: "สร้างซ้ำ (เดิม)", veo: "สร้างวิดีโอ (Veo)" },
+    buttons: { generate: "สร้างรูปภาพ", generating: "กำลังสร้าง...", openProjects: "เปิดโปรเจค", clearAll: "ลบข้อมูลทั้งหมด", newProject: "โปรเจคใหม่", download: "ดาวน์โหลด", closeProject: "ปิดโปรเจค", upscale4k: "ขยายภาพ 4K", regenerate: "สร้างซ้ำ (เดิม)", veo: "สร้างวิดีโอ (Veo)", copy: "คัดลอก", copied: "คัดลอกแล้ว!" },
     placeholders: { promptExterior: "อธิบายสิ่งที่ต้องการแก้ไข...", promptInterior: "อธิบายการตกแต่งภายใน...", promptPlan: "อธิบายรายละเอียดของแปลน...", promptMask: "วาดรูปร่างและอธิบายสิ่งที่ต้องการแก้ (เช่น 'ต่อเติมหลังคาหน้าจั่ว')...", customFlooring: "อธิบายลวดลายพื้นพิเศษ (เช่น 'กระเบื้องหกเหลี่ยมสีน้ำเงินสลับขาว')..." },
     modes: { general: "ทั่วไป", object: "เฉพาะจุด" },
     help: { title: "วิธีใช้งาน FAST AI", step1: "1. เริ่มต้นใช้งาน", step1desc: "กดไอคอนกุญแจเพื่อใส่ Gemini API Key (จำเป็น) จากนั้นกดปุ่ม 'โปรเจค' เพื่ออัปโหลดรูปภาพ", step2: "2. เลือกโหมด", step2desc: "เลือกแท็บ Exterior (ภายนอก), Interior (ภายใน), หรือ Plan (แปลน) จากเมนูด้านซ้ายตามประเภทงาน", step3: "3. การสั่งงาน", step3desc: "ใช้ 'คำสั่งด่วน' เพื่อเปลี่ยนสไตล์ในคลิกเดียว หรือพิมพ์คำสั่งเองในช่อง 'Prompt' ปรับความเข้มได้ตามต้องการ", step4: "4. โหมดเฉพาะจุด", step4desc: "เปลี่ยนเป็นโหมด 'เฉพาะจุด' (Object) เพื่อระบายสีพื้นที่ที่ต้องการแก้ไข (เช่น เปลี่ยนวัสดุพื้น หรือ ผนัง) โดย AI จะแก้เฉพาะส่วนนั้น" }
@@ -260,6 +261,7 @@ const ImageEditor: React.FC = () => {
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
 
   const [prompt, setPrompt] = useState<string>('');
+  const [isCopied, setIsCopied] = useState(false);
   const [customFlooringPrompt, setCustomFlooringPrompt] = useState<string>('');
   const [negativePrompt, setNegativePrompt] = useState<string>('');
   const [selectedStyle, setSelectedStyle] = useState<string>('');
@@ -717,6 +719,14 @@ const ImageEditor: React.FC = () => {
     }
   };
 
+  const handleCopyPrompt = () => {
+    if (prompt) {
+        navigator.clipboard.writeText(prompt);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+    }
+  };
+
   const applyManualChanges = async () => {
     if (!activeImage) return;
     setIsLoading(true);
@@ -1079,7 +1089,15 @@ const ImageEditor: React.FC = () => {
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
                     {/* Common Prompt Section */}
                     <div className="bg-zinc-900/40 p-4 rounded-xl border border-zinc-800/50 space-y-3">
-                        <div className="flex justify-between items-center"><label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">{t.sections.prompt}</label><button onClick={handleAutoDescribe} disabled={!activeImage || isAnalyzing} title={t.controls.autoDescribe} className="text-[10px] flex items-center gap-1.5 text-blue-400 hover:text-blue-300 disabled:opacity-50 transition-colors"><SparklesIcon className="w-3 h-3" /> {isAnalyzing ? 'Analyzing...' : t.controls.autoDescribe}</button></div>
+                        <div className="flex justify-between items-center"><label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">{t.sections.prompt}</label>
+                            <div className="flex items-center gap-2">
+                                <button onClick={handleCopyPrompt} disabled={!prompt} title={t.buttons.copy} className={`text-[10px] flex items-center gap-1.5 transition-colors ${isCopied ? 'text-green-500 font-bold' : 'text-zinc-400 hover:text-white disabled:opacity-30'}`}>
+                                    <ClipboardIcon className="w-3 h-3" /> {isCopied ? t.buttons.copied : t.buttons.copy}
+                                </button>
+                                <div className="h-3 w-px bg-zinc-700"></div>
+                                <button onClick={handleAutoDescribe} disabled={!activeImage || isAnalyzing} title={t.controls.autoDescribe} className="text-[10px] flex items-center gap-1.5 text-blue-400 hover:text-blue-300 disabled:opacity-50 transition-colors"><SparklesIcon className="w-3 h-3" /> {isAnalyzing ? 'Analyzing...' : t.controls.autoDescribe}</button>
+                            </div>
+                        </div>
                         <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={sceneType === 'plan' ? t.placeholders.promptPlan : sceneType === 'interior' ? t.placeholders.promptInterior : t.placeholders.promptExterior} className="w-full h-28 bg-black/40 text-sm text-zinc-200 placeholder-zinc-600 rounded-lg p-3 resize-none border border-zinc-800 focus:border-zinc-600 focus:ring-1 focus:ring-zinc-600 outline-none transition-all" />
                     </div>
 
