@@ -92,7 +92,7 @@ const translations = {
     tabs: { exterior: "Exterior", interior: "Interior", plan: "Plan" },
     sections: { prompt: "Prompt", quickActions: "Quick Actions", cameraAngle: "Camera Angle", artStyle: "Art Style", archStyle: "Arch Style", garden: "Garden", lighting: "Lighting", background: "Background", foreground: "Foreground", interiorStyle: "Interior Style", systems: "Systems (Lighting & AC)", viewOutside: "View Outside", conversionMode: "Conversion Mode", roomConfig: "Room Configuration", brushSettings: "Brush Settings", manualAdjustments: "Manual Adjustments (Offline)", moodboard: "Moodboard & Materials", flooring: "Flooring & Materials" },
     controls: { turnOnLights: "Turn On Lights", brightness: "Brightness", contrast: "Contrast", saturation: "Saturation", sharpness: "Sharpness", colorTemp: "Color Temp", intensity: "Intensity", soft: "Soft", vibrant: "Vibrant", warm: "Warm", neutral: "Neutral", cool: "Cool", coveLight: "Cove Light (Hidden)", downlight: "Downlight (Recessed)", airConditioner: "Air Conditioner", ac4way: "4-Way Cassette AC", acWall: "Wall-Mounted AC", clearMask: "Clear Mask", subtle: "Subtle", strong: "Strong", applyManual: "Apply Adjustment", tolerance: "Tolerance", autoDescribe: "Auto-Describe" },
-    buttons: { generate: "Generate Image", generating: "Generating...", openProjects: "Open Projects", clearAll: "Clear All Data", newProject: "New Project", download: "Download", reset: "Reset", upscale4k: "Upscale 4K", regenerate: "Re-generate", veo: "Animate (Veo)" },
+    buttons: { generate: "Generate Image", generating: "Generating...", openProjects: "Open Projects", clearAll: "Clear All Data", newProject: "New Project", download: "Download", closeProject: "Close Project", upscale4k: "Upscale 4K", regenerate: "Re-generate", veo: "Animate (Veo)" },
     placeholders: { promptExterior: "Describe your changes...", promptInterior: "Describe interior changes...", promptPlan: "Describe specific details for the plan...", promptMask: "Draw the shape and describe the new element (e.g., 'Add a gable roof extension')...", customFlooring: "Describe a unique floor pattern (e.g., 'Geometric hexagon tiles in blue and white')..." },
     modes: { general: "General", object: "Object" },
     help: { title: "How to use FAST AI", step1: "1. Getting Started", step1desc: "Click the Key icon to set your Gemini API Key (Required). Then click 'Projects' to upload an image.", step2: "2. Select Mode", step2desc: "Choose Exterior (Facades), Interior (Rooms), or Plan (Floorplans) from the left sidebar tabs.", step3: "3. Editing", step3desc: "Use 'Quick Actions' for one-click styles, or type a custom command in the 'Prompt' box. Adjust sliders for intensity.", step4: "4. Object Mode", step4desc: "Switch to 'Object' mode to paint a mask over specific areas (like a wall or floor) to change only that part." }
@@ -102,7 +102,7 @@ const translations = {
     tabs: { exterior: "ภายนอก (Exterior)", interior: "ภายใน (Interior)", plan: "แปลน (Plan)" },
     sections: { prompt: "คำสั่ง (Prompt)", quickActions: "คำสั่งด่วน", cameraAngle: "มุมกล้อง", artStyle: "สไตล์ศิลปะ", archStyle: "สไตล์สถาปัตยกรรม", garden: "สวน", lighting: "แสงไฟ", background: "พื้นหลัง", foreground: "ฉากหน้า", interiorStyle: "สไตล์ภายใน", systems: "ระบบไฟและแอร์", viewOutside: "วิวนอกหน้าต่าง", conversionMode: "โหมดแปลงภาพ", roomConfig: "ตั้งค่าห้อง", brushSettings: "ตั้งค่าแปรง", manualAdjustments: "ปรับแต่งภาพ (ไม่ต้องใช้เน็ต)", moodboard: "มู้ดบอร์ดและวัสดุตัวอย่าง", flooring: "วัสดุพื้น" },
     controls: { turnOnLights: "เปิดไฟ", brightness: "ความสว่าง", contrast: "ความคมชัด (Contrast)", saturation: "ความสดของสี (Saturation)", sharpness: "ความคม (Sharpness)", colorTemp: "อุณหภูมิแสง", intensity: "ความเข้ม", soft: "นุ่มนวล", vibrant: "สดใส", warm: "โทนอุ่น", neutral: "ธรรมชาติ", cool: "โทนเย็น", coveLight: "ไฟหลืบ (Cove Light)", downlight: "ไฟดาวน์ไลท์ (Downlight)", airConditioner: "เครื่องปรับอากาศ", ac4way: "แอร์ 4 ทิศทาง", acWall: "แอร์ติดผนัง", clearMask: "ล้างพื้นที่เลือก", subtle: "น้อย", strong: "มาก", applyManual: "ยืนยันการปรับแต่ง", tolerance: "ความไวสี (Tolerance)", autoDescribe: "ให้ AI เขียนคำสั่ง" },
-    buttons: { generate: "สร้างรูปภาพ", generating: "กำลังสร้าง...", openProjects: "เปิดโปรเจค", clearAll: "ลบข้อมูลทั้งหมด", newProject: "โปรเจคใหม่", download: "ดาวน์โหลด", reset: "รีเซ็ต", upscale4k: "ขยายภาพ 4K", regenerate: "สร้างซ้ำ (เดิม)", veo: "สร้างวิดีโอ (Veo)" },
+    buttons: { generate: "สร้างรูปภาพ", generating: "กำลังสร้าง...", openProjects: "เปิดโปรเจค", clearAll: "ลบข้อมูลทั้งหมด", newProject: "โปรเจคใหม่", download: "ดาวน์โหลด", closeProject: "ปิดโปรเจค", upscale4k: "ขยายภาพ 4K", regenerate: "สร้างซ้ำ (เดิม)", veo: "สร้างวิดีโอ (Veo)" },
     placeholders: { promptExterior: "อธิบายสิ่งที่ต้องการแก้ไข...", promptInterior: "อธิบายการตกแต่งภายใน...", promptPlan: "อธิบายรายละเอียดของแปลน...", promptMask: "วาดรูปร่างและอธิบายสิ่งที่ต้องการแก้ (เช่น 'ต่อเติมหลังคาหน้าจั่ว')...", customFlooring: "อธิบายลวดลายพื้นพิเศษ (เช่น 'กระเบื้องหกเหลี่ยมสีน้ำเงินสลับขาว')..." },
     modes: { general: "ทั่วไป", object: "เฉพาะจุด" },
     help: { title: "วิธีใช้งาน FAST AI", step1: "1. เริ่มต้นใช้งาน", step1desc: "กดไอคอนกุญแจเพื่อใส่ Gemini API Key (จำเป็น) จากนั้นกดปุ่ม 'โปรเจค' เพื่ออัปโหลดรูปภาพ", step2: "2. เลือกโหมด", step2desc: "เลือกแท็บ Exterior (ภายนอก), Interior (ภายใน), หรือ Plan (แปลน) จากเมนูด้านซ้ายตามประเภทงาน", step3: "3. การสั่งงาน", step3desc: "ใช้ 'คำสั่งด่วน' เพื่อเปลี่ยนสไตล์ในคลิกเดียว หรือพิมพ์คำสั่งเองในช่อง 'Prompt' ปรับความเข้มได้ตามต้องการ", step4: "4. โหมดเฉพาะจุด", step4desc: "เปลี่ยนเป็นโหมด 'เฉพาะจุด' (Object) เพื่อระบายสีพื้นที่ที่ต้องการแก้ไข (เช่น เปลี่ยนวัสดุพื้น หรือ ผนัง) โดย AI จะแก้เฉพาะส่วนนั้น" }
@@ -206,7 +206,7 @@ const FOREGROUND_PROMPTS = foregrounds.reduce((acc, fg) => ({ ...acc, [fg]: `Add
 
 const CollapsibleSection: React.FC<{ title: string; sectionKey: string; isOpen: boolean; onToggle: () => void; children: React.ReactNode; disabled?: boolean; icon?: React.ReactNode; actions?: React.ReactNode; }> = ({ title, isOpen, onToggle, children, disabled = false, icon, actions }) => (
     <div className={`bg-zinc-900/40 rounded-xl border border-zinc-800/50 overflow-hidden transition-all duration-300 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
-        <button type="button" onClick={onToggle} disabled={disabled} className="w-full flex justify-between items-center p-3 text-left bg-zinc-900/40 hover:bg-zinc-800/60 transition-colors disabled:cursor-not-allowed backdrop-blur-sm" aria-expanded={isOpen}>
+        <button type="button" onClick={onToggle} disabled={disabled} title={isOpen ? "Collapse section" : "Expand section"} className="w-full flex justify-between items-center p-3 text-left bg-zinc-900/40 hover:bg-zinc-800/60 transition-colors disabled:cursor-not-allowed backdrop-blur-sm" aria-expanded={isOpen}>
             <h3 className="flex items-center gap-3 text-xs font-bold text-zinc-300 uppercase tracking-wider">{icon && <span className="text-zinc-500">{icon}</span>}<span className="bg-gradient-to-r from-zinc-200 to-zinc-400 bg-clip-text text-transparent">{title}</span></h3>
             <div className="flex items-center gap-2">{actions}<ChevronDownIcon className={`w-4 h-4 text-zinc-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} /></div>
         </button>
@@ -215,33 +215,33 @@ const CollapsibleSection: React.FC<{ title: string; sectionKey: string; isOpen: 
 );
 
 const PreviewCard: React.FC<{ label: string; description?: string; isSelected: boolean; onClick: () => void; isNested?: boolean; icon?: React.ReactNode; }> = ({ label, description, isSelected, onClick, isNested = false, icon }) => (
-    <button type="button" onClick={onClick} className={`p-3 text-left rounded-xl border transition-all duration-300 group flex flex-col backdrop-blur-sm ${isSelected ? 'bg-red-900/10 border-red-500/50 shadow-[0_0_20px_rgba(220,38,38,0.15)] ring-1 ring-red-500/20' : 'bg-zinc-900/40 border-zinc-800/60 hover:border-zinc-600/80 hover:bg-zinc-800/60'} h-auto`}>
+    <button type="button" onClick={onClick} title={description ? `${label}: ${description}` : label} className={`p-3 text-left rounded-xl border transition-all duration-300 group flex flex-col backdrop-blur-sm ${isSelected ? 'bg-red-900/10 border-red-500/50 shadow-[0_0_20px_rgba(220,38,38,0.15)] ring-1 ring-red-500/20' : 'bg-zinc-900/40 border-zinc-800/60 hover:border-zinc-600/80 hover:bg-zinc-800/60'} h-auto`}>
         <div className="w-full"><div className={`flex items-center gap-2 ${description ? 'mb-1.5' : ''}`}>{icon && <span className={`flex-shrink-0 transition-colors duration-300 ${isSelected ? 'text-red-400' : 'text-zinc-500 group-hover:text-zinc-400'}`}>{icon}</span>}<span className={`font-bold transition-colors text-xs uppercase tracking-wide break-words ${isSelected ? 'text-red-400' : 'text-zinc-300 group-hover:text-white'}`}>{label}</span></div>{description && (<p className={`text-[10px] leading-relaxed transition-colors ${isSelected ? 'text-zinc-400' : 'text-zinc-500'}`}>{description}</p>)}</div>
     </button>
 );
 
 const OptionButton: React.FC<{ option: string, isSelected: boolean, onClick: (option: string) => void, size?: 'sm' | 'md' }> = ({ option, isSelected, onClick, size = 'sm' }) => {
     const sizeClasses = size === 'md' ? 'px-4 py-2 text-base' : 'px-3 py-1.5 text-xs font-medium uppercase tracking-wide';
-    return (<button key={option} type="button" onClick={() => onClick(option)} className={`${sizeClasses} rounded-lg transition-all duration-300 border backdrop-blur-sm ${isSelected ? 'bg-red-600/80 text-white border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.4)] ring-1 ring-red-400/50' : 'bg-zinc-800/40 text-zinc-400 hover:bg-zinc-700/60 border-zinc-700/50 hover:text-zinc-200 hover:border-zinc-500'}`}>{option}</button>);
+    return (<button key={option} type="button" onClick={() => onClick(option)} title={option} className={`${sizeClasses} rounded-lg transition-all duration-300 border backdrop-blur-sm ${isSelected ? 'bg-red-600/80 text-white border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.4)] ring-1 ring-red-400/50' : 'bg-zinc-800/40 text-zinc-400 hover:bg-zinc-700/60 border-zinc-700/50 hover:text-zinc-200 hover:border-zinc-500'}`}>{option}</button>);
 };
 
 const ModeButton: React.FC<{ label: string; icon: React.ReactNode; mode: EditingMode; activeMode: EditingMode; onClick: (mode: EditingMode) => void; }> = ({ label, icon, mode, activeMode, onClick }) => (
-    <button type="button" onClick={() => onClick(mode)} className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-2 p-2 text-xs font-bold uppercase tracking-wide rounded-lg transition-all duration-300 border ${activeMode === mode ? 'bg-gradient-to-br from-zinc-800 to-zinc-900 text-white border-zinc-600 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]' : 'bg-transparent text-zinc-500 border-zinc-800 hover:bg-zinc-800/50 hover:text-zinc-300'}`}>{icon}<span>{label}</span></button>
+    <button type="button" onClick={() => onClick(mode)} title={`Switch to ${label} mode`} className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-2 p-2 text-xs font-bold uppercase tracking-wide rounded-lg transition-all duration-300 border ${activeMode === mode ? 'bg-gradient-to-br from-zinc-800 to-zinc-900 text-white border-zinc-600 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]' : 'bg-transparent text-zinc-500 border-zinc-800 hover:bg-zinc-800/50 hover:text-zinc-300'}`}>{icon}<span>{label}</span></button>
 );
 
 const IntensitySlider: React.FC<{ value: number; onChange: (val: number) => void; t: any }> = ({ value, onChange, t }) => (
-    <div className="mt-3 p-3 bg-zinc-900/50 rounded-lg animate-fade-in border border-zinc-700/50">
+    <div className="mt-3 p-3 bg-zinc-900/50 rounded-lg animate-fade-in border border-zinc-700/50" title={`${t.controls.intensity}: ${value}%`}>
         <div className="flex justify-between text-xs mb-2 text-zinc-400"><span className="font-medium text-zinc-300">{t.controls.intensity}</span><span className="font-mono text-red-400">{value}% {value === 100 && `(${t.controls.strong})`}</span></div>
-        <input type="range" min="10" max="100" value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full h-1.5 bg-zinc-700/50 rounded-lg appearance-none cursor-pointer accent-red-500 hover:accent-red-400 transition-all" />
+        <input type="range" min="10" max="100" value={value} onChange={(e) => onChange(Number(e.target.value))} title={`Adjust intensity: ${value}%`} className="w-full h-1.5 bg-zinc-700/50 rounded-lg appearance-none cursor-pointer accent-red-500 hover:accent-red-400 transition-all" />
         <div className="flex justify-between text-[10px] text-zinc-500 mt-1 px-0.5"><span>{t.controls.subtle}</span><span>{t.controls.strong}</span></div>
     </div>
 );
 
-const ImageToolbar: React.FC<{ onUndo: () => void; onRedo: () => void; onReset: () => void; onDownload: () => void; onShare: () => void; onUpscale: () => void; onRegenerate: () => void; onTransform: (type: 'rotateLeft' | 'rotateRight' | 'flipHorizontal' | 'flipVertical') => void; onVeo: () => void; canUndo: boolean; canRedo: boolean; canReset: boolean; canUpscaleAndSave: boolean; canRegenerate: boolean; isLoading: boolean; t: any; }> = ({ onUndo, onRedo, onReset, onDownload, onShare, onUpscale, onRegenerate, onTransform, onVeo, canUndo, canRedo, canReset, canUpscaleAndSave, canRegenerate, isLoading, t }) => (
+const ImageToolbar: React.FC<{ onUndo: () => void; onRedo: () => void; onClose: () => void; onDownload: () => void; onShare: () => void; onUpscale: () => void; onRegenerate: () => void; onTransform: (type: 'rotateLeft' | 'rotateRight' | 'flipHorizontal' | 'flipVertical') => void; onVeo: () => void; canUndo: boolean; canRedo: boolean; canClose: boolean; canUpscaleAndSave: boolean; canRegenerate: boolean; isLoading: boolean; t: any; }> = ({ onUndo, onRedo, onClose, onDownload, onShare, onUpscale, onRegenerate, onTransform, onVeo, canUndo, canRedo, canClose, canUpscaleAndSave, canRegenerate, isLoading, t }) => (
     <div className="flex items-center gap-2 bg-gray-500/20 backdrop-blur-md p-2 rounded-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] transform hover:scale-[1.02] transition-transform duration-300">
-        <div className="flex items-center gap-1 px-2 border-r border-white/10"><button onClick={onUndo} disabled={!canUndo || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><UndoIcon className="w-4 h-4" /></button><button onClick={onRedo} disabled={!canRedo || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><RedoIcon className="w-4 h-4" /></button></div>
-        <div className="flex items-center gap-1 px-2 border-r border-white/10"><button onClick={() => onTransform('rotateLeft')} disabled={!canUpscaleAndSave || isLoading} title="Rotate Left" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><RotateLeftIcon className="w-4 h-4" /></button><button onClick={() => onTransform('rotateRight')} disabled={!canUpscaleAndSave || isLoading} title="Rotate Right" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><RotateRightIcon className="w-4 h-4" /></button><button onClick={() => onTransform('flipHorizontal')} disabled={!canUpscaleAndSave || isLoading} title="Flip Horizontal" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><FlipHorizontalIcon className="w-4 h-4" /></button></div>
-        <div className="flex items-center gap-2 pl-2"><button onClick={onRegenerate} disabled={!canRegenerate || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg" title={t.buttons.regenerate}><ArrowPathIcon className="w-4 h-4" /></button><div className="w-px h-4 bg-white/10 mx-1"></div><button onClick={onUpscale} disabled={!canUpscaleAndSave || isLoading} className="p-2 text-zinc-200 hover:text-white disabled:opacity-30 transition-colors flex items-center gap-1 hover:bg-white/10 rounded-lg" title={t.buttons.upscale4k}><UpscaleIcon className="w-4 h-4" /><span className="text-[10px] font-extrabold uppercase hidden sm:inline tracking-wider">{t.buttons.upscale4k}</span></button><div className="w-px h-4 bg-white/10 mx-1"></div><button onClick={onVeo} disabled={!canUpscaleAndSave || isLoading} className="p-2 text-zinc-200 hover:text-white disabled:opacity-30 transition-colors flex items-center gap-1 hover:bg-white/10 rounded-lg" title={t.buttons.veo}><VideoCameraIcon className="w-4 h-4" /><span className="text-[10px] font-extrabold uppercase hidden sm:inline tracking-wider">Veo 3</span></button><button onClick={onShare} disabled={!canUpscaleAndSave || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg" title="Share"><ShareIcon className="w-4 h-4" /></button><button onClick={onDownload} disabled={!canUpscaleAndSave || isLoading} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-sm font-extrabold rounded-lg transition-all disabled:opacity-50 shadow-lg shadow-blue-900/30"><DownloadIcon className="w-3 h-3" /> {t.buttons.download}</button><button onClick={onReset} disabled={!canReset || isLoading} className="p-2 text-red-500 hover:text-red-400 disabled:opacity-30 transition-colors hover:bg-red-500/10 rounded-lg" title={t.buttons.reset}><ResetEditsIcon className="w-4 h-4" /></button></div>
+        <div className="flex items-center gap-1 px-2 border-r border-white/10"><button onClick={onUndo} disabled={!canUndo || isLoading} title="Undo last action" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><UndoIcon className="w-4 h-4" /></button><button onClick={onRedo} disabled={!canRedo || isLoading} title="Redo last action" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><RedoIcon className="w-4 h-4" /></button></div>
+        <div className="flex items-center gap-1 px-2 border-r border-white/10"><button onClick={() => onTransform('rotateLeft')} disabled={!canUpscaleAndSave || isLoading} title="Rotate 90° Left" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><RotateLeftIcon className="w-4 h-4" /></button><button onClick={() => onTransform('rotateRight')} disabled={!canUpscaleAndSave || isLoading} title="Rotate 90° Right" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><RotateRightIcon className="w-4 h-4" /></button><button onClick={() => onTransform('flipHorizontal')} disabled={!canUpscaleAndSave || isLoading} title="Flip Horizontal" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><FlipHorizontalIcon className="w-4 h-4" /></button></div>
+        <div className="flex items-center gap-2 pl-2"><button onClick={onRegenerate} disabled={!canRegenerate || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg" title={t.buttons.regenerate}><ArrowPathIcon className="w-4 h-4" /></button><div className="w-px h-4 bg-white/10 mx-1"></div><button onClick={onUpscale} disabled={!canUpscaleAndSave || isLoading} className="p-2 text-zinc-200 hover:text-white disabled:opacity-30 transition-colors flex items-center gap-1 hover:bg-white/10 rounded-lg" title={t.buttons.upscale4k}><UpscaleIcon className="w-4 h-4" /><span className="text-[10px] font-extrabold uppercase hidden sm:inline tracking-wider">{t.buttons.upscale4k}</span></button><div className="w-px h-4 bg-white/10 mx-1"></div><button onClick={onVeo} disabled={!canUpscaleAndSave || isLoading} className="p-2 text-zinc-200 hover:text-white disabled:opacity-30 transition-colors flex items-center gap-1 hover:bg-white/10 rounded-lg" title={t.buttons.veo}><VideoCameraIcon className="w-4 h-4" /><span className="text-[10px] font-extrabold uppercase hidden sm:inline tracking-wider">Veo 3</span></button><button onClick={onShare} disabled={!canUpscaleAndSave || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg" title="Share Image"><ShareIcon className="w-4 h-4" /></button><button onClick={onDownload} disabled={!canUpscaleAndSave || isLoading} title={t.buttons.download} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-sm font-extrabold rounded-lg transition-all disabled:opacity-50 shadow-lg shadow-blue-900/30"><DownloadIcon className="w-3 h-3" /> {t.buttons.download}</button><button onClick={onClose} disabled={isLoading} className="p-2 text-red-500 hover:text-red-400 disabled:opacity-30 transition-colors hover:bg-red-500/10 rounded-lg" title={t.buttons.closeProject}><XMarkIcon className="w-4 h-4" /></button></div>
     </div>
 );
 
@@ -371,6 +371,9 @@ const ImageEditor: React.FC = () => {
   const [userApiKey, setUserApiKey] = useState<string>('');
   const [tempKey, setTempKey] = useState('');
   const [isKeyVisible, setIsKeyVisible] = useState(false);
+
+  // Ref for hidden main file input to trigger upload from empty state
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
       const checkKey = async () => {
@@ -580,7 +583,8 @@ const ImageEditor: React.FC = () => {
           if (mountedRef.current) {
               const currentListSize = imageList.length;
               setImageList(prevList => [...prevList, ...newImages]);
-              if (activeImageIndex === null) { setActiveImageIndex(currentListSize); }
+              // Set the newly added image (first one if multiple) as active
+              setActiveImageIndex(currentListSize); 
               setIsProjectModalOpen(false); 
           }
       } catch (err) { if (mountedRef.current) setError("Could not load images."); }
@@ -993,7 +997,12 @@ const ImageEditor: React.FC = () => {
 
   const handleUndo = () => { if (activeImage && activeImage.historyIndex > -1) updateActiveImage(img => ({ ...img, historyIndex: img.historyIndex - 1, selectedResultIndex: 0 })); };
   const handleRedo = () => { if (activeImage && activeImage.historyIndex < activeImage.history.length - 1) updateActiveImage(img => ({ ...img, historyIndex: img.historyIndex + 1, selectedResultIndex: 0 })); };
-  const handleResetEdits = () => { if (window.confirm("Reset?")) updateActiveImage(img => ({ ...img, history: [], historyIndex: -1, selectedResultIndex: null, promptHistory: [] })); };
+  
+  const handleCloseProject = () => {
+    setActiveImageIndex(null);
+    setPrompt('');
+    setReferenceImage(null);
+  };
   
   const handleDownload = async () => { 
       if (!activeImage) return;
@@ -1004,849 +1013,435 @@ const ImageEditor: React.FC = () => {
         } else { const link = document.createElement('a'); link.href = url; link.download = `edited-image-${Date.now()}.jpg`; document.body.appendChild(link); link.click(); document.body.removeChild(link); }
       }
   };
-  
-  const handleShare = async () => { if (!activeImage) return; const url = activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex] : activeImage.dataUrl; if (url && navigator.share) { try { const base64Data = url.split(',')[1]; const mimeType = url.substring(5, url.indexOf(';')); const byteCharacters = atob(base64Data); const byteNumbers = new Uint8Array(byteCharacters.length); for (let i = 0; i < byteCharacters.length; i++) { byteNumbers[i] = byteCharacters.charCodeAt(i); } const blob = new Blob([byteNumbers], {type: mimeType}); const file = new File([blob], `image.${mimeType.split('/')[1]}`, { type: mimeType }); await navigator.share({ files: [file], title: 'My Design', text: 'Check out this image created with FAST AI Image Editor!' }); } catch (e) { console.error("Sharing failed", e); } } else { alert("Web Share API not supported in this browser"); } };
 
-  const selectedImageUrl = activeImage ? activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex] : activeImage.dataUrl : null;
-  const currentResults = (activeImage && activeImage.historyIndex > -1) ? activeImage.history[activeImage.historyIndex] : [];
-  const currentModelLabel = (activeImage && activeImage.historyIndex > -1 && activeImage.lastGeneratedLabels) ? activeImage.lastGeneratedLabels[activeImage.historyIndex] : null;
-
-  const canUndo = activeImage ? activeImage.historyIndex > -1 : false;
-  const canRedo = activeImage ? activeImage.historyIndex < activeImage.history.length - 1 : false;
-  const canReset = activeImage ? activeImage.history.length > 0 : false;
-  const canUpscaleAndSave = !!selectedImageUrl;
-  const canRegenerate = activeImage ? (activeImage.apiPromptHistory ? activeImage.apiPromptHistory.length > 0 : false) : false;
-
-  if (!isDataLoaded) return <div className="flex items-center justify-center h-screen bg-black text-white"><Spinner /></div>;
+  const handleShare = async () => {
+    if (!activeImage) return;
+    const url = activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex] : activeImage.dataUrl;
+    if (url && navigator.share) {
+        try {
+            const blob = await (await fetch(url)).blob();
+            const file = new File([blob], "image.jpg", { type: blob.type });
+            await navigator.share({
+                title: 'FAST AI Image',
+                text: 'Check out this image generated with FAST AI!',
+                files: [file],
+            });
+        } catch (error) {
+            console.error('Error sharing:', error);
+        }
+    } else {
+        alert("Sharing is not supported on this browser/device.");
+    }
+  };
 
   return (
-    <div className="flex h-screen w-full bg-[#09090b] text-zinc-300 overflow-hidden font-sans">
-      {/* Help Modal */}
-      {isHelpModalOpen && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 backdrop-blur-md p-4" onClick={() => setIsHelpModalOpen(false)}>
-            <div className="bg-[#18181b] rounded-2xl border border-white/10 shadow-2xl w-full max-w-lg p-6 overflow-hidden transform transition-all relative" onClick={e => e.stopPropagation()}>
-                <button onClick={() => setIsHelpModalOpen(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors"><XMarkIcon className="w-6 h-6"/></button>
-                <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                    <QuestionMarkCircleIcon className="w-6 h-6 text-red-500" />
-                    {t.help.title}
-                </h2>
-                <div className="space-y-6 overflow-y-auto max-h-[60vh] pr-2 custom-scrollbar">
-                    <div className="flex gap-4">
-                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-red-500/20 text-red-400 font-bold flex items-center justify-center">1</div>
-                        <div>
-                            <h3 className="text-sm font-bold text-white mb-1">{t.help.step1}</h3>
-                            <p className="text-xs text-zinc-400 leading-relaxed">{t.help.step1desc}</p>
-                        </div>
-                    </div>
-                    <div className="flex gap-4">
-                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 font-bold flex items-center justify-center">2</div>
-                        <div>
-                            <h3 className="text-sm font-bold text-white mb-1">{t.help.step2}</h3>
-                            <p className="text-xs text-zinc-400 leading-relaxed">{t.help.step2desc}</p>
-                        </div>
-                    </div>
-                    <div className="flex gap-4">
-                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-green-500/20 text-green-400 font-bold flex items-center justify-center">3</div>
-                        <div>
-                            <h3 className="text-sm font-bold text-white mb-1">{t.help.step3}</h3>
-                            <p className="text-xs text-zinc-400 leading-relaxed">{t.help.step3desc}</p>
-                        </div>
-                    </div>
-                    <div className="flex gap-4">
-                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-500/20 text-purple-400 font-bold flex items-center justify-center">4</div>
-                        <div>
-                            <h3 className="text-sm font-bold text-white mb-1">{t.help.step4}</h3>
-                            <p className="text-xs text-zinc-400 leading-relaxed">{t.help.step4desc}</p>
-                        </div>
-                    </div>
+    <div className="flex flex-col h-full bg-[#09090b] text-zinc-100 font-sans selection:bg-red-500/30">
+        <header className="flex items-center justify-between px-6 py-3 bg-[#09090b]/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-50">
+            <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center shadow-lg shadow-red-900/20"><span className="text-xl font-bold text-white tracking-tighter">FA</span></div>
+                    <div><h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">FAST AI <span className="text-xs font-normal text-zinc-500 ml-1">v1.2</span></h1><p className="text-[10px] text-zinc-500 uppercase tracking-widest font-semibold">Architectural Intelligence</p></div>
                 </div>
-                <div className="mt-6 pt-6 border-t border-white/5 text-center">
-                    <button onClick={() => setIsHelpModalOpen(false)} className="px-6 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-sm font-medium transition-colors">
-                        Close Guide
-                    </button>
-                    <div className="mt-4 text-[10px] text-zinc-600 font-mono">v1.0.0 (Stable Release)</div>
+                <div className="h-8 w-px bg-white/10 mx-2 hidden sm:block"></div>
+                <div className="flex gap-2">
+                    <button onClick={() => setIsProjectModalOpen(true)} title={t.buttons.openProjects} className="px-3 py-1.5 text-xs font-medium bg-zinc-800/50 hover:bg-zinc-700/50 text-zinc-300 rounded-lg border border-white/5 transition-all">{t.header.projects}</button>
+                    <button onClick={handleClearAllProjects} title={t.buttons.clearAll} className="px-3 py-1.5 text-xs font-medium bg-zinc-800/50 hover:bg-red-900/20 text-zinc-300 hover:text-red-400 rounded-lg border border-white/5 transition-all">{t.buttons.clearAll}</button>
                 </div>
             </div>
-        </div>
-      )}
+            <div className="flex items-center gap-3">
+                <span className={`text-[10px] font-mono px-2 py-1 rounded-full border ${saveStatus === 'saved' ? 'border-green-900/30 text-green-500 bg-green-900/10' : saveStatus === 'saving' ? 'border-yellow-900/30 text-yellow-500 bg-yellow-900/10' : 'border-red-900/30 text-red-500 bg-red-900/10'}`}>{saveStatus === 'saved' ? t.header.saved : saveStatus === 'saving' ? t.header.saving : t.header.error}</span>
+                <button onClick={() => setIsHelpModalOpen(true)} title={t.header.help} className="p-2 text-zinc-400 hover:text-white transition-colors rounded-lg hover:bg-white/5"><QuestionMarkCircleIcon className="w-5 h-5" /></button>
+                <button onClick={() => setIsKeyModalOpen(true)} title="API Key Settings" className={`p-2 transition-colors rounded-lg hover:bg-white/5 ${hasApiKey ? 'text-green-500' : 'text-red-500 animate-pulse'}`}><KeyIcon className="w-5 h-5" /></button>
+                <button onClick={toggleLanguage} title={language === 'en' ? "Switch to Thai" : "Switch to English"} className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-400 hover:text-white border border-white/5">{language.toUpperCase()}</button>
+            </div>
+        </header>
 
-      {/* Video Generation Modal */}
-      {isVideoModalOpen && (
-          <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/90 backdrop-blur-md p-4" onClick={() => !isGeneratingVideo && setIsVideoModalOpen(false)}>
-              <div className="bg-[#18181b] rounded-2xl border border-white/10 shadow-2xl w-full max-w-lg p-6 overflow-hidden transform transition-all relative" onClick={e => e.stopPropagation()}>
-                  <div className="flex justify-between items-center mb-6">
-                      <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                          <VideoCameraIcon className="w-6 h-6 text-indigo-500" />
-                          {t.buttons.veo}
-                      </h2>
-                      {!isGeneratingVideo && (
-                          <button onClick={() => setIsVideoModalOpen(false)} className="text-zinc-500 hover:text-white transition-colors">
-                              <XMarkIcon className="w-6 h-6"/>
-                          </button>
-                      )}
-                  </div>
-                  
-                  {generatedVideoUrl ? (
-                      <div className="space-y-4 animate-fade-in">
-                          <div className="aspect-video bg-black rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10">
-                              <video 
-                                  src={generatedVideoUrl} 
-                                  controls 
-                                  autoPlay 
-                                  className="w-full h-full object-contain"
-                              />
-                          </div>
-                          <div className="flex gap-3">
-                              <a 
-                                  href={generatedVideoUrl} 
-                                  download={`veo-video-${Date.now()}.mp4`}
-                                  className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-blue-900/30 transition-all"
-                              >
-                                  <DownloadIcon className="w-5 h-5" /> Download MP4
-                              </a>
-                              <button 
-                                  onClick={() => { setGeneratedVideoUrl(null); }}
-                                  className="px-4 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold rounded-xl border border-white/5 transition-colors"
-                              >
-                                  New Video
-                              </button>
-                          </div>
-                          <div className="text-[10px] text-zinc-500 text-center">Generated by Veo 3.1</div>
-                      </div>
-                  ) : (
-                      <div className="space-y-4">
-                           <div className="bg-gradient-to-br from-indigo-900/30 to-purple-900/30 border border-indigo-500/20 p-4 rounded-xl flex gap-3 items-start">
-                               <SparklesIcon className="w-5 h-5 text-indigo-400 mt-0.5 flex-shrink-0" />
-                               <div className="space-y-1">
-                                   <p className="text-sm font-bold text-indigo-200">AI Video Generation</p>
-                                   <p className="text-xs text-indigo-300/80 leading-relaxed">
-                                       Create a 5-second video from your image. Describe the motion you want (e.g., "Camera pans right", "Trees swaying in wind").
-                                   </p>
-                               </div>
-                           </div>
+        {/* Global Error Banner */}
+        {error && !isKeyModalOpen && (
+             <div className="bg-red-900/80 border-b border-red-500/50 p-2 text-center text-red-100 text-sm font-medium animate-fade-in relative z-40 backdrop-blur-md">
+                 <span className="mr-2">⚠️</span> {error} 
+                 <button onClick={() => setError(null)} className="ml-4 underline hover:text-white">Dismiss</button>
+             </div>
+        )}
 
-                           <div className="space-y-2">
-                               <label className="text-xs font-bold text-zinc-400 uppercase tracking-wide">Motion Prompt</label>
-                               <textarea 
-                                  value={videoPrompt}
-                                  onChange={(e) => setVideoPrompt(e.target.value)}
-                                  placeholder={language === 'th' ? "อธิบายการเคลื่อนไหว..." : "Describe the camera motion or scene changes..."}
-                                  className="w-full bg-black/50 border border-zinc-700 rounded-xl p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all resize-none shadow-inner"
-                                  rows={3}
-                                  disabled={isGeneratingVideo}
-                               />
-                           </div>
+        <div className="flex flex-1 overflow-hidden relative">
+            <aside className="w-80 md:w-96 flex-shrink-0 bg-[#0c0c0e] border-r border-white/5 flex flex-col z-20 shadow-2xl overflow-hidden">
+                <div className="p-2 grid grid-cols-3 gap-1 bg-[#0c0c0e]">
+                    {[
+                        { id: 'exterior', icon: <HomeModernIcon className="w-4 h-4" />, label: t.tabs.exterior },
+                        { id: 'interior', icon: <HomeIcon className="w-4 h-4" />, label: t.tabs.interior },
+                        { id: 'plan', icon: <PlanIcon className="w-4 h-4" />, label: t.tabs.plan }
+                    ].map((tab) => (
+                        <button key={tab.id} onClick={() => handleSceneTypeSelect(tab.id as SceneType)} title={`Switch to ${tab.label} mode`} className={`flex flex-col items-center justify-center gap-1.5 py-3 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all duration-300 ${sceneType === tab.id ? 'bg-zinc-800 text-white shadow-lg ring-1 ring-white/10' : 'text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-300'}`}>{tab.icon}<span>{tab.label}</span></button>
+                    ))}
+                </div>
 
-                           <button 
-                              onClick={handleGenerateVideo}
-                              disabled={isGeneratingVideo || !videoPrompt.trim()}
-                              className="w-full py-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-size-200 animate-gradient hover:bg-right text-white font-bold rounded-xl shadow-[0_0_20px_rgba(79,70,229,0.4)] hover:shadow-[0_0_30px_rgba(79,70,229,0.6)] transition-all transform active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-3"
-                           >
-                              {isGeneratingVideo ? (
-                                  <>
-                                      <Spinner className="w-5 h-5 text-white" />
-                                      <span>Generating Video (Veo)...</span>
-                                  </>
-                              ) : (
-                                  <>
-                                      <VideoCameraIcon className="w-5 h-5" />
-                                      <span>Generate Video</span>
-                                  </>
-                              )}
-                           </button>
-                           {isGeneratingVideo && <p className="text-[10px] text-zinc-500 text-center animate-pulse">This process may take 1-2 minutes. Please do not close this window.</p>}
-                      </div>
-                  )}
-              </div>
-          </div>
-      )}
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
+                    {/* Common Prompt Section */}
+                    <div className="bg-zinc-900/40 p-4 rounded-xl border border-zinc-800/50 space-y-3">
+                        <div className="flex justify-between items-center"><label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">{t.sections.prompt}</label><button onClick={handleAutoDescribe} disabled={!activeImage || isAnalyzing} title={t.controls.autoDescribe} className="text-[10px] flex items-center gap-1.5 text-blue-400 hover:text-blue-300 disabled:opacity-50 transition-colors"><SparklesIcon className="w-3 h-3" /> {isAnalyzing ? 'Analyzing...' : t.controls.autoDescribe}</button></div>
+                        <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={sceneType === 'plan' ? t.placeholders.promptPlan : sceneType === 'interior' ? t.placeholders.promptInterior : t.placeholders.promptExterior} className="w-full h-28 bg-black/40 text-sm text-zinc-200 placeholder-zinc-600 rounded-lg p-3 resize-none border border-zinc-800 focus:border-zinc-600 focus:ring-1 focus:ring-zinc-600 outline-none transition-all" />
+                    </div>
 
-      {/* ... (API Key & Project Modals remain unchanged) ... */}
-      {isKeyModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-md p-4" onClick={() => hasApiKey ? setIsKeyModalOpen(false) : null}>
-            <div className="bg-[#18181b] rounded-2xl border border-white/10 shadow-2xl w-full max-w-md p-6 overflow-hidden transform transition-all" onClick={e => e.stopPropagation()}>
-                <div className="flex justify-between items-start mb-6">
-                     <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-red-600 to-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/20">
-                            <SparklesIcon className="w-7 h-7 text-white" />
+                    {/* Moodboard / Reference (Moved Here) */}
+                    <CollapsibleSection title={t.sections.moodboard} sectionKey="moodboard" isOpen={openSections.moodboard} onToggle={() => toggleSection('moodboard')} icon={<PhotoIcon className="w-3.5 h-3.5"/>}>
+                        <div className="space-y-3">
+                            <label className="block w-full cursor-pointer group"><div className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-zinc-700 rounded-xl hover:border-zinc-500 hover:bg-zinc-800/30 transition-all bg-black/20 group-hover:scale-[1.01]">{referenceImage ? (<div className="relative w-full h-full p-1"><img src={referenceImage.dataUrl} alt="Reference" className="w-full h-full object-cover rounded-lg" /><button onClick={(e) => { e.preventDefault(); setReferenceImage(null); }} title="Remove reference image" className="absolute top-1 right-1 p-1 bg-black/50 hover:bg-red-500/80 rounded-full text-white transition-colors"><XMarkIcon className="w-3 h-3" /></button></div>) : (<div className="text-center p-4"><PhotoIcon className="w-6 h-6 mx-auto text-zinc-500 mb-2 group-hover:text-zinc-400" /><span className="text-[10px] text-zinc-500 uppercase tracking-wide group-hover:text-zinc-400">Upload Reference Image</span></div>)}<input type="file" className="hidden" onChange={handleReferenceImageChange} accept="image/*" /></div></label>
                         </div>
-                        <div>
-                            <h2 className="text-xl font-bold text-white tracking-tight">Setup Gemini 3</h2>
-                            <p className="text-xs text-zinc-500 font-medium">POWERED BY GOOGLE DEEPMIND</p>
+                    </CollapsibleSection>
+
+                    {/* Scene Specific Sections */}
+                    {sceneType === 'exterior' && (
+                        <>
+                           <CollapsibleSection title={t.sections.quickActions} sectionKey="quickActions" isOpen={openSections.quickActions} onToggle={() => toggleSection('quickActions')} icon={<SparklesIcon className="w-3.5 h-3.5" />}>
+                                <div className="grid grid-cols-2 gap-2">{exteriorQuickActionList.map((action) => (<PreviewCard key={action.id} label={action.label} description={action.desc} isSelected={selectedQuickAction === action.id} onClick={() => handleQuickActionClick(action.id)} icon={action.icon} />))}</div>
+                           </CollapsibleSection>
+                           
+                           <CollapsibleSection title={t.sections.cameraAngle} sectionKey="cameraAngle" isOpen={openSections.cameraAngle} onToggle={() => toggleSection('cameraAngle')} icon={<CameraAngleIcon className="w-3.5 h-3.5"/>}>
+                                <div className="grid grid-cols-3 gap-2">{cameraAngleOptions.map((option) => (<OptionButton key={option.name} option={option.name} isSelected={selectedCameraAngle === option.name} onClick={(opt) => setSelectedCameraAngle(selectedCameraAngle === opt ? '' : opt)} />))}</div>
+                           </CollapsibleSection>
+                           
+                           <CollapsibleSection title={t.sections.artStyle} sectionKey="artStyle" isOpen={openSections.artStyle} onToggle={() => toggleSection('artStyle')} icon={<PencilIcon className="w-3.5 h-3.5"/>}>
+                                <div className="grid grid-cols-2 gap-2 mb-3">{styleOptions.map((style) => (<OptionButton key={style.name} option={style.name} isSelected={selectedStyle === style.name} onClick={(opt) => setSelectedStyle(selectedStyle === opt ? '' : opt)} />))}</div>
+                                {selectedStyle && <IntensitySlider value={styleIntensity} onChange={setStyleIntensity} t={t} />}
+                           </CollapsibleSection>
+
+                           <CollapsibleSection title={t.sections.archStyle} sectionKey="archStyle" isOpen={openSections.archStyle} onToggle={() => toggleSection('archStyle')} icon={<HomeModernIcon className="w-3.5 h-3.5"/>}>
+                                <div className="grid grid-cols-2 gap-2">{architecturalStyleOptions.map((style) => (<OptionButton key={style.name} option={style.name} isSelected={selectedArchStyle === style.name} onClick={(opt) => setSelectedArchStyle(selectedArchStyle === opt ? '' : opt)} />))}</div>
+                           </CollapsibleSection>
+
+                           <CollapsibleSection title={t.sections.garden} sectionKey="gardenStyle" isOpen={openSections.gardenStyle} onToggle={() => toggleSection('gardenStyle')} icon={<FlowerIcon className="w-3.5 h-3.5"/>}>
+                                <div className="grid grid-cols-1 gap-1">{gardenStyleOptions.map((style) => (<PreviewCard key={style.name} label={style.name} description={style.description} isSelected={selectedGardenStyle === style.name} onClick={() => setSelectedGardenStyle(selectedGardenStyle === style.name ? '' : style.name)} />))}</div>
+                           </CollapsibleSection>
+
+                           <CollapsibleSection title={t.sections.lighting} sectionKey="lighting" isOpen={openSections.lighting} onToggle={() => toggleSection('lighting')} icon={<LightbulbIcon className="w-3.5 h-3.5" />}>
+                                <button onClick={() => setIsAddLightActive(!isAddLightActive)} className={`w-full p-3 rounded-xl border flex items-center justify-between mb-3 transition-all ${isAddLightActive ? 'bg-yellow-500/10 border-yellow-500/50 text-yellow-200' : 'bg-zinc-900/40 border-zinc-800 text-zinc-400'}`}><span className="text-sm font-medium">{t.controls.turnOnLights}</span><div className={`w-10 h-5 rounded-full relative transition-colors ${isAddLightActive ? 'bg-yellow-500' : 'bg-zinc-700'}`}><div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-transform ${isAddLightActive ? 'left-6' : 'left-1'}`} /></div></button>
+                                {isAddLightActive && (<div className="space-y-4 animate-fade-in"><div className="space-y-2"><div className="flex justify-between text-xs text-zinc-400"><span>{t.controls.brightness}</span><span>{lightingBrightness}%</span></div><input type="range" min="0" max="100" value={lightingBrightness} onChange={(e) => setLightingBrightness(Number(e.target.value))} className="w-full h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-yellow-500" /></div><div className="space-y-2"><div className="flex justify-between text-xs text-zinc-400"><span>{t.controls.colorTemp}</span><span>{lightingTemperature < 33 ? t.controls.warm : lightingTemperature > 66 ? t.controls.cool : t.controls.neutral}</span></div><input type="range" min="0" max="100" value={lightingTemperature} onChange={(e) => setLightingTemperature(Number(e.target.value))} className="w-full h-1.5 bg-gradient-to-r from-orange-400 via-white to-blue-300 rounded-lg appearance-none cursor-pointer" /></div></div>)}
+                           </CollapsibleSection>
+
+                           <CollapsibleSection title={t.sections.background} sectionKey="background" isOpen={openSections.background} onToggle={() => toggleSection('background')} icon={<LandscapeIcon className="w-3.5 h-3.5"/>}>
+                                <div className="flex flex-wrap gap-2 mb-3">{backgrounds.map((bg) => (<OptionButton key={bg} option={bg} isSelected={selectedBackgrounds.includes(bg)} onClick={() => handleBackgroundToggle(bg)} />))}</div>
+                                {selectedBackgrounds.length > 0 && <IntensitySlider value={backgroundIntensity} onChange={setBackgroundIntensity} t={t} />}
+                           </CollapsibleSection>
+
+                            <CollapsibleSection title={t.sections.foreground} sectionKey="foreground" isOpen={openSections.foreground} onToggle={() => toggleSection('foreground')} icon={<FlowerIcon className="w-3.5 h-3.5"/>}>
+                                <div className="flex flex-wrap gap-2 mb-3">{foregrounds.map((fg) => (<OptionButton key={fg} option={fg} isSelected={selectedForegrounds.includes(fg)} onClick={() => handleForegroundToggle(fg)} />))}</div>
+                                {selectedForegrounds.length > 0 && <IntensitySlider value={foregroundIntensity} onChange={setForegroundIntensity} t={t} />}
+                           </CollapsibleSection>
+                        </>
+                    )}
+
+                    {sceneType === 'interior' && (
+                        <>
+                           <CollapsibleSection title={t.sections.interiorStyle} sectionKey="interiorStyle" isOpen={openSections.interiorStyle} onToggle={() => toggleSection('interiorStyle')} icon={<HomeIcon className="w-3.5 h-3.5"/>}>
+                                <div className="grid grid-cols-2 gap-2 mb-3">{interiorStyleOptions.map((style) => (<OptionButton key={style.name} option={style.name} isSelected={selectedInteriorStyle === style.name} onClick={(opt) => setSelectedInteriorStyle(selectedInteriorStyle === opt ? '' : opt)} />))}</div>
+                                {selectedInteriorStyle && <IntensitySlider value={styleIntensity} onChange={setStyleIntensity} t={t} />}
+                           </CollapsibleSection>
+                            
+                           <CollapsibleSection title={t.sections.quickActions} sectionKey="interiorQuickActions" isOpen={openSections.interiorQuickActions} onToggle={() => toggleSection('interiorQuickActions')} icon={<SparklesIcon className="w-3.5 h-3.5" />}>
+                                <div className="grid grid-cols-2 gap-2">{interiorQuickActionList.map((action) => (<PreviewCard key={action.id} label={action.label} description={action.desc} isSelected={selectedQuickAction === action.id} onClick={() => handleQuickActionClick(action.id)} />))}</div>
+                           </CollapsibleSection>
+
+                           <CollapsibleSection title={t.sections.roomConfig} sectionKey="interiorRoomType" isOpen={openSections.interiorRoomType} onToggle={() => toggleSection('interiorRoomType')} icon={<CogIcon className="w-3.5 h-3.5"/>}>
+                                <div className="flex flex-wrap gap-2">{roomTypeOptions.map((room) => (<OptionButton key={room} option={room} isSelected={selectedInteriorRoomType === room} onClick={(opt) => setSelectedInteriorRoomType(selectedInteriorRoomType === opt ? '' : opt)} />))}</div>
+                           </CollapsibleSection>
+
+                           <CollapsibleSection title={t.sections.systems} sectionKey="specialLighting" isOpen={openSections.specialLighting} onToggle={() => toggleSection('specialLighting')} icon={<LightbulbIcon className="w-3.5 h-3.5"/>}>
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between"><span className="text-xs text-zinc-300">{t.controls.coveLight}</span><button onClick={() => setIsCoveLightActive(!isCoveLightActive)} className={`w-10 h-5 rounded-full relative transition-colors ${isCoveLightActive ? 'bg-yellow-500' : 'bg-zinc-700'}`}><div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-transform ${isCoveLightActive ? 'left-6' : 'left-1'}`} /></button></div>
+                                    <div className="flex items-center justify-between"><span className="text-xs text-zinc-300">{t.controls.downlight}</span><button onClick={() => setIsDownlightActive(!isDownlightActive)} className={`w-10 h-5 rounded-full relative transition-colors ${isDownlightActive ? 'bg-yellow-500' : 'bg-zinc-700'}`}><div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-transform ${isDownlightActive ? 'left-6' : 'left-1'}`} /></button></div>
+                                    <div className="flex items-center justify-between"><span className="text-xs text-zinc-300">{t.controls.ac4way}</span><button onClick={() => setAddFourWayAC(!addFourWayAC)} className={`w-10 h-5 rounded-full relative transition-colors ${addFourWayAC ? 'bg-blue-500' : 'bg-zinc-700'}`}><div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-transform ${addFourWayAC ? 'left-6' : 'left-1'}`} /></button></div>
+                                    <div className="flex items-center justify-between"><span className="text-xs text-zinc-300">{t.controls.acWall}</span><button onClick={() => setAddWallTypeAC(!addWallTypeAC)} className={`w-10 h-5 rounded-full relative transition-colors ${addWallTypeAC ? 'bg-blue-500' : 'bg-zinc-700'}`}><div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-transform ${addWallTypeAC ? 'left-6' : 'left-1'}`} /></button></div>
+                                </div>
+                           </CollapsibleSection>
+
+                           <CollapsibleSection title={t.sections.viewOutside} sectionKey="interiorBackground" isOpen={openSections.background} onToggle={() => toggleSection('background')} icon={<LandscapeIcon className="w-3.5 h-3.5"/>}>
+                                <div className="flex flex-wrap gap-2 mb-3">{interiorBackgrounds.map((bg) => (<OptionButton key={bg} option={bg} isSelected={selectedBackgrounds.includes(bg)} onClick={() => handleBackgroundToggle(bg)} />))}</div>
+                                {selectedBackgrounds.length > 0 && <IntensitySlider value={backgroundIntensity} onChange={setBackgroundIntensity} t={t} />}
+                           </CollapsibleSection>
+                           
+                           <CollapsibleSection title={t.sections.foreground} sectionKey="interiorForeground" isOpen={openSections.foreground} onToggle={() => toggleSection('foreground')} icon={<FlowerIcon className="w-3.5 h-3.5"/>}>
+                                <div className="flex flex-wrap gap-2 mb-3">{interiorForegrounds.map((fg) => (<OptionButton key={fg} option={fg} isSelected={selectedForegrounds.includes(fg)} onClick={() => handleForegroundToggle(fg)} />))}</div>
+                                {selectedForegrounds.length > 0 && <IntensitySlider value={foregroundIntensity} onChange={setForegroundIntensity} t={t} />}
+                           </CollapsibleSection>
+                        </>
+                    )}
+
+                    {sceneType === 'plan' && (
+                        <>
+                           <CollapsibleSection title={t.sections.conversionMode} sectionKey="planConversion" isOpen={openSections.planConversion} onToggle={() => toggleSection('planConversion')} icon={<ArrowPathIcon className="w-3.5 h-3.5"/>}>
+                                <div className="grid grid-cols-1 gap-2">{planConversionModes.map((mode) => (<PreviewCard key={mode.id} label={mode.label} description={mode.desc} isSelected={planConversionMode === mode.id} onClick={() => setPlanConversionMode(mode.id)} />))}</div>
+                           </CollapsibleSection>
+                           
+                           <CollapsibleSection title={t.sections.quickActions} sectionKey="planQuickActions" isOpen={openSections.planQuickActions} onToggle={() => toggleSection('planQuickActions')} icon={<SparklesIcon className="w-3.5 h-3.5" />}>
+                                <div className="grid grid-cols-2 gap-2">{planQuickActionList.map((action) => (<PreviewCard key={action.id} label={action.label} description={action.desc} isSelected={selectedQuickAction === action.id} onClick={() => handleQuickActionClick(action.id)} icon={action.icon} />))}</div>
+                           </CollapsibleSection>
+
+                           <CollapsibleSection title={t.sections.roomConfig} sectionKey="planConfig" isOpen={openSections.planConfig} onToggle={() => toggleSection('planConfig')} icon={<CogIcon className="w-3.5 h-3.5"/>}>
+                                <div className="flex flex-wrap gap-2">{roomTypeOptions.map((room) => (<OptionButton key={room} option={room} isSelected={selectedRoomType === room} onClick={(opt) => setSelectedRoomType(selectedRoomType === opt ? '' : opt)} />))}</div>
+                           </CollapsibleSection>
+                           
+                           <CollapsibleSection title={t.sections.flooring} sectionKey="planFlooring" isOpen={openSections.planFlooring} onToggle={() => toggleSection('planFlooring')} icon={<TextureIcon className="w-3.5 h-3.5"/>}>
+                                <div className="flex flex-wrap gap-2 mb-3">{flooringOptions.map((floor) => (<OptionButton key={floor} option={floor} isSelected={selectedFlooring === floor} onClick={(opt) => setSelectedFlooring(selectedFlooring === opt ? '' : opt)} />))}</div>
+                                <input type="text" value={customFlooringPrompt} onChange={(e) => setCustomFlooringPrompt(e.target.value)} placeholder={t.placeholders.customFlooring} className="w-full bg-zinc-800/50 text-xs text-zinc-300 rounded-lg p-2 border border-zinc-700 focus:border-zinc-500 outline-none" />
+                           </CollapsibleSection>
+                        </>
+                    )}
+
+                    {/* Manual Adjustments */}
+                    <CollapsibleSection title={t.sections.manualAdjustments} sectionKey="manualAdjustments" isOpen={openSections.manualAdjustments} onToggle={() => toggleSection('manualAdjustments')} icon={<AdjustmentsIcon className="w-3.5 h-3.5"/>}>
+                         <div className="space-y-4">
+                            {[
+                                { label: t.controls.brightness, val: brightness, set: setBrightness },
+                                { label: t.controls.contrast, val: contrast, set: setContrast },
+                                { label: t.controls.saturation, val: saturation, set: setSaturation },
+                                { label: t.controls.sharpness, val: sharpness, set: setSharpness }
+                            ].map((ctrl) => (
+                                <div key={ctrl.label} className="space-y-1.5"><div className="flex justify-between text-xs text-zinc-400"><span>{ctrl.label}</span><span>{ctrl.val}%</span></div><input type="range" min="0" max="200" value={ctrl.val} onChange={(e) => ctrl.set(Number(e.target.value))} className="w-full h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-500" /></div>
+                            ))}
+                            <button onClick={applyManualChanges} disabled={isLoading || !activeImage} title={t.controls.applyManual} className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold uppercase rounded-lg transition-colors border border-white/5">{t.controls.applyManual}</button>
+                         </div>
+                    </CollapsibleSection>
+
+                    {/* Brush Settings (Object Mode Only) */}
+                    {editingMode === 'object' && (
+                        <CollapsibleSection title={t.sections.brushSettings} sectionKey="brushTool" isOpen={openSections.brushTool} onToggle={() => toggleSection('brushTool')} icon={<BrushIcon className="w-3.5 h-3.5"/>}>
+                            <div className="space-y-4">
+                                <div className="flex gap-2">
+                                    <button onClick={() => setMaskTool('brush')} title="Brush Tool" className={`flex-1 py-2 text-xs font-bold uppercase rounded-lg border transition-all ${maskTool === 'brush' ? 'bg-zinc-700 text-white border-zinc-500' : 'bg-zinc-800/50 text-zinc-500 border-zinc-800'}`}>Brush</button>
+                                    <button onClick={() => setMaskTool('line')} title="Line Tool" className={`flex-1 py-2 text-xs font-bold uppercase rounded-lg border transition-all ${maskTool === 'line' ? 'bg-zinc-700 text-white border-zinc-500' : 'bg-zinc-800/50 text-zinc-500 border-zinc-800'}`}>Line</button>
+                                    <button onClick={() => setMaskTool('magic-wand')} title="Magic Wand Tool" className={`flex-1 py-2 text-xs font-bold uppercase rounded-lg border transition-all ${maskTool === 'magic-wand' ? 'bg-zinc-700 text-white border-zinc-500' : 'bg-zinc-800/50 text-zinc-500 border-zinc-800'}`}>Wand</button>
+                                </div>
+                                {maskTool === 'magic-wand' ? (
+                                    <div className="space-y-2"><div className="flex justify-between text-xs text-zinc-400"><span>{t.controls.tolerance}</span><span>{tolerance}%</span></div><input type="range" min="0" max="100" value={tolerance} onChange={(e) => setTolerance(Number(e.target.value))} className="w-full h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-500" /></div>
+                                ) : (
+                                    <div className="space-y-2"><div className="flex justify-between text-xs text-zinc-400"><span>Brush Size</span><span>{brushSize}px</span></div><input type="range" min="1" max="100" value={brushSize} onChange={(e) => setBrushSize(Number(e.target.value))} className="w-full h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-500" /></div>
+                                )}
+                                <div className="flex gap-2">{brushColors.map((color) => (<button key={color.name} onClick={() => setBrushColor(color.value)} title={`Color: ${color.name}`} className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 ${brushColor === color.value ? 'border-white scale-110 shadow-lg' : 'border-transparent opacity-70 hover:opacity-100'} ${color.css}`} />))}</div>
+                                <button onClick={() => imageDisplayRef.current?.clearMask()} title={t.controls.clearMask} className="w-full py-2 text-xs font-bold text-red-400 bg-red-900/10 border border-red-900/30 hover:bg-red-900/20 rounded-lg transition-colors">{t.controls.clearMask}</button>
+                            </div>
+                        </CollapsibleSection>
+                    )}
+                </div>
+            </aside>
+            
+            {/* Main Content */}
+            <main className="flex-1 flex flex-col min-w-0 bg-[#0c0c0e] relative">
+                {/* Image Toolbar / Mode Selector */}
+                <div className="absolute top-4 left-4 right-4 z-40 flex justify-between items-start pointer-events-none">
+                     <div className="pointer-events-auto bg-black/60 backdrop-blur-md p-1 rounded-xl border border-white/10 flex gap-1 shadow-2xl">
+                        <ModeButton label={t.modes.general} icon={<AdjustmentsIcon className="w-4 h-4"/>} mode="default" activeMode={editingMode} onClick={changeEditingMode} />
+                        <ModeButton label={t.modes.object} icon={<BrushIcon className="w-4 h-4"/>} mode="object" activeMode={editingMode} onClick={changeEditingMode} />
+                     </div>
+                     <div className="pointer-events-auto flex items-center gap-2">
+                        {/* Model Selection Dropdown */}
+                        <div className="relative group">
+                            <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value as any)} title="Select AI Model" className="appearance-none bg-black/60 backdrop-blur-md text-zinc-300 text-xs font-bold uppercase tracking-wider pl-3 pr-8 py-2 rounded-xl border border-white/10 hover:bg-zinc-800/80 focus:outline-none cursor-pointer">
+                                <option value="auto">Auto Model (Smart)</option>
+                                <option value="gemini-3-pro-speed">Gemini 3 Pro (~1.40 THB)</option>
+                                <option value="gemini-3-pro-4k">Gemini 3 Pro 4K (~1.40 THB)</option>
+                                <option value="gemini-2.5-flash">Gemini 2.5 Flash (Fast)</option>
+                            </select>
+                            <ChevronDownIcon className="w-3 h-3 absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none group-hover:text-zinc-300" />
                         </div>
                      </div>
-                     {hasApiKey && (
-                         <button onClick={() => setIsKeyModalOpen(false)} className="text-zinc-500 hover:text-white transition-colors">
-                             <XMarkIcon className="w-6 h-6"/>
-                         </button>
-                     )}
                 </div>
-                
-                <p className="text-zinc-300 text-sm leading-relaxed mb-6 font-light">
-                   {language === 'th' 
-                    ? 'กรุณาเชื่อมต่อ API Key เพื่อเริ่มการสร้างภาพ AI ความละเอียดสูง' 
-                    : 'Please connect your API Key to enable high-resolution AI generation.'}
-                </p>
-                
-                <div className="bg-zinc-900/50 rounded-xl p-4 mb-6 border border-white/5">
-                    <h3 className="text-xs font-bold text-zinc-400 uppercase mb-2">
-                        {language === 'th' ? 'วิธีขอ Key ฟรี (1 นาที)' : 'How to get a Free Key'}
-                    </h3>
-                    <ol className="text-xs text-zinc-300 space-y-2 list-decimal pl-4">
-                        <li>{language === 'th' ? 'กดปุ่ม "ขอ API Key ฟรี" ด้านล่าง' : 'Click "Get a free API Key" below'}</li>
-                        <li>{language === 'th' ? 'ล็อกอิน Google -> กด "Create API key"' : 'Login to Google -> Click "Create API key"'}</li>
-                        <li>{language === 'th' ? 'เลือก "Create API key in new project"' : 'Select "Create API key in new project"'}</li>
-                        <li>{language === 'th' ? 'คัดลอกรหัส (AIza...) มาใส่ในช่องนี้' : 'Copy the code (AIza...) and paste it here'}</li>
-                    </ol>
-                    <div className="mt-3 pt-3 border-t border-white/10 text-[10px] text-zinc-500">
-                        <p><strong>*RPD (Requests Per Day):</strong> Free keys have a daily limit (approx 50-100 images). If you hit the limit, come back tomorrow or switch Google Accounts.</p>
-                        {language === 'th' && <p><strong>*คำเตือน:</strong> คีย์ฟรีมีการจำกัดจำนวนต่อวัน (ประมาณ 50-100 ภาพ) ถ้าใช้ไม่ได้ให้รอวันพรุ่งนี้หรือเปลี่ยนบัญชี Google เพื่อขอคีย์ใหม่</p>}
-                    </div>
-                </div>
-                
-                {(window as any).aistudio ? (
-                    <button 
-                        onClick={handleApiKeySelect}
-                        className="w-full py-3 px-6 bg-white text-black font-bold rounded-xl hover:bg-zinc-200 transition-all transform active:scale-95 mb-4 shadow-lg"
-                    >
-                        {language === 'th' ? 'เลือก API Key (Auto)' : 'Select API Key (Auto)'}
-                    </button>
-                ) : (
-                    <form onSubmit={handleManualKeySubmit} className="space-y-4">
-                        <div className="relative">
-                            <input 
-                                type={isKeyVisible ? "text" : "password"} 
-                                value={tempKey}
-                                onChange={(e) => setTempKey(e.target.value)}
-                                placeholder="Paste your Gemini API Key here"
-                                className="w-full p-4 pr-12 bg-black/50 border border-zinc-700 rounded-xl text-white placeholder-zinc-600 focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all font-mono text-sm"
+
+                {/* Main Image Display */}
+                <div className="flex-1 p-4 flex items-center justify-center relative bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-fixed">
+                     <div className="relative w-full h-full max-w-7xl flex flex-col">
+                        <ImageDisplay 
+                            ref={imageDisplayRef}
+                            label={activeImage ? activeImage.file?.name || "Untitled" : "No Image"} 
+                            imageUrl={activeImage && activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex] : activeImage?.dataUrl || null} 
+                            originalImageUrl={activeImage?.dataUrl} 
+                            isLoading={isLoading} 
+                            hideLabel={true}
+                            brightness={brightness} 
+                            contrast={contrast} 
+                            saturation={saturation} 
+                            sharpness={sharpness}
+                            isMaskingMode={editingMode === 'object'} 
+                            brushSize={brushSize} 
+                            brushColor={brushColor}
+                            maskTool={maskTool}
+                            tolerance={tolerance}
+                            onMaskChange={(isEmpty) => setIsMaskEmpty(isEmpty)}
+                            onUpload={() => fileInputRef.current?.click()}
+                        />
+                        
+                        {/* Hidden input for triggering upload from empty state */}
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            className="hidden" 
+                            accept="image/*" 
+                            onChange={handleImageChange} 
+                        />
+
+                        {/* Bottom Toolbar */}
+                        <div className="mt-4 flex justify-center">
+                            <ImageToolbar 
+                                onUndo={handleUndo} 
+                                onRedo={handleRedo} 
+                                onClose={handleCloseProject} 
+                                onDownload={handleDownload}
+                                onShare={handleShare}
+                                onUpscale={handleUpscale} 
+                                onRegenerate={handleRegenerate}
+                                onTransform={handleTransform}
+                                onVeo={handleVeoClick}
+                                canUndo={!!activeImage && activeImage.historyIndex > -1} 
+                                canRedo={!!activeImage && activeImage.historyIndex < (activeImage.history.length - 1)} 
+                                canClose={!!activeImage}
+                                canUpscaleAndSave={!!activeImage && activeImage.historyIndex > -1}
+                                canRegenerate={!!activeImage && activeImage.apiPromptHistory?.length > 0}
+                                isLoading={isLoading}
+                                t={t}
                             />
-                            <button
-                                type="button"
-                                onClick={() => setIsKeyVisible(!isKeyVisible)}
-                                className="absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-500 hover:text-white transition-colors"
-                            >
-                                {isKeyVisible ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                        </div>
+
+                         {/* Generate Button */}
+                        <div className="absolute bottom-24 right-6 z-30">
+                            <button onClick={handleSubmit} disabled={isLoading || !activeImage || (!hasTextPrompt && !hasEditInstruction && !selectedQuickAction)} title={t.buttons.generate} className="group relative flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(220,38,38,0.5)] hover:shadow-[0_20px_60px_-15px_rgba(220,38,38,0.6)] hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-shimmer" />
+                                <span className="font-bold text-lg tracking-wide uppercase">{isLoading ? t.buttons.generating : t.buttons.generate}</span>
+                                {isLoading ? <Spinner className="w-6 h-6" /> : <SparklesIcon className="w-6 h-6 animate-pulse" />}
                             </button>
                         </div>
-                        <button 
-                            type="submit"
-                            disabled={!tempKey.trim()}
-                            className="w-full py-4 px-6 bg-gradient-to-r from-red-600 to-orange-600 text-white font-bold rounded-xl hover:from-red-500 hover:to-orange-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-red-900/30 active:scale-95"
-                        >
-                            {language === 'th' ? 'บันทึกและเริ่มใช้งาน' : 'Save & Start Using'}
-                        </button>
-                    </form>
-                )}
-                
-                <div className="text-center mt-6 pt-6 border-t border-white/5">
-                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:text-blue-300 hover:underline flex items-center justify-center gap-1">
-                        {language === 'th' ? 'ขอกุญแจ API Key (ฟรี)' : 'Get a free API Key'}
-                        <ArrowPathIcon className="w-3 h-3 rotate-[-45deg]"/>
-                    </a>
+                     </div>
                 </div>
-            </div>
+            </main>
         </div>
-      )}
 
-      {/* ... (Project Modal same as before) ... */}
-      {isProjectModalOpen && (
-         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-lg p-4" onClick={() => setIsProjectModalOpen(false)}>
-            <div className="bg-[#18181b] rounded-2xl border border-white/10 shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
-                <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/20">
-                    <h2 className="text-xl font-bold text-white">{t.header.projects}</h2>
-                    <button onClick={() => setIsProjectModalOpen(false)} className="text-zinc-500 hover:text-white transition-colors"><XMarkIcon className="w-6 h-6"/></button>
-                </div>
-                <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-black/40">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <label className="cursor-pointer flex flex-col items-center justify-center p-8 border-2 border-dashed border-zinc-800 rounded-xl hover:border-red-500 hover:bg-red-500/5 transition-all group">
-                             <div className="w-12 h-12 rounded-full bg-zinc-800/50 flex items-center justify-center group-hover:bg-red-500/10 transition-colors mb-3">
-                                <PhotoIcon className="w-6 h-6 text-zinc-500 group-hover:text-red-500 transition-colors"/>
-                             </div>
-                             <span className="text-sm font-medium text-zinc-400 group-hover:text-white transition-colors">{t.buttons.newProject}</span>
-                             <input type="file" accept="image/*" multiple onChange={handleImageChange} className="hidden" />
+        {/* --- MODALS --- */}
+        
+        {/* Project Modal */}
+        {isProjectModalOpen && (
+            <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                <div className="bg-[#0c0c0e] rounded-2xl border border-white/10 w-full max-w-3xl h-[80vh] flex flex-col shadow-2xl">
+                    <div className="p-6 border-b border-white/5 flex justify-between items-center"><h2 className="text-xl font-bold text-white tracking-tight">{t.buttons.openProjects}</h2><button onClick={() => setIsProjectModalOpen(false)} title="Close" className="p-2 hover:bg-white/10 rounded-full transition-colors text-zinc-400"><XMarkIcon className="w-6 h-6" /></button></div>
+                    <div className="p-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 overflow-y-auto custom-scrollbar">
+                        <label className="aspect-square flex flex-col items-center justify-center bg-zinc-800/50 hover:bg-zinc-800 border-2 border-dashed border-zinc-700 hover:border-zinc-500 rounded-xl cursor-pointer transition-all group">
+                            <div className="p-4 bg-zinc-900 rounded-full mb-3 group-hover:scale-110 transition-transform"><PhotoIcon className="w-8 h-8 text-zinc-500 group-hover:text-zinc-300" /></div><span className="text-sm font-bold text-zinc-400 group-hover:text-white uppercase tracking-wide">{t.buttons.newProject}</span><input type="file" className="hidden" accept="image/*" multiple onChange={handleImageChange} />
                         </label>
-                        {imageList.map((img, index) => (
-                            <div key={img.id} onClick={() => { setActiveImageIndex(index); setIsProjectModalOpen(false); }} 
-                                 className={`flex items-center p-3 rounded-xl border cursor-pointer transition-all ${activeImageIndex === index ? 'bg-red-900/10 border-red-500/50 ring-1 ring-red-500/20' : 'bg-zinc-900/50 border-white/5 hover:border-zinc-600 hover:bg-zinc-800'}`}>
-                                <div className="w-16 h-16 bg-black rounded-lg overflow-hidden flex-shrink-0 border border-white/5 shadow-inner">
-                                    {img.dataUrl && <img src={img.dataUrl} className="w-full h-full object-cover opacity-80" alt="thumb" />}
+                        {imageList.map((img, idx) => (
+                            <div key={img.id} onClick={() => { setActiveImageIndex(idx); setIsProjectModalOpen(false); }} className={`relative aspect-square rounded-xl overflow-hidden cursor-pointer border-2 transition-all group ${activeImageIndex === idx ? 'border-red-500 ring-4 ring-red-500/20' : 'border-zinc-800 hover:border-zinc-500'}`}>
+                                <img src={img.dataUrl || ''} alt="Thumbnail" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
+                                    <p className="text-xs font-bold text-white truncate">{img.file?.name || "Untitled"}</p>
+                                    <p className="text-[10px] text-zinc-400">{new Date().toLocaleDateString()}</p>
                                 </div>
-                                <div className="ml-4 flex-1 min-w-0">
-                                    <p className="text-sm font-bold text-zinc-200 truncate">{img.file?.name || `Project ${index + 1}`}</p>
-                                    <p className="text-xs text-zinc-500 mt-1">{img.history.length} edits made</p>
-                                </div>
-                                <button onClick={(e) => { e.stopPropagation(); handleRemoveImage(index); }} className="p-2 text-zinc-600 hover:text-red-500 transition-colors"><ResetEditsIcon className="w-4 h-4"/></button>
+                                <button onClick={(e) => { e.stopPropagation(); handleRemoveImage(idx); }} title="Delete Project" className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-500 transition-all shadow-lg transform hover:scale-110"><XMarkIcon className="w-3.5 h-3.5" /></button>
                             </div>
                         ))}
                     </div>
                 </div>
-                <div className="p-4 border-t border-white/5 bg-black/20 flex justify-between items-center">
-                    <button onClick={handleClearAllProjects} className="text-xs text-red-500 hover:text-red-400 font-medium px-3 py-1.5 rounded hover:bg-red-500/10 transition-colors">{t.buttons.clearAll}</button>
-                    <div className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold">Local Browser Storage</div>
-                </div>
             </div>
-         </div>
-      )}
+        )}
 
-      {/* LEFT SIDEBAR */}
-      <aside className="w-80 flex flex-col border-r border-white/5 bg-black/80 backdrop-blur-xl flex-shrink-0 z-20 shadow-[4px_0_24px_rgba(0,0,0,0.5)]">
-         {/* Logo and Tabs */}
-         <div className="h-16 flex items-center px-6 border-b border-white/5 bg-gradient-to-r from-black/50 to-transparent">
-             <div className="flex items-center gap-2">
-                 <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-red-600 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
-                    <SparklesIcon className="w-5 h-5 text-white" />
-                 </div>
-                 <h1 className="text-xl font-black tracking-tighter text-white italic">FAST <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">AI</span></h1>
-             </div>
-         </div>
+        {/* API Key Modal */}
+        {isKeyModalOpen && (
+            <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+                <div className="bg-[#0c0c0e] rounded-2xl border border-red-500/30 w-full max-w-md p-8 shadow-[0_0_50px_rgba(220,38,38,0.1)] relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 to-orange-500"></div>
+                    <h2 className="text-2xl font-bold text-white mb-2">API Authentication</h2>
+                    <p className="text-sm text-zinc-400 mb-6">Enter your Gemini API Key to unlock professional features. Your key is stored locally.</p>
+                    
+                    {error && <div className="mb-4 p-3 bg-red-900/20 border border-red-500/50 rounded-lg text-red-200 text-sm flex items-start gap-2"><span className="mt-0.5">⚠️</span>{error}</div>}
 
-         {activeImage && (
-           <div className="flex border-b border-white/5 bg-black/40 p-1">
-             <button onClick={() => handleSceneTypeSelect('exterior')} className={`flex-1 py-2 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-300 ${sceneType === 'exterior' ? 'text-white bg-zinc-800 shadow-lg' : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'}`}>{t.tabs.exterior}</button>
-             <button onClick={() => handleSceneTypeSelect('interior')} className={`flex-1 py-2 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-300 ${sceneType === 'interior' ? 'text-white bg-zinc-800 shadow-lg' : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'}`}>{t.tabs.interior}</button>
-             <button onClick={() => handleSceneTypeSelect('plan')} className={`flex-1 py-2 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-300 ${sceneType === 'plan' ? 'text-white bg-zinc-800 shadow-lg' : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'}`}>{t.tabs.plan}</button>
-           </div>
-         )}
-         
-         {/* ... LEFT PANEL CONTENT ... */}
-         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3 bg-transparent">
-            {!activeImage ? (
-               <div className="flex flex-col items-center justify-center h-full text-zinc-500 space-y-6 animate-fade-in">
-                  <div className="w-24 h-24 rounded-2xl bg-zinc-900/50 flex items-center justify-center border border-white/5 shadow-inner"><PhotoIcon className="w-10 h-10 opacity-20"/></div>
-                  <p className="text-sm font-light tracking-wide">{t.header.noProject}</p>
-                  <button onClick={() => setIsProjectModalOpen(true)} className="px-6 py-3 bg-white text-black hover:bg-zinc-200 rounded-full text-sm font-bold transition-transform hover:scale-105 shadow-xl shadow-white/5">{t.buttons.openProjects}</button>
-               </div>
-            ) : (
-               <>
-                  {/* Mode Buttons */}
-                  <div className="flex gap-2 mb-4 p-1 bg-black/30 rounded-xl border border-white/5">
-                         <ModeButton label={t.modes.general} icon={<SparklesIcon className="w-4 h-4" />} mode="default" activeMode={editingMode} onClick={setEditingMode} />
-                         <ModeButton label={t.modes.object} icon={<BrushIcon className="w-4 h-4" />} mode="object" activeMode={editingMode} onClick={setEditingMode} />
-                  </div>
-                  
-                  {/* ... Rest of the left panel ... */}
-                  {/* Model Selection Dropdown */}
-                  <div className="mb-4 px-1">
-                      <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1"><CogIcon className="w-3 h-3"/> AI Model Selection</div>
-                      <div className="relative">
-                          <select
-                              value={selectedModel}
-                              onChange={(e) => setSelectedModel(e.target.value as any)}
-                              className="w-full bg-zinc-900/50 border border-zinc-700 text-zinc-300 text-xs font-medium rounded-lg p-2.5 focus:ring-1 focus:ring-red-500 focus:border-red-500 appearance-none cursor-pointer shadow-sm hover:bg-zinc-800/50 transition-colors"
-                          >
-                              <option value="auto">Auto (Smart Fallback)</option>
-                              <option value="gemini-3-pro">Gemini 3.0 Pro (~1.40 THB/img)</option>
-                              <option value="gemini-3-pro-speed">Gemini 3.0 Pro Speed (~1.40 THB/img)</option>
-                              <option value="gemini-3-pro-4k">Gemini 3.0 Pro 4K (~1.40 THB/img)</option>
-                          </select>
-                          <ChevronDownIcon className="absolute right-3 top-3 w-4 h-4 text-zinc-500 pointer-events-none" />
-                      </div>
-                  </div>
-                  
-                   {/* Manual Adjustments Section */}
-                   <CollapsibleSection title={t.sections.manualAdjustments} sectionKey="manualAdjustments" isOpen={openSections.manualAdjustments} onToggle={() => toggleSection('manualAdjustments')} icon={<AdjustmentsIcon className="w-4 h-4"/>} disabled={editingMode === 'object'}>
-                       <div className="space-y-4">
-                           <div><div className="flex justify-between text-xs mb-1 text-zinc-400"><span>{t.controls.brightness}</span><span>{brightness}%</span></div><input type="range" min="50" max="150" value={brightness} onChange={(e) => setBrightness(Number(e.target.value))} className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-red-500"/></div>
-                           <div><div className="flex justify-between text-xs mb-1 text-zinc-400"><span>{t.controls.contrast}</span><span>{contrast}%</span></div><input type="range" min="50" max="150" value={contrast} onChange={(e) => setContrast(Number(e.target.value))} className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-red-500"/></div>
-                           <div><div className="flex justify-between text-xs mb-1 text-zinc-400"><span>{t.controls.saturation}</span><span>{saturation}%</span></div><input type="range" min="0" max="200" value={saturation} onChange={(e) => setSaturation(Number(e.target.value))} className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-red-500"/></div>
-                           <button onClick={applyManualChanges} className="w-full mt-2 py-2.5 text-xs font-bold bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/5 rounded-lg transition-colors flex items-center justify-center gap-2"><AdjustmentsIcon className="w-3 h-3" /> {t.controls.applyManual}</button>
-                       </div>
-                   </CollapsibleSection>
-
-                  {/* --- EXTERIOR MODE --- */}
-                  {sceneType === 'exterior' && (
-                    <>
-                        <CollapsibleSection title={t.sections.prompt} sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-4 h-4"/>}>
+                    <div className="space-y-4">
+                        {(window as any).aistudio && (
+                            <button onClick={handleApiKeySelect} className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl border border-white/10 transition-all flex items-center justify-center gap-2 mb-2">
+                                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> Select Key from AI Studio
+                            </button>
+                        )}
+                        
+                        <form onSubmit={handleManualKeySubmit} className="space-y-4">
                             <div className="relative">
-                                <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={editingMode === 'object' ? t.placeholders.promptMask : t.placeholders.promptExterior} className="w-full bg-black/50 border border-zinc-700 rounded-xl p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none shadow-inner" rows={3} />
-                                <button 
-                                    onClick={handleAutoDescribe} 
-                                    disabled={isAnalyzing}
-                                    className="absolute bottom-2 right-2 p-1.5 bg-zinc-800/80 hover:bg-red-500 text-zinc-400 hover:text-white rounded-lg transition-all border border-zinc-700 hover:border-red-400 disabled:opacity-50"
-                                    title={t.controls.autoDescribe}
-                                >
-                                    {isAnalyzing ? <Spinner className="w-4 h-4"/> : <SparklesIcon className="w-4 h-4" />}
+                                <input 
+                                    type={isKeyVisible ? "text" : "password"} 
+                                    value={tempKey} 
+                                    onChange={(e) => setTempKey(e.target.value)} 
+                                    placeholder="Paste your API Key here (AIza...)" 
+                                    className="w-full bg-black/50 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none pr-10 font-mono text-sm" 
+                                />
+                                <button type="button" onClick={() => setIsKeyVisible(!isKeyVisible)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300">
+                                    {isKeyVisible ? <EyeSlashIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
                                 </button>
                             </div>
-                        </CollapsibleSection>
-
-                        {editingMode === 'default' && (
-                            <>
-                                <CollapsibleSection title={t.sections.moodboard} sectionKey="moodboard" isOpen={openSections.moodboard} onToggle={() => toggleSection('moodboard')} icon={<TextureIcon className="w-4 h-4"/>}>
-                                    <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-zinc-700 rounded-xl hover:border-red-500 hover:bg-red-500/5 transition-colors cursor-pointer group">
-                                        {referenceImage ? (
-                                            <img src={referenceImage.dataUrl} alt="Ref" className="h-32 object-contain rounded-lg shadow-md" />
-                                        ) : (
-                                            <>
-                                                <PhotoIcon className="w-8 h-8 text-zinc-600 group-hover:text-red-500 transition-colors mb-2"/>
-                                                <span className="text-xs text-zinc-500 text-center group-hover:text-zinc-300">Upload Reference Image</span>
-                                            </>
-                                        )}
-                                        <input type="file" accept="image/*" onChange={handleReferenceImageChange} className="hidden" />
-                                    </label>
-                                    {referenceImage && <button onClick={() => setReferenceImage(null)} className="w-full mt-2 py-1.5 text-xs text-red-400 hover:text-red-300">Remove Reference</button>}
-                                </CollapsibleSection>
-
-                                <CollapsibleSection title={t.sections.quickActions} sectionKey="quickActions" isOpen={openSections.quickActions} onToggle={() => toggleSection('quickActions')} icon={<SparklesIcon className="w-4 h-4"/>}>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {exteriorQuickActionList.map(action => (
-                                            <PreviewCard key={action.id} label={action.label} description={action.desc} isSelected={selectedQuickAction === action.id} onClick={() => handleQuickActionClick(action.id)} isNested icon={action.icon} />
-                                        ))}
-                                    </div>
-                                </CollapsibleSection>
-                                {/* ... Other exterior sections (camera, art style, etc.) ... */}
-                                <CollapsibleSection title={t.sections.cameraAngle} sectionKey="cameraAngle" isOpen={openSections.cameraAngle} onToggle={() => toggleSection('cameraAngle')} icon={<CameraAngleIcon className="w-4 h-4"/>} disabled={!!selectedQuickAction}>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {cameraAngleOptions.map(option => (
-                                            <OptionButton key={option.name} option={option.name} isSelected={selectedCameraAngle === option.name} onClick={() => setSelectedCameraAngle(selectedCameraAngle === option.name ? '' : option.name)} />
-                                        ))}
-                                    </div>
-                                </CollapsibleSection>
-
-                                <CollapsibleSection title={t.sections.artStyle} sectionKey="artStyle" isOpen={openSections.artStyle} onToggle={() => toggleSection('artStyle')} icon={<SketchWatercolorIcon className="w-4 h-4"/>}>
-                                    <div className="flex flex-wrap gap-2 mb-3">
-                                        {styleOptions.map(style => (
-                                            <OptionButton key={style.name} option={style.name} isSelected={selectedStyle === style.name} onClick={() => setSelectedStyle(selectedStyle === style.name ? '' : style.name)} />
-                                        ))}
-                                    </div>
-                                    {selectedStyle && <IntensitySlider value={styleIntensity} onChange={setStyleIntensity} t={t} />}
-                                </CollapsibleSection>
-
-                                <CollapsibleSection title={t.sections.archStyle} sectionKey="archStyle" isOpen={openSections.archStyle} onToggle={() => toggleSection('archStyle')} icon={<HomeModernIcon className="w-4 h-4"/>}>
-                                    <div className="flex flex-wrap gap-2">
-                                        {architecturalStyleOptions.map(style => (
-                                            <OptionButton key={style.name} option={style.name} isSelected={selectedArchStyle === style.name} onClick={() => setSelectedArchStyle(selectedArchStyle === style.name ? '' : style.name)} />
-                                        ))}
-                                    </div>
-                                </CollapsibleSection>
-
-                                <CollapsibleSection title={t.sections.garden} sectionKey="gardenStyle" isOpen={openSections.gardenStyle} onToggle={() => toggleSection('gardenStyle')} icon={<FlowerIcon className="w-4 h-4"/>}>
-                                    <div className="flex flex-wrap gap-2">
-                                        {gardenStyleOptions.map(style => (
-                                            <OptionButton key={style.name} option={style.name} isSelected={selectedGardenStyle === style.name} onClick={() => setSelectedGardenStyle(selectedGardenStyle === style.name ? '' : style.name)} />
-                                        ))}
-                                    </div>
-                                </CollapsibleSection>
-
-                                <CollapsibleSection title={t.sections.lighting} sectionKey="lighting" isOpen={openSections.lighting} onToggle={() => toggleSection('lighting')} icon={<LightbulbIcon className="w-4 h-4"/>}>
-                                    <button type="button" onClick={() => setIsAddLightActive(!isAddLightActive)} className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${isAddLightActive ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-200' : 'bg-zinc-800/40 border-zinc-700 text-zinc-400 hover:bg-zinc-700/60'}`}>
-                                        <span className="text-xs font-bold uppercase">{t.controls.turnOnLights}</span>
-                                        <div className={`w-4 h-4 rounded-full border ${isAddLightActive ? 'bg-yellow-400 border-yellow-300 shadow-[0_0_10px_rgba(250,204,21,0.5)]' : 'bg-transparent border-zinc-600'}`}></div>
-                                    </button>
-                                    {isAddLightActive && (
-                                        <div className="mt-3 space-y-3 pl-2 border-l-2 border-yellow-500/30">
-                                            <div><div className="flex justify-between text-[10px] text-zinc-400 mb-1"><span>{t.controls.brightness}</span><span>{lightingBrightness}%</span></div><input type="range" min="0" max="100" value={lightingBrightness} onChange={(e) => setLightingBrightness(Number(e.target.value))} className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-yellow-400"/></div>
-                                            <div><div className="flex justify-between text-[10px] text-zinc-400 mb-1"><span>{t.controls.colorTemp}</span><span>{lightingTemperature > 50 ? t.controls.cool : t.controls.warm}</span></div><input type="range" min="0" max="100" value={lightingTemperature} onChange={(e) => setLightingTemperature(Number(e.target.value))} className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-400"/></div>
-                                        </div>
-                                    )}
-                                </CollapsibleSection>
-
-                                <CollapsibleSection title={t.sections.background} sectionKey="background" isOpen={openSections.background} onToggle={() => toggleSection('background')} icon={<LandscapeIcon className="w-4 h-4"/>}>
-                                    <div className="flex flex-wrap gap-2 mb-3">
-                                        {backgrounds.map(bg => (
-                                            <OptionButton key={bg} option={bg} isSelected={selectedBackgrounds.includes(bg)} onClick={() => handleBackgroundToggle(bg)} />
-                                        ))}
-                                    </div>
-                                    {selectedBackgrounds.length > 0 && !selectedBackgrounds.includes('No Change') && <IntensitySlider value={backgroundIntensity} onChange={setBackgroundIntensity} t={t} />}
-                                </CollapsibleSection>
-
-                                <CollapsibleSection title={t.sections.foreground} sectionKey="foreground" isOpen={openSections.foreground} onToggle={() => toggleSection('foreground')} icon={<FlowerIcon className="w-4 h-4"/>}>
-                                    <div className="flex flex-wrap gap-2 mb-3">
-                                        {foregrounds.map(fg => (
-                                            <OptionButton key={fg} option={fg} isSelected={selectedForegrounds.includes(fg)} onClick={() => handleForegroundToggle(fg)} />
-                                        ))}
-                                    </div>
-                                    {selectedForegrounds.length > 0 && <IntensitySlider value={foregroundIntensity} onChange={setForegroundIntensity} t={t} />}
-                                </CollapsibleSection>
-                            </>
-                        )}
-                    </>
-                  )}
-
-                  {/* --- INTERIOR MODE --- */}
-                  {sceneType === 'interior' && (
-                    <>
-                        <CollapsibleSection title={t.sections.prompt} sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-4 h-4"/>}>
-                            <div className="relative">
-                                <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={editingMode === 'object' ? t.placeholders.promptMask : t.placeholders.promptInterior} className="w-full bg-black/50 border border-zinc-700 rounded-xl p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none shadow-inner" rows={3} />
-                                <button 
-                                    onClick={handleAutoDescribe} 
-                                    disabled={isAnalyzing}
-                                    className="absolute bottom-2 right-2 p-1.5 bg-zinc-800/80 hover:bg-red-500 text-zinc-400 hover:text-white rounded-lg transition-all border border-zinc-700 hover:border-red-400 disabled:opacity-50"
-                                    title={t.controls.autoDescribe}
-                                >
-                                    {isAnalyzing ? <Spinner className="w-4 h-4"/> : <SparklesIcon className="w-4 h-4" />}
-                                </button>
+                            <div className="flex gap-2">
+                                <button type="submit" disabled={!tempKey} className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed">Save API Key</button>
+                                <button type="button" onClick={() => setIsKeyModalOpen(false)} className="px-4 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold rounded-xl transition-all">Cancel</button>
                             </div>
-                        </CollapsibleSection>
-
-                        {editingMode === 'default' && (
-                            <>
-                                <CollapsibleSection title={t.sections.moodboard} sectionKey="moodboard" isOpen={openSections.moodboard} onToggle={() => toggleSection('moodboard')} icon={<TextureIcon className="w-4 h-4"/>}>
-                                    <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-zinc-700 rounded-xl hover:border-red-500 hover:bg-red-500/5 transition-colors cursor-pointer group">
-                                        {referenceImage ? (
-                                            <img src={referenceImage.dataUrl} alt="Ref" className="h-32 object-contain rounded-lg shadow-md" />
-                                        ) : (
-                                            <>
-                                                <PhotoIcon className="w-8 h-8 text-zinc-600 group-hover:text-red-500 transition-colors mb-2"/>
-                                                <span className="text-xs text-zinc-500 text-center group-hover:text-zinc-300">Upload Reference Image</span>
-                                            </>
-                                        )}
-                                        <input type="file" accept="image/*" onChange={handleReferenceImageChange} className="hidden" />
-                                    </label>
-                                    {referenceImage && <button onClick={() => setReferenceImage(null)} className="w-full mt-2 py-1.5 text-xs text-red-400 hover:text-red-300">Remove Reference</button>}
-                                </CollapsibleSection>
-
-                                <CollapsibleSection title={t.sections.roomConfig} sectionKey="interiorRoomType" isOpen={openSections.interiorRoomType} onToggle={() => toggleSection('interiorRoomType')} icon={<HomeIcon className="w-4 h-4"/>}>
-                                    <div className="flex flex-wrap gap-2">
-                                        {roomTypeOptions.map(room => (
-                                            <OptionButton key={room} option={room} isSelected={selectedInteriorRoomType === room} onClick={() => setSelectedInteriorRoomType(selectedInteriorRoomType === room ? '' : room)} />
-                                        ))}
-                                    </div>
-                                </CollapsibleSection>
-
-                                <CollapsibleSection title={t.sections.quickActions} sectionKey="interiorQuickActions" isOpen={openSections.interiorQuickActions} onToggle={() => toggleSection('interiorQuickActions')} icon={<SparklesIcon className="w-4 h-4"/>}>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {interiorQuickActionList.map(action => (
-                                            <PreviewCard key={action.id} label={action.label} description={action.desc} isSelected={selectedQuickAction === action.id} onClick={() => handleQuickActionClick(action.id)} isNested />
-                                        ))}
-                                    </div>
-                                </CollapsibleSection>
-
-                                {/* ... Other interior sections (style, lighting, etc.) ... */}
-                                <CollapsibleSection title={t.sections.interiorStyle} sectionKey="interiorStyle" isOpen={openSections.interiorStyle} onToggle={() => toggleSection('interiorStyle')} icon={<HomeModernIcon className="w-4 h-4"/>}>
-                                    <div className="flex flex-wrap gap-2 mb-3">
-                                        {interiorStyleOptions.map(style => (
-                                            <OptionButton key={style.name} option={style.name} isSelected={selectedInteriorStyle === style.name} onClick={() => setSelectedInteriorStyle(selectedInteriorStyle === style.name ? '' : style.name)} />
-                                        ))}
-                                    </div>
-                                    {selectedInteriorStyle && <IntensitySlider value={styleIntensity} onChange={setStyleIntensity} t={t} />}
-                                </CollapsibleSection>
-                                
-                                <CollapsibleSection title={t.sections.lighting} sectionKey="lighting" isOpen={openSections.lighting} onToggle={() => toggleSection('lighting')} icon={<LightbulbIcon className="w-4 h-4"/>}>
-                                    <div className="grid grid-cols-2 gap-2 mb-4">
-                                        {interiorLightingOptions.map(opt => (
-                                            <OptionButton key={opt} option={opt} isSelected={selectedInteriorLighting === opt} onClick={() => setSelectedInteriorLighting(selectedInteriorLighting === opt ? '' : opt)} />
-                                        ))}
-                                    </div>
-                                </CollapsibleSection>
-
-                                <CollapsibleSection title={t.sections.systems} sectionKey="systems" isOpen={openSections.systems} onToggle={() => toggleSection('systems')} icon={<DownlightIcon className="w-4 h-4"/>}>
-                                    <div className="space-y-3">
-                                        <div className="p-3 bg-zinc-900/30 rounded-lg border border-zinc-700/30">
-                                            <label className="flex items-center gap-3 cursor-pointer">
-                                                <input type="checkbox" checked={isCoveLightActive} onChange={(e) => setIsCoveLightActive(e.target.checked)} className="w-4 h-4 rounded border-zinc-600 text-red-600 focus:ring-red-500 bg-zinc-800" />
-                                                <span className="text-xs font-medium text-zinc-300">{t.controls.coveLight}</span>
-                                            </label>
-                                            {isCoveLightActive && <div className="mt-2 pl-7"><input type="range" min="0" max="100" value={coveLightBrightness} onChange={(e) => setCoveLightBrightness(Number(e.target.value))} className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-red-500"/></div>}
-                                        </div>
-                                        <div className="p-3 bg-zinc-900/30 rounded-lg border border-zinc-700/30">
-                                            <label className="flex items-center gap-3 cursor-pointer">
-                                                <input type="checkbox" checked={isDownlightActive} onChange={(e) => setIsDownlightActive(e.target.checked)} className="w-4 h-4 rounded border-zinc-600 text-red-600 focus:ring-red-500 bg-zinc-800" />
-                                                <span className="text-xs font-medium text-zinc-300">{t.controls.downlight}</span>
-                                            </label>
-                                            {isDownlightActive && <div className="mt-2 pl-7"><input type="range" min="0" max="100" value={downlightBrightness} onChange={(e) => setDownlightBrightness(Number(e.target.value))} className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-red-500"/></div>}
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-2 mt-2">
-                                            <OptionButton option={t.controls.ac4way} isSelected={addFourWayAC} onClick={() => setAddFourWayAC(!addFourWayAC)} />
-                                            <OptionButton option={t.controls.acWall} isSelected={addWallTypeAC} onClick={() => setAddWallTypeAC(!addWallTypeAC)} />
-                                        </div>
-                                    </div>
-                                </CollapsibleSection>
-
-                                <CollapsibleSection title={t.sections.viewOutside} sectionKey="background" isOpen={openSections.background} onToggle={() => toggleSection('background')} icon={<LandscapeIcon className="w-4 h-4"/>}>
-                                    <div className="flex flex-wrap gap-2 mb-3">
-                                        {interiorBackgrounds.map(bg => (
-                                            <OptionButton key={bg} option={bg} isSelected={selectedBackgrounds.includes(bg)} onClick={() => handleBackgroundToggle(bg)} />
-                                        ))}
-                                    </div>
-                                    {selectedBackgrounds.length > 0 && !selectedBackgrounds.includes('No Change') && <IntensitySlider value={backgroundIntensity} onChange={setBackgroundIntensity} t={t} />}
-                                </CollapsibleSection>
-
-                                <CollapsibleSection title={t.sections.foreground} sectionKey="foreground" isOpen={openSections.foreground} onToggle={() => toggleSection('foreground')} icon={<FlowerIcon className="w-4 h-4"/>}>
-                                    <div className="flex flex-wrap gap-2 mb-3">
-                                        {interiorForegrounds.map(fg => (
-                                            <OptionButton key={fg} option={fg} isSelected={selectedForegrounds.includes(fg)} onClick={() => handleForegroundToggle(fg)} />
-                                        ))}
-                                    </div>
-                                    {selectedForegrounds.length > 0 && <IntensitySlider value={foregroundIntensity} onChange={setForegroundIntensity} t={t} />}
-                                </CollapsibleSection>
-                            </>
-                        )}
-                    </>
-                  )}
-
-                  {/* --- PLAN MODE --- */}
-                  {sceneType === 'plan' && (
-                    <>
-                        <CollapsibleSection title={t.sections.prompt} sectionKey="prompt" isOpen={openSections.prompt} onToggle={() => toggleSection('prompt')} icon={<PencilIcon className="w-4 h-4"/>}>
-                            <div className="relative">
-                                <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={editingMode === 'object' ? t.placeholders.promptMask : t.placeholders.promptPlan} className="w-full bg-black/50 border border-zinc-700 rounded-xl p-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none shadow-inner" rows={3} />
-                                <button 
-                                    onClick={handleAutoDescribe} 
-                                    disabled={isAnalyzing}
-                                    className="absolute bottom-2 right-2 p-1.5 bg-zinc-800/80 hover:bg-red-500 text-zinc-400 hover:text-white rounded-lg transition-all border border-zinc-700 hover:border-red-400 disabled:opacity-50"
-                                    title={t.controls.autoDescribe}
-                                >
-                                    {isAnalyzing ? <Spinner className="w-4 h-4"/> : <SparklesIcon className="w-4 h-4" />}
-                                </button>
-                            </div>
-                        </CollapsibleSection>
-
-                        {editingMode === 'default' && (
-                            <>
-                                <CollapsibleSection title={t.sections.moodboard} sectionKey="moodboard" isOpen={openSections.moodboard} onToggle={() => toggleSection('moodboard')} icon={<TextureIcon className="w-4 h-4"/>}>
-                                    <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-zinc-700 rounded-xl hover:border-red-500 hover:bg-red-500/5 transition-colors cursor-pointer group">
-                                        {referenceImage ? (
-                                            <img src={referenceImage.dataUrl} alt="Ref" className="h-32 object-contain rounded-lg shadow-md" />
-                                        ) : (
-                                            <>
-                                                <PhotoIcon className="w-8 h-8 text-zinc-600 group-hover:text-red-500 transition-colors mb-2"/>
-                                                <span className="text-xs text-zinc-500 text-center group-hover:text-zinc-300">Upload Reference Image</span>
-                                            </>
-                                        )}
-                                        <input type="file" accept="image/*" onChange={handleReferenceImageChange} className="hidden" />
-                                    </label>
-                                    {referenceImage && <button onClick={() => setReferenceImage(null)} className="w-full mt-2 py-1.5 text-xs text-red-400 hover:text-red-300">Remove Reference</button>}
-                                </CollapsibleSection>
-
-                                <CollapsibleSection title={t.sections.quickActions} sectionKey="planQuickActions" isOpen={openSections.planQuickActions} onToggle={() => toggleSection('planQuickActions')} icon={<SparklesIcon className="w-4 h-4"/>}>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {planQuickActionList.map(action => (
-                                            <PreviewCard key={action.id} label={action.label} description={action.desc} isSelected={selectedQuickAction === action.id} onClick={() => handleQuickActionClick(action.id)} isNested icon={action.icon} />
-                                        ))}
-                                    </div>
-                                </CollapsibleSection>
-
-                                <CollapsibleSection title={t.sections.conversionMode} sectionKey="planConversion" isOpen={openSections.planConversion} onToggle={() => toggleSection('planConversion')} icon={<PlanIcon className="w-4 h-4"/>} disabled={!!selectedQuickAction}>
-                                    <div className="space-y-2">
-                                        {planConversionModes.map(mode => (
-                                            <PreviewCard key={mode.id} label={mode.label} description={mode.desc} isSelected={planConversionMode === mode.id} onClick={() => setPlanConversionMode(mode.id)} />
-                                        ))}
-                                    </div>
-                                </CollapsibleSection>
-
-                                <CollapsibleSection title={t.sections.flooring} sectionKey="planFlooring" isOpen={openSections.planFlooring} onToggle={() => toggleSection('planFlooring')} icon={<TextureIcon className="w-4 h-4"/>} disabled={planConversionMode === '2d_bw'}>
-                                    <div className="flex flex-wrap gap-2 mb-3">
-                                        {flooringOptions.map(floor => (
-                                            <OptionButton key={floor} option={floor} isSelected={selectedFlooring === floor} onClick={() => setSelectedFlooring(selectedFlooring === floor ? '' : floor)} />
-                                        ))}
-                                    </div>
-                                     <textarea
-                                        value={customFlooringPrompt}
-                                        onChange={(e) => setCustomFlooringPrompt(e.target.value)}
-                                        placeholder={t.placeholders.customFlooring}
-                                        className="w-full bg-black/30 border border-zinc-700 rounded-lg p-2 text-xs text-zinc-300 placeholder-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all resize-none"
-                                        rows={2}
-                                    />
-                                </CollapsibleSection>
-
-                                <CollapsibleSection title={t.sections.roomConfig} sectionKey="perspectiveConfig" isOpen={openSections.perspectiveConfig} onToggle={() => toggleSection('perspectiveConfig')} icon={<HomeIcon className="w-4 h-4"/>} disabled={planConversionMode !== 'perspective'}>
-                                    <div className="space-y-3">
-                                        <div className="text-xs text-zinc-400 mb-1 uppercase font-bold">Room Type</div>
-                                        <div className="flex flex-wrap gap-2">
-                                            {roomTypeOptions.map(room => (
-                                                <OptionButton key={room} option={room} isSelected={selectedRoomType === room} onClick={() => setSelectedRoomType(room)} />
-                                            ))}
-                                        </div>
-                                        <div className="text-xs text-zinc-400 mb-1 mt-2 uppercase font-bold">Style</div>
-                                        <div className="flex flex-wrap gap-2">
-                                            {interiorStyleOptions.slice(0, 8).map(style => (
-                                                <OptionButton key={style.name} option={style.name} isSelected={selectedInteriorStyle === style.name} onClick={() => setSelectedInteriorStyle(selectedInteriorStyle === style.name ? '' : style.name)} />
-                                            ))}
-                                        </div>
-                                    </div>
-                                </CollapsibleSection>
-                            </>
-                        )}
-                    </>
-                  )}
-
-                  {/* Brush Settings (Object Mode Only) */}
-                  {editingMode === 'object' && (
-                      <CollapsibleSection title={t.sections.brushSettings} sectionKey="brushSettings" isOpen={openSections.brushSettings} onToggle={() => toggleSection('brushSettings')} icon={<BrushIcon className="w-4 h-4"/>}>
-                          <div className="space-y-4">
-                              <div className="flex gap-2 mb-2">
-                                  <button onClick={() => setMaskTool('brush')} className={`flex-1 py-2 text-xs font-bold rounded-lg border flex items-center justify-center gap-2 ${maskTool === 'brush' ? 'bg-zinc-700 text-white border-zinc-500' : 'bg-transparent text-zinc-500 border-zinc-700'}`}>
-                                      <BrushIcon className="w-4 h-4"/> Brush
-                                  </button>
-                                  <button onClick={() => setMaskTool('magic-wand')} className={`flex-1 py-2 text-xs font-bold rounded-lg border flex items-center justify-center gap-2 ${maskTool === 'magic-wand' ? 'bg-zinc-700 text-white border-zinc-500' : 'bg-transparent text-zinc-500 border-zinc-700'}`}>
-                                      <MagicWandIcon className="w-4 h-4"/> Magic Wand
-                                  </button>
-                                  <button onClick={() => setMaskTool('line')} className={`flex-1 py-2 text-xs font-bold rounded-lg border flex items-center justify-center gap-2 ${maskTool === 'line' ? 'bg-zinc-700 text-white border-zinc-500' : 'bg-transparent text-zinc-500 border-zinc-700'}`}>
-                                      <LineSegmentIcon className="w-4 h-4"/> Line
-                                  </button>
-                              </div>
-                              
-                              {maskTool === 'brush' && (
-                                <div><div className="flex justify-between text-xs mb-1 text-zinc-400"><span>Size</span><span>{brushSize}px</span></div><input type="range" min="5" max="100" value={brushSize} onChange={(e) => setBrushSize(Number(e.target.value))} className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-white"/></div>
-                              )}
-                              
-                              {maskTool === 'magic-wand' && (
-                                <div><div className="flex justify-between text-xs mb-1 text-zinc-400"><span>{t.controls.tolerance}</span><span>{tolerance}</span></div><input type="range" min="1" max="100" value={tolerance} onChange={(e) => setTolerance(Number(e.target.value))} className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-white"/></div>
-                              )}
-
-                              <div><div className="text-xs mb-2 text-zinc-400">Color</div><div className="flex gap-2">{brushColors.map(c => (<button key={c.name} onClick={() => setBrushColor(c.value)} className={`w-6 h-6 rounded-full ${c.css} ${brushColor === c.value ? 'ring-2 ring-white scale-110' : 'opacity-50 hover:opacity-100'} transition-all`}/>))}</div></div>
-                              <button onClick={() => imageDisplayRef.current?.clearMask()} className="w-full py-2 text-xs font-bold text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/10 transition-colors">{t.controls.clearMask}</button>
-                          </div>
-                      </CollapsibleSection>
-                  )}
-               </>
-            )}
-         </div>
-
-         {activeImage && (
-            <div className="p-4 border-t border-white/5 bg-black/40 backdrop-blur-md">
-               <button
-                 onClick={handleSubmit}
-                 disabled={isLoading || (!hasEditInstruction && editingMode !== 'object')}
-                 className="w-full bg-gradient-to-r from-red-600 via-orange-600 to-red-600 bg-size-200 animate-gradient hover:bg-right text-white font-bold py-4 px-4 rounded-xl shadow-[0_0_20px_rgba(220,38,38,0.4)] hover:shadow-[0_0_30px_rgba(220,38,38,0.6)] transition-all transform active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-3 text-lg tracking-wide"
-               >
-                 {isLoading ? <Spinner className="w-6 h-6 text-white"/> : <SparklesIcon className="w-6 h-6 animate-pulse" />}
-                 <span>{isLoading ? t.buttons.generating : t.buttons.generate}</span>
-               </button>
-            </div>
-         )}
-      </aside>
-
-      {/* MAIN CONTENT */}
-      <main className="flex-1 flex flex-col min-w-0 relative bg-[#09090b]">
-         <div className="absolute inset-0 z-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-
-         <header className="h-16 flex items-center justify-between px-6 border-b border-white/5 bg-black/60 backdrop-blur-xl z-10">
-             <div className="flex items-center gap-3">
-                {activeImage ? (
-                     <>
-                        <span className="px-2.5 py-1 rounded-md bg-zinc-800/50 text-xs font-mono font-bold text-red-400 border border-red-500/20 shadow-[0_0_10px_rgba(220,38,38,0.1)]">{sceneType.toUpperCase()}</span>
-                        <h2 className="text-sm font-medium text-zinc-300 truncate max-w-xs">{activeImage.file?.name}</h2>
-                     </>
-                ) : <div className="text-zinc-500 text-sm font-light italic">{t.header.noProject}</div>}
-             </div>
-             <div className="flex items-center gap-4">
-                <div className="text-xs font-bold uppercase tracking-wider flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-full border border-white/5">
-                    {saveStatus === 'saving' && <span className="text-yellow-500 animate-pulse flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-yellow-500"/> {t.header.saving}</span>}
-                    {saveStatus === 'saved' && <span className="text-green-500 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-500"/> {t.header.saved}</span>}
-                    {saveStatus === 'error' && <span className="text-red-500 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500"/> {t.header.error}</span>}
-                </div>
-                
-                <button onClick={() => setIsHelpModalOpen(true)} className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors" title={t.header.help}>
-                    <QuestionMarkCircleIcon className="w-5 h-5"/>
-                </button>
-                
-                <button onClick={handleResetKey} className={`p-2 rounded-lg transition-all ${!hasApiKey ? 'text-red-500 bg-red-500/10 border border-red-500/50 hover:bg-red-500/20 animate-pulse shadow-[0_0_15px_rgba(220,38,38,0.3)]' : 'text-zinc-400 hover:text-white hover:bg-white/10'}`} title={!hasApiKey ? (language === 'th' ? 'กรุณาใส่ API Key' : 'API Key Required') : (language === 'th' ? 'เปลี่ยน API Key' : 'Change API Key')}>
-                    <KeyIcon className="w-5 h-5"/>
-                </button>
-
-                <button onClick={toggleLanguage} className="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white text-xs font-bold rounded-lg border border-white/10 transition-colors">
-                    {language === 'en' ? 'TH' : 'EN'}
-                </button>
-                 <button onClick={() => setIsProjectModalOpen(true)} className="px-4 py-2 text-xs font-bold uppercase tracking-wide bg-white text-black hover:bg-zinc-200 rounded-lg shadow-lg shadow-white/10 transition-all transform hover:scale-105 flex items-center gap-2 group">
-                    <PhotoIcon className="w-4 h-4 animate-pulse"/> {t.buttons.openProjects}
-                 </button>
-             </div>
-         </header>
-
-         <div className="flex-1 overflow-y-auto custom-scrollbar p-8 flex flex-col items-center relative z-0">
-            <div className="w-full max-w-7xl h-full flex flex-col">
-               
-               {error && (
-                  <div className="mb-4 bg-red-950/40 border border-red-500/30 text-red-200 px-6 py-4 rounded-xl flex justify-between items-center animate-fade-in shadow-xl backdrop-blur-md">
-                      <span className="text-sm font-medium flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"/>
-                          {error}
-                      </span>
-                      <div className="flex items-center gap-3">
-                          {(error.includes('Quota') || error.includes('Limit') || error.includes('Key') || error.toLowerCase().includes('expired') || error.includes('403') || error.includes('429')) && (
-                              <button onClick={handleResetKey} className="px-3 py-1.5 bg-white text-red-600 text-xs font-bold rounded-lg hover:bg-zinc-200 transition-colors shadow-sm">
-                                  {language === 'th' ? 'เปลี่ยนคีย์' : 'Change Key'}
-                              </button>
-                          )}
-                          <button onClick={() => setError(null)} className="text-red-400 hover:text-white transition-colors"><XMarkIcon className="w-5 h-5"/></button>
-                      </div>
-                  </div>
-               )}
-
-               <div className="flex-1 min-h-[450px] bg-black/40 rounded-2xl border border-white/5 shadow-2xl overflow-hidden relative flex flex-col backdrop-blur-sm">
-                  <div className="flex-1 relative">
-                      <ImageDisplay
-                        ref={imageDisplayRef}
-                        label="Preview"
-                        imageUrl={selectedImageUrl}
-                        originalImageUrl={activeImage?.dataUrl}
-                        isLoading={isLoading}
-                        hideLabel
-                        selectedFilter={selectedFilter}
-                        brightness={brightness}
-                        contrast={contrast}
-                        saturation={saturation}
-                        sharpness={sharpness}
-                        isMaskingMode={editingMode === 'object'}
-                        brushSize={brushSize}
-                        brushColor={brushColor}
-                        maskTool={maskTool}
-                        tolerance={tolerance}
-                        onMaskChange={setIsMaskEmpty}
-                      />
-                  </div>
-                  
-                  {currentModelLabel && (
-                      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
-                          <div className={`px-3 py-1.5 rounded-full backdrop-blur-md border text-[10px] font-bold uppercase tracking-widest shadow-lg flex items-center gap-2 ${
-                              currentModelLabel.includes('Flash') 
-                              ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-200' 
-                              : 'bg-green-500/20 border-green-500/50 text-green-200'
-                          }`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${currentModelLabel.includes('Flash') ? 'bg-yellow-400' : 'bg-green-400'} animate-pulse`}/>
-                              Used: {currentModelLabel}
-                          </div>
-                      </div>
-                  )}
-
-                  {activeImage && (
-                      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30">
-                           <ImageToolbar
-                                onUndo={handleUndo} onRedo={handleRedo} onReset={handleResetEdits} onDownload={handleDownload}
-                                onShare={handleShare} onUpscale={handleUpscale} onRegenerate={handleRegenerate} onTransform={handleTransform} onVeo={handleVeoClick}
-                                canUndo={canUndo} canRedo={canRedo} canReset={canReset} canUpscaleAndSave={canUpscaleAndSave} canRegenerate={canRegenerate}
-                                isLoading={isLoading} t={t}
-                           />
-                      </div>
-                  )}
-               </div>
-               
-               {currentResults.length > 1 && (
-                  <div className="mt-8">
-                      <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4 flex items-center gap-2"><SparklesIcon className="w-4 h-4 text-red-500"/> Generated Variations</h3>
-                      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                          {currentResults.map((resultUrl, index) => (
-                              <div key={index} onClick={() => updateActiveImage(img => ({ ...img, selectedResultIndex: index }))}
-                                   className={`group relative aspect-square rounded-xl overflow-hidden cursor-pointer border-2 transition-all transform hover:scale-105 shadow-lg ${activeImage?.selectedResultIndex === index ? 'border-red-500 ring-2 ring-red-500/20 scale-105 z-10' : 'border-zinc-800 hover:border-zinc-600 bg-black'}`}>
-                                  <img src={resultUrl} alt="var" className="w-full h-full object-cover" />
-                                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                  {activeImage?.selectedResultIndex === index && <div className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full shadow-[0_0_10px_rgba(220,38,38,0.8)] border border-white/20" />}
-                              </div>
-                          ))}
-                      </div>
-                  </div>
-               )}
-               
-               {activeImage && activeImage.promptHistory.length > 0 && (
-                   <div className="mt-8 border-t border-white/5 pt-6 pb-8">
-                        <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4 flex items-center gap-2"><HistoryIcon className="w-4 h-4"/> History Log</h3>
-                        <div className="flex flex-wrap gap-2">
-                            {activeImage.promptHistory.map((h, i) => (
-                                <button key={i} onClick={() => updateActiveImage(img => ({ ...img, historyIndex: i, selectedResultIndex: 0 }))}
-                                    className={`px-4 py-1.5 text-[10px] font-medium rounded-full border transition-all max-w-xs truncate ${activeImage.historyIndex === i ? 'bg-zinc-800 text-white border-zinc-600 shadow-md' : 'bg-black/30 text-zinc-500 border-zinc-800 hover:border-zinc-600 hover:text-zinc-300'}`}>
-                                    <span className="opacity-50 mr-1">{i + 1}.</span> {h}
-                                </button>
-                            ))}
+                        </form>
+                        
+                        <div className="pt-4 border-t border-white/5">
+                            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 hover:text-blue-300 hover:underline flex items-center gap-1 justify-center">Get a free API Key from Google AI Studio <ArrowPathIcon className="w-3 h-3"/></a>
                         </div>
-                   </div>
-               )}
+                    </div>
+                </div>
             </div>
-         </div>
-      </main>
+        )}
+
+        {/* Video Generation Modal (Veo) */}
+        {isVideoModalOpen && (
+            <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                <div className="bg-[#0c0c0e] rounded-2xl border border-white/10 w-full max-w-lg p-6 shadow-2xl">
+                     <div className="flex justify-between items-center mb-6"><h2 className="text-xl font-bold text-white flex items-center gap-2"><VideoCameraIcon className="w-6 h-6 text-purple-500" /> Generate Video (Veo)</h2><button onClick={() => setIsVideoModalOpen(false)} className="text-zinc-400 hover:text-white"><XMarkIcon className="w-6 h-6" /></button></div>
+                     
+                     {!generatedVideoUrl ? (
+                         <div className="space-y-4">
+                             <div className="bg-purple-900/10 border border-purple-500/20 p-4 rounded-xl">
+                                 <p className="text-sm text-purple-200">Generate a short cinematic video from your current image using Google's Veo model.</p>
+                             </div>
+                             <div>
+                                 <label className="block text-xs font-bold text-zinc-400 uppercase mb-2">Video Prompt</label>
+                                 <textarea value={videoPrompt} onChange={(e) => setVideoPrompt(e.target.value)} placeholder="Describe the camera movement (e.g., 'Slow pan right, cinematic lighting, leaves moving in wind')..." className="w-full h-24 bg-black/50 border border-zinc-700 rounded-xl p-3 text-sm text-white focus:border-purple-500 outline-none resize-none" />
+                             </div>
+                             <button onClick={handleGenerateVideo} disabled={isGeneratingVideo} className="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-purple-900/20 flex items-center justify-center gap-2">
+                                 {isGeneratingVideo ? <><Spinner className="w-5 h-5" /> Generating...</> : <><SparklesIcon className="w-5 h-5" /> Generate Video</>}
+                             </button>
+                             {error && <p className="text-xs text-red-400 text-center">{error}</p>}
+                         </div>
+                     ) : (
+                         <div className="space-y-4">
+                             <video src={generatedVideoUrl} controls autoPlay loop className="w-full rounded-xl border border-white/10 shadow-lg" />
+                             <div className="flex gap-2">
+                                 <a href={generatedVideoUrl} download="veo-generated-video.mp4" className="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-xl text-center transition-all">Download MP4</a>
+                                 <button onClick={() => { setGeneratedVideoUrl(null); setIsGeneratingVideo(false); }} className="px-4 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl">New</button>
+                             </div>
+                         </div>
+                     )}
+                </div>
+            </div>
+        )}
+        
+        {/* Help Modal */}
+        {isHelpModalOpen && (
+            <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                <div className="bg-[#0c0c0e] rounded-2xl border border-white/10 w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
+                    <div className="p-6 border-b border-white/5 flex justify-between items-center"><h2 className="text-xl font-bold text-white">{t.help.title}</h2><button onClick={() => setIsHelpModalOpen(false)} className="text-zinc-400 hover:text-white"><XMarkIcon className="w-6 h-6" /></button></div>
+                    <div className="p-6 overflow-y-auto custom-scrollbar space-y-6">
+                        {[
+                            { step: t.help.step1, desc: t.help.step1desc, icon: <KeyIcon className="w-6 h-6 text-red-500" /> },
+                            { step: t.help.step2, desc: t.help.step2desc, icon: <HomeModernIcon className="w-6 h-6 text-blue-500" /> },
+                            { step: t.help.step3, desc: t.help.step3desc, icon: <SparklesIcon className="w-6 h-6 text-yellow-500" /> },
+                            { step: t.help.step4, desc: t.help.step4desc, icon: <BrushIcon className="w-6 h-6 text-purple-500" /> },
+                        ].map((item, i) => (
+                            <div key={i} className="flex gap-4">
+                                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-zinc-900 flex items-center justify-center border border-white/10">{item.icon}</div>
+                                <div><h3 className="text-lg font-bold text-white mb-1">{item.step}</h3><p className="text-sm text-zinc-400 leading-relaxed">{item.desc}</p></div>
+                            </div>
+                        ))}
+                        <div className="mt-8 p-4 bg-zinc-900/50 rounded-xl border border-white/5 text-xs text-zinc-500 text-center">
+                            Powered by Google Gemini 3 Pro & Veo • Created for Architectural Visualization
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )}
+
     </div>
   );
 };

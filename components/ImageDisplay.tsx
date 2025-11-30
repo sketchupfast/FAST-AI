@@ -25,6 +25,7 @@ interface ImageDisplayProps {
   maskTool?: 'brush' | 'line' | 'magic-wand';
   tolerance?: number;
   onMaskChange?: (isMaskEmpty: boolean) => void;
+  onUpload?: () => void;
 }
 
 export interface ImageDisplayHandle {
@@ -74,7 +75,8 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
   brushColor = 'rgba(255, 59, 48, 0.7)',
   maskTool = 'brush',
   tolerance = 20,
-  onMaskChange
+  onMaskChange,
+  onUpload
 }, ref) => {
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -317,17 +319,9 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
     const visited = new Uint8Array(width * height); // keep track of visited pixels to avoid loops
     
     // We will draw on the MAIN mask canvas
-    // Parsing color string to RGBA for the mask
-    // Simple parsing for 'rgba(r,g,b,a)' format or named colors
-    // For simplicity, we'll just fill the visited set and then draw a single shape or manipulate pixels
-    // Direct pixel manipulation on the mask canvas is fastest
-    
     const maskImgData = ctx.getImageData(0, 0, width, height);
     const maskData = maskImgData.data;
     
-    // Parse fill color (assuming rgba provided from parent, e.g. "rgba(255, 0, 0, 0.5)")
-    // If complex, we might need a helper. For now, let's hardcode red-ish if parsing fails or use the brushColor prop directly
-    // Let's assume brushColor is passed as prop
     let fillR = 255, fillG = 0, fillB = 0, fillA = 128;
     
     if (fillColor.startsWith('rgba')) {
@@ -620,10 +614,16 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
             </>
         ) : (
           !isLoading && (
-            <div className="w-full h-full flex items-center justify-center text-center text-gray-500">
-              <div>
-                <PhotoIcon className="w-16 h-16 mx-auto mb-2" />
-                <p>Your {label.toLowerCase()} will appear here</p>
+            <div 
+              className="w-full h-full flex items-center justify-center text-center text-gray-500 cursor-pointer hover:bg-white/5 transition-colors rounded-xl border-2 border-dashed border-gray-700 hover:border-gray-500 group"
+              onClick={onUpload}
+            >
+              <div className="transform transition-transform group-hover:scale-105">
+                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-800 flex items-center justify-center border border-gray-700 group-hover:border-gray-500 shadow-lg">
+                    <PhotoIcon className="w-10 h-10 text-gray-400 group-hover:text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-300 group-hover:text-white mb-2">Upload Image / อัปโหลดรูปภาพ</h3>
+                <p className="text-sm text-gray-500">Click anywhere to start editing</p>
               </div>
             </div>
           )
