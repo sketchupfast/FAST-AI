@@ -6,6 +6,7 @@ import { ZoomInIcon } from './icons/ZoomInIcon';
 import { ZoomOutIcon } from './icons/ZoomOutIcon';
 import { ResetViewIcon } from './icons/ResetViewIcon';
 import { CompareIcon } from './icons/CompareIcon';
+import type { MaterialInfo } from '../services/geminiService';
 
 
 interface ImageDisplayProps {
@@ -26,11 +27,14 @@ interface ImageDisplayProps {
   tolerance?: number;
   onMaskChange?: (isMaskEmpty: boolean) => void;
   onUpload?: () => void;
+  materialResults?: MaterialInfo[];
+  showMaterialOverlay?: boolean;
 }
 
 export interface ImageDisplayHandle {
   exportMask: () => string | null;
   clearMask: () => void;
+  getCompositeImage: () => Promise<string | null>;
 }
 
 const loadingMessages = [
@@ -76,7 +80,9 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
   maskTool = 'brush',
   tolerance = 20,
   onMaskChange,
-  onUpload
+  onUpload,
+  materialResults = [],
+  showMaterialOverlay = false
 }, ref) => {
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -107,7 +113,6 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
       const userCtx = userCanvas.getContext('2d', { willReadFrequently: true });
       if (!userCtx) return null;
   
-      // Create a temporary canvas to produce the final black and white mask
       const finalMaskCanvas = document.createElement('canvas');
       finalMaskCanvas.width = userCanvas.width;
       finalMaskCanvas.height = userCanvas.height;
@@ -116,32 +121,24 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
       if (!finalCtx) return null;
   
       try {
-        // Get pixel data from the user's drawing canvas
         const userImageData = userCtx.getImageData(0, 0, userCanvas.width, userCanvas.height);
         const finalImageData = finalCtx.createImageData(userCanvas.width, userCanvas.height);
         
-        // Iterate over each pixel to create a perfect black and white mask
         for (let i = 0; i < userImageData.data.length; i += 4) {
-          const alpha = userImageData.data[i + 3]; // Alpha channel
-  
-          // If the pixel has been drawn on (alpha > 0), make it white (area to edit)
+          const alpha = userImageData.data[i + 3];
           if (alpha > 0) {
-            finalImageData.data[i] = 255;     // R
-            finalImageData.data[i + 1] = 255; // G
-            finalImageData.data[i + 2] = 255; // B
-            finalImageData.data[i + 3] = 255; // A
+            finalImageData.data[i] = 255;
+            finalImageData.data[i + 1] = 255;
+            finalImageData.data[i + 2] = 255;
+            finalImageData.data[i + 3] = 255;
           } else {
-            // Otherwise, make it black (area to preserve)
-            finalImageData.data[i] = 0;       // R
-            finalImageData.data[i + 1] = 0;   // G
-            finalImageData.data[i + 2] = 0;   // B
-            finalImageData.data[i + 3] = 255; // A
+            finalImageData.data[i] = 0;
+            finalImageData.data[i + 1] = 0;
+            finalImageData.data[i + 2] = 0;
+            finalImageData.data[i + 3] = 255;
           }
         }
-  
         finalCtx.putImageData(finalImageData, 0, 0);
-  
-        // Export the final black and white mask as a PNG
         return finalMaskCanvas.toDataURL('image/png').split(',')[1];
       } catch (e) {
         console.error("Error exporting mask:", e);
@@ -155,6 +152,173 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         onMaskChange?.(true);
       }
+    },
+    getCompositeImage: async () => {
+        if (!imageUrl) return null;
+        
+        // 1. Create a canvas with the main image dimensions
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = imageUrl;
+        });
+
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return null;
+
+        // 2. Draw the main image
+        // Apply basic filters if any (approximated for canvas)
+        if (selectedFilter && selectedFilter !== 'None') {
+            ctx.filter = getFilterStyle(selectedFilter);
+        }
+        // Apply manual adjustments
+        if (brightness !== 100 || contrast !== 100 || saturation !== 100 || sharpness !== 100) {
+             const manualFilter = `brightness(${brightness / 100}) contrast(${contrast / 100}) saturate(${saturation / 100})`;
+             ctx.filter = ctx.filter && ctx.filter !== 'none' ? `${ctx.filter} ${manualFilter}` : manualFilter;
+        }
+
+        ctx.drawImage(img, 0, 0);
+        ctx.filter = 'none'; // Reset filter for overlay
+
+        // 3. Draw Material Overlays
+        if (materialResults && materialResults.length > 0) {
+            for (const mat of materialResults) {
+                if (!mat.position) continue;
+                
+                const x = (mat.position.x / 100) * canvas.width;
+                const y = (mat.position.y / 100) * canvas.height;
+                const isLeft = mat.position.x < 50;
+
+                // --- Draw Dot ---
+                ctx.beginPath();
+                ctx.arc(x, y, 6, 0, 2 * Math.PI);
+                ctx.fillStyle = 'white';
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = 'black';
+                ctx.stroke();
+
+                // --- Draw Line ---
+                // Calculate Card Position (approximate based on canvas size)
+                const cardWidth = Math.min(400, canvas.width * 0.35);
+                const cardHeight = 120; // Approx
+                const cardMarginX = canvas.width * 0.02; // 2% margin
+                
+                const cardX = isLeft ? cardMarginX : canvas.width - cardWidth - cardMarginX;
+                const cardY = Math.max(cardHeight/2, Math.min(y, canvas.height - cardHeight/2));
+                
+                // Connection point on card
+                const connX = isLeft ? cardX + cardWidth : cardX;
+                const connY = cardY;
+
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                // Elbow joint
+                const elbowX = isLeft ? x - (x - connX)/2 : x + (connX - x)/2;
+                ctx.lineTo(elbowX, y);
+                ctx.lineTo(connX, connY);
+                
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+                ctx.shadowBlur = 4;
+                ctx.stroke();
+                ctx.setLineDash([]); // Reset
+                ctx.shadowBlur = 0;
+
+                // --- Draw Card Background ---
+                // Rounded rect
+                const r = 12; // radius
+                ctx.fillStyle = 'rgba(20, 20, 25, 0.85)'; // Darker opaque for better readability
+                ctx.beginPath();
+                ctx.moveTo(cardX + r, cardY - cardHeight/2);
+                ctx.lineTo(cardX + cardWidth - r, cardY - cardHeight/2);
+                ctx.quadraticCurveTo(cardX + cardWidth, cardY - cardHeight/2, cardX + cardWidth, cardY - cardHeight/2 + r);
+                ctx.lineTo(cardX + cardWidth, cardY + cardHeight/2 - r);
+                ctx.quadraticCurveTo(cardX + cardWidth, cardY + cardHeight/2, cardX + cardWidth - r, cardY + cardHeight/2);
+                ctx.lineTo(cardX + r, cardY + cardHeight/2);
+                ctx.quadraticCurveTo(cardX, cardY + cardHeight/2, cardX, cardY + cardHeight/2 - r);
+                ctx.lineTo(cardX, cardY - cardHeight/2 + r);
+                ctx.quadraticCurveTo(cardX, cardY - cardHeight/2, cardX + r, cardY - cardHeight/2);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Border
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // --- Draw Texture Swatch (REAL IMAGE CROP) ---
+                const textureSize = 80;
+                const padding = 20;
+                const swatchX = cardX + padding;
+                const swatchY = cardY - textureSize/2;
+                
+                ctx.save();
+                
+                // Draw crop from original image
+                // Calculate source crop area (Zoomed in)
+                // We want to grab a small area around the center point (x,y)
+                const cropFactor = 0.15; // 15% of image dimension
+                const cropW = Math.min(canvas.width, canvas.height) * cropFactor;
+                const cropH = cropW;
+                const sx = Math.max(0, Math.min(canvas.width - cropW, x - cropW/2));
+                const sy = Math.max(0, Math.min(canvas.height - cropH, y - cropH/2));
+
+                // Clip to rounded square for swatch
+                ctx.beginPath();
+                ctx.roundRect(swatchX, swatchY, textureSize, textureSize, 8);
+                ctx.clip();
+
+                // Draw the cropped part of the main image into the swatch box
+                ctx.drawImage(img, sx, sy, cropW, cropH, swatchX, swatchY, textureSize, textureSize);
+                
+                ctx.restore();
+
+                // Swatch border
+                ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(swatchX, swatchY, textureSize, textureSize);
+
+
+                // --- Draw Text ---
+                ctx.fillStyle = 'white';
+                ctx.shadowColor = "black";
+                ctx.shadowBlur = 2;
+                
+                // Name
+                const textStartX = swatchX + textureSize + 15;
+                const textMaxWidth = cardWidth - textureSize - padding * 2 - 10;
+                ctx.font = "bold 18px sans-serif";
+                ctx.fillText(mat.name.toUpperCase(), textStartX, cardY - 15, textMaxWidth);
+
+                // Category Tag (Background)
+                const catText = mat.category || 'Material';
+                ctx.font = "12px sans-serif";
+                const catWidth = ctx.measureText(catText).width + 10;
+                ctx.fillStyle = 'rgba(255,255,255,0.2)';
+                ctx.fillRect(textStartX, cardY - 5, catWidth, 20);
+                
+                // Category Text
+                ctx.fillStyle = '#ddd';
+                ctx.fillText(catText, textStartX + 5, cardY + 9);
+
+                // Description
+                ctx.fillStyle = '#bbb';
+                ctx.font = "12px sans-serif";
+                ctx.fillText(mat.description, textStartX, cardY + 30, textMaxWidth);
+
+                ctx.shadowBlur = 0;
+            }
+        }
+        
+        return canvas.toDataURL('image/jpeg', 0.95);
     }
   }));
 
@@ -171,7 +335,6 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
     prevOriginalImageUrlRef.current = originalImageUrl;
   }, [imageUrl, originalImageUrl, showComparison]);
 
-  // When entering masking mode, reset view for accurate coordinates
   useEffect(() => {
     if (isMaskingMode) {
       handleReset();
@@ -223,11 +386,9 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
     const zoomFactor = -e.deltaY * 0.001;
     const newScale = Math.max(0.5, Math.min(scale + zoomFactor, 5));
     
-    // Position of the mouse pointer relative to the image itself (before zoom)
     const mousePointX = (mouseX - position.x) / scale;
     const mousePointY = (mouseY - position.y) / scale;
 
-    // New position of the image to keep the mouse pointer at the same spot after zoom
     const newPosX = mouseX - mousePointX * newScale;
     const newPosY = mouseY - mousePointY * newScale;
 
@@ -272,26 +433,21 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
     };
   }, [isSliderDragging, handleSliderMouseMove, handleSliderMouseUp]);
   
-  // --- Masking Logic ---
   const getCoords = (e: React.MouseEvent): { x: number; y: number } | null => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
-    // Since scale is 1 in mask mode, we don't need to divide by scale
     return {
       x: e.clientX - rect.left,
       y: e.clientY - rect.top,
     };
   };
 
-  // Helper for flood fill
   const floodFill = (ctx: CanvasRenderingContext2D, startX: number, startY: number, tolerance: number, fillColor: string) => {
     const canvas = ctx.canvas;
     const width = canvas.width;
     const height = canvas.height;
     
-    // Create a temporary canvas to read the underlying image data
-    // We need the original image to determine color boundaries
     const imageElement = imageRef.current;
     if (!imageElement) return;
 
@@ -301,24 +457,20 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
     const tempCtx = tempCanvas.getContext('2d');
     if (!tempCtx) return;
     
-    // Draw the image onto temp canvas to read pixel data
     tempCtx.drawImage(imageElement, 0, 0, width, height);
     
     const imgData = tempCtx.getImageData(0, 0, width, height);
     const pixelData = imgData.data;
     
-    // Get starting color
     const startPos = (Math.floor(startY) * width + Math.floor(startX)) * 4;
     const startR = pixelData[startPos];
     const startG = pixelData[startPos + 1];
     const startB = pixelData[startPos + 2];
     const startA = pixelData[startPos + 3];
 
-    // Stack based flood fill
     const stack = [[Math.floor(startX), Math.floor(startY)]];
-    const visited = new Uint8Array(width * height); // keep track of visited pixels to avoid loops
+    const visited = new Uint8Array(width * height);
     
-    // We will draw on the MAIN mask canvas
     const maskImgData = ctx.getImageData(0, 0, width, height);
     const maskData = maskImgData.data;
     
@@ -348,9 +500,8 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
         const b = pixelData[pos + 2];
         const a = pixelData[pos + 3];
         
-        // Euclidean distance or simple difference sum
         const diff = Math.abs(r - startR) + Math.abs(g - startG) + Math.abs(b - startB) + Math.abs(a - startA);
-        return diff <= tolerance * 3; // Simplified tolerance check (0-100 scale roughly maps)
+        return diff <= tolerance * 3;
     };
 
     while (stack.length > 0) {
@@ -365,14 +516,11 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
 
         if (colorMatch(pos)) {
             visited[visitedPos] = 1;
-            
-            // Fill mask pixel
             maskData[pos] = fillR;
             maskData[pos + 1] = fillG;
             maskData[pos + 2] = fillB;
-            maskData[pos + 3] = fillA; // Semi-transparent
+            maskData[pos + 3] = fillA;
 
-            // Add neighbors
             stack.push([x + 1, y]);
             stack.push([x - 1, y]);
             stack.push([x, y + 1]);
@@ -399,15 +547,12 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
       ctx.lineJoin = 'round';
 
       if (maskTool === 'line' && startLinePosition.current && canvasSnapshot.current) {
-         // Restore snapshot to clear previous line preview
          ctx.putImageData(canvasSnapshot.current, 0, 0);
-         // Draw straight line preview
          ctx.beginPath();
          ctx.moveTo(startLinePosition.current.x, startLinePosition.current.y);
          ctx.lineTo(coords.x, coords.y);
          ctx.stroke();
       } else if (maskTool === 'brush' && lastPosition.current) {
-         // Freehand draw
          ctx.beginPath();
          ctx.moveTo(lastPosition.current.x, lastPosition.current.y);
          ctx.lineTo(coords.x, coords.y);
@@ -427,8 +572,6 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
         const canvas = canvasRef.current;
         const ctx = canvas?.getContext('2d', { willReadFrequently: true });
         if (ctx) {
-            // Adjust tolerance scaling: slider 0-100 -> tolerance check
-            // 0 is very strict, 100 is very loose
             floodFill(ctx, coords.x, coords.y, tolerance, brushColor);
         }
         return;
@@ -439,7 +582,6 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
     
     if (maskTool === 'line' && coords) {
         startLinePosition.current = coords;
-        // Save state for line preview
         const canvas = canvasRef.current;
         const ctx = canvas?.getContext('2d', { willReadFrequently: true });
         if (canvas && ctx) {
@@ -469,15 +611,10 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
   useEffect(() => {
     const image = imageRef.current;
     if (isMaskingMode && image) {
-      // Ensure canvas is resized when the image is first loaded or its src changes
       image.onload = resizeCanvas;
-      
       const resizeObserver = new ResizeObserver(resizeCanvas);
       resizeObserver.observe(image);
-      
-      // Initial resize
       resizeCanvas();
-
       return () => {
         resizeObserver.disconnect();
         image.onload = null;
@@ -584,6 +721,75 @@ const ImageDisplay = forwardRef<ImageDisplayHandle, ImageDisplayProps>(({
                   onMouseUp={handleCanvasMouseUp}
                   onMouseLeave={handleCanvasMouseUp}
                 />
+              )}
+
+              {/* Material Spec Overlay (HTML Version for Display) */}
+              {showMaterialOverlay && materialResults && materialResults.length > 0 && !isMaskingMode && (
+                  <div className="absolute inset-0 z-40 pointer-events-none overflow-hidden">
+                      <svg className="absolute inset-0 w-full h-full">
+                        {materialResults.map((mat, i) => {
+                            if (!mat.position) return null;
+                            const isLeft = mat.position.x < 50;
+                            const lineStartX = isLeft ? 15 : 85; 
+                            const lineStartY = Math.min(Math.max(mat.position.y, 10), 90);
+
+                            return (
+                                <g key={`line-${i}`}>
+                                    <circle cx={`${mat.position.x}%`} cy={`${mat.position.y}%`} r="5" fill="white" stroke="black" strokeWidth="2" className="drop-shadow-lg" />
+                                    <path 
+                                        d={`M ${lineStartX}% ${lineStartY}% L ${isLeft ? mat.position.x - 2 : mat.position.x + 2}% ${mat.position.y}%`} 
+                                        stroke="white" 
+                                        strokeWidth="2" 
+                                        fill="none" 
+                                        strokeDasharray="4 3"
+                                        filter="drop-shadow(0px 2px 3px rgba(0,0,0,0.9))"
+                                    />
+                                </g>
+                            );
+                        })}
+                      </svg>
+                      
+                      {materialResults.map((mat, i) => {
+                          if (!mat.position) return null;
+                          const isLeft = mat.position.x < 50;
+                          const cardStyle: React.CSSProperties = {
+                              position: 'absolute',
+                              top: `${Math.min(Math.max(mat.position.y, 10), 90)}%`,
+                              left: isLeft ? '2%' : 'auto',
+                              right: isLeft ? 'auto' : '2%',
+                              transform: 'translateY(-50%)',
+                              maxWidth: '35%',
+                              pointerEvents: 'auto'
+                          };
+                          
+                          return (
+                              <div key={i} style={cardStyle} className="bg-gray-900/60 backdrop-blur-md p-4 rounded-2xl border border-white/10 shadow-2xl flex items-center gap-4 animate-fade-in group hover:bg-gray-800/80 transition-all">
+                                  <div 
+                                    className="w-24 h-24 rounded-lg shadow-inner border border-white/20 flex-shrink-0 relative overflow-hidden group-hover:scale-105 transition-transform duration-500"
+                                    style={{ 
+                                        backgroundColor: mat.hexCode, 
+                                        backgroundImage: `url(${imageUrl})`,
+                                        backgroundPosition: `${mat.position.x}% ${mat.position.y}%`,
+                                        backgroundSize: '1000%', // Extreme Zoom to show texture details from source
+                                        backgroundRepeat: 'no-repeat'
+                                    }}
+                                  >
+                                      <div className="absolute inset-0 bg-gradient-to-tr from-black/10 to-white/10 pointer-events-none"></div>
+                                  </div>
+
+                                  <div className="min-w-0 flex flex-col justify-center">
+                                      <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-1 leading-tight">{mat.name}</h4>
+                                      <span className="text-[9px] px-1.5 py-0.5 bg-white/10 rounded text-zinc-300 w-fit mb-1">{mat.category}</span>
+                                      <p className="text-[11px] text-zinc-300 leading-relaxed line-clamp-3">{mat.description}</p>
+                                      <div className="mt-2 flex items-center gap-2">
+                                          <div className="w-3 h-3 rounded-full border border-white/30 shadow-sm" style={{ backgroundColor: mat.hexCode }}></div>
+                                          <span className="text-[9px] font-mono text-zinc-500 tracking-wider opacity-70">{mat.hexCode}</span>
+                                      </div>
+                                  </div>
+                              </div>
+                          );
+                      })}
+                  </div>
               )}
 
               {showComparison && !isMaskingMode && (

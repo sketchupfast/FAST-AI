@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Modality, Type, GenerateContentResponse } from "@google/genai";
 
 // Helper to get a fresh client instance with the provided API key
@@ -21,6 +22,14 @@ export interface AnalysisResult {
   keyMaterials: string[];
   lightingConditions: string;
   improvementSuggestions: string[];
+}
+
+export interface MaterialInfo {
+  name: string;
+  category: string;
+  hexCode: string;
+  description: string;
+  position?: { x: number; y: number };
 }
 
 const resizeImage = (
@@ -447,6 +456,49 @@ export const generateVideo = async (
         console.error("Video Generation Error:", error);
         throw parseGeminiError(error);
     }
+};
+
+export const identifyMaterials = async (
+  base64ImageData: string,
+  mimeType: string,
+  apiKey?: string
+): Promise<MaterialInfo[]> => {
+  const ai = getAiClient(apiKey);
+  try {
+    const { resizedBase64, resizedMimeType } = await resizeImage(base64ImageData, mimeType);
+    const prompt = "Identify 4 to 6 key architectural or interior materials visible in this image. Return a JSON array. For each material provide: 'name' (short material name), 'category' (Choose from: 'Wood', 'Concrete', 'Stone', 'Marble', 'Metal', 'Glass', 'Fabric', 'Ceramic', 'Paint', 'Brick', 'Grass', 'Water', 'Other'), 'hexCode' (representative hex color code), 'description' (very brief 3-5 word usage description), and 'position' object with 'x' and 'y' integer values (0-100) representing the center percentage coordinates.";
+
+    const responseSchema = {
+        type: Type.ARRAY,
+        items: {
+            type: Type.OBJECT,
+            properties: {
+                name: { type: Type.STRING },
+                category: { type: Type.STRING },
+                hexCode: { type: Type.STRING },
+                description: { type: Type.STRING },
+                position: { 
+                    type: Type.OBJECT, 
+                    properties: { x: { type: Type.INTEGER }, y: { type: Type.INTEGER } }
+                }
+            },
+            required: ["name", "category", "hexCode", "description"]
+        }
+    };
+
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-pro-preview', // Smart enough for complex JSON extraction with coordinates
+        contents: [{ parts: [{ inlineData: { data: resizedBase64, mimeType: resizedMimeType } }, { text: prompt }] }],
+        config: { responseMimeType: "application/json", responseSchema: responseSchema },
+    });
+    
+    return JSON.parse(response.text || "[]") as MaterialInfo[];
+
+  } catch (error) {
+    console.error("Material analysis failed:", error);
+    // Return empty array on failure
+    return [];
+  }
 };
 
 export const analyzeImage = async (

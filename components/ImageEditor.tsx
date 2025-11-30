@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { editImage, analyzeImage, suggestCameraAngles, generateVideo, type AnalysisResult, cropAndResizeImage } from '../services/geminiService';
+import { editImage, analyzeImage, suggestCameraAngles, generateVideo, identifyMaterials, type AnalysisResult, type MaterialInfo, cropAndResizeImage } from '../services/geminiService';
 import { saveProjects, loadProjects, clearProjects } from '../services/dbService';
 import ImageDisplay, { type ImageDisplayHandle } from './ImageDisplay';
 import { UndoIcon } from './icons/UndoIcon';
@@ -59,6 +59,7 @@ import { VideoCameraIcon } from './icons/VideoCameraIcon';
 import { EyeIcon } from './icons/EyeIcon';
 import { EyeSlashIcon } from './icons/EyeSlashIcon';
 import { ClipboardIcon } from './icons/ClipboardIcon';
+import { SwatchIcon } from './icons/SwatchIcon';
 
 
 export interface ImageState {
@@ -89,21 +90,21 @@ const brushColors = [
 
 const translations = {
   en: {
-    header: { projects: "Projects", noProject: "No project loaded", saving: "Saving...", saved: "Auto-saved", error: "Save Error", help: "Help / User Guide" },
+    header: { projects: "Gallery", noProject: "No project loaded", saving: "Saving...", saved: "Auto-saved", error: "Save Error", help: "Help / User Guide" },
     tabs: { exterior: "Exterior", interior: "Interior", plan: "Plan" },
     sections: { prompt: "Prompt", quickActions: "Quick Actions", cameraAngle: "Camera Angle", artStyle: "Art Style", archStyle: "Arch Style", garden: "Garden", lighting: "Lighting", background: "Background", foreground: "Foreground", interiorStyle: "Interior Style", systems: "Systems (Lighting & AC)", viewOutside: "View Outside", conversionMode: "Conversion Mode", roomConfig: "Room Configuration", brushSettings: "Brush Settings", manualAdjustments: "Manual Adjustments (Offline)", moodboard: "Moodboard & Materials", flooring: "Flooring & Materials" },
     controls: { turnOnLights: "Turn On Lights", brightness: "Brightness", contrast: "Contrast", saturation: "Saturation", sharpness: "Sharpness", colorTemp: "Color Temp", intensity: "Intensity", soft: "Soft", vibrant: "Vibrant", warm: "Warm", neutral: "Neutral", cool: "Cool", coveLight: "Cove Light (Hidden)", downlight: "Downlight (Recessed)", airConditioner: "Air Conditioner", ac4way: "4-Way Cassette AC", acWall: "Wall-Mounted AC", clearMask: "Clear Mask", subtle: "Subtle", strong: "Strong", applyManual: "Apply Adjustment", tolerance: "Tolerance", autoDescribe: "Auto-Describe" },
-    buttons: { generate: "Generate Image", generating: "Generating...", openProjects: "Open Projects", clearAll: "Clear All Data", newProject: "New Project", download: "Download", closeProject: "Close Project", upscale4k: "Upscale 4K", regenerate: "Re-generate", veo: "Animate (Veo)", copy: "Copy", copied: "Copied!" },
+    buttons: { generate: "Generate Image", generating: "Generating...", openProjects: "Open Projects", clearAll: "Clear All Data", newProject: "New Project", download: "Download", closeProject: "Close Project", upscale4k: "Upscale 4K", regenerate: "Re-generate", veo: "Animate (Veo)", copy: "Copy", copied: "Copied!", materialSpec: "Material Spec", batchAngles: "Generate All 4 Angles (Batch)" },
     placeholders: { promptExterior: "Describe your changes...", promptInterior: "Describe interior changes...", promptPlan: "Describe specific details for the plan...", promptMask: "Draw the shape and describe the new element (e.g., 'Add a gable roof extension')...", customFlooring: "Describe a unique floor pattern (e.g., 'Geometric hexagon tiles in blue and white')..." },
     modes: { general: "General", object: "Object" },
     help: { title: "How to use FAST AI", step1: "1. Getting Started", step1desc: "Click the Key icon to set your Gemini API Key (Required). Then click 'Projects' to upload an image.", step2: "2. Select Mode", step2desc: "Choose Exterior (Facades), Interior (Rooms), or Plan (Floorplans) from the left sidebar tabs.", step3: "3. Editing", step3desc: "Use 'Quick Actions' for one-click styles, or type a custom command in the 'Prompt' box. Adjust sliders for intensity.", step4: "4. Object Mode", step4desc: "Switch to 'Object' mode to paint a mask over specific areas (like a wall or floor) to change only that part." }
   },
   th: {
-    header: { projects: "โปรเจค", noProject: "ยังไม่ได้เลือกโปรเจค", saving: "กำลังบันทึก...", saved: "บันทึกอัตโนมัติ", error: "บันทึกไม่สำเร็จ", help: "คู่มือการใช้งาน" },
+    header: { projects: "ประวัติโปรเจค", noProject: "ยังไม่ได้เลือกโปรเจค", saving: "กำลังบันทึก...", saved: "บันทึกอัตโนมัติ", error: "บันทึกไม่สำเร็จ", help: "คู่มือการใช้งาน" },
     tabs: { exterior: "ภายนอก (Exterior)", interior: "ภายใน (Interior)", plan: "แปลน (Plan)" },
     sections: { prompt: "คำสั่ง (Prompt)", quickActions: "คำสั่งด่วน", cameraAngle: "มุมกล้อง", artStyle: "สไตล์ศิลปะ", archStyle: "สไตล์สถาปัตยกรรม", garden: "สวน", lighting: "แสงไฟ", background: "พื้นหลัง", foreground: "ฉากหน้า", interiorStyle: "สไตล์ภายใน", systems: "ระบบไฟและแอร์", viewOutside: "วิวนอกหน้าต่าง", conversionMode: "โหมดแปลงภาพ", roomConfig: "ตั้งค่าห้อง", brushSettings: "ตั้งค่าแปรง", manualAdjustments: "ปรับแต่งภาพ (ไม่ต้องใช้เน็ต)", moodboard: "มู้ดบอร์ดและวัสดุตัวอย่าง", flooring: "วัสดุพื้น" },
     controls: { turnOnLights: "เปิดไฟ", brightness: "ความสว่าง", contrast: "ความคมชัด (Contrast)", saturation: "ความสดของสี (Saturation)", sharpness: "ความคม (Sharpness)", colorTemp: "อุณหภูมิแสง", intensity: "ความเข้ม", soft: "นุ่มนวล", vibrant: "สดใส", warm: "โทนอุ่น", neutral: "ธรรมชาติ", cool: "โทนเย็น", coveLight: "ไฟหลืบ (Cove Light)", downlight: "ไฟดาวน์ไลท์ (Downlight)", airConditioner: "เครื่องปรับอากาศ", ac4way: "แอร์ 4 ทิศทาง", acWall: "แอร์ติดผนัง", clearMask: "ล้างพื้นที่เลือก", subtle: "น้อย", strong: "มาก", applyManual: "ยืนยันการปรับแต่ง", tolerance: "ความไวสี (Tolerance)", autoDescribe: "ให้ AI เขียนคำสั่ง" },
-    buttons: { generate: "สร้างรูปภาพ", generating: "กำลังสร้าง...", openProjects: "เปิดโปรเจค", clearAll: "ลบข้อมูลทั้งหมด", newProject: "โปรเจคใหม่", download: "ดาวน์โหลด", closeProject: "ปิดโปรเจค", upscale4k: "ขยายภาพ 4K", regenerate: "สร้างซ้ำ (เดิม)", veo: "สร้างวิดีโอ (Veo)", copy: "คัดลอก", copied: "คัดลอกแล้ว!" },
+    buttons: { generate: "สร้างรูปภาพ", generating: "กำลังสร้าง...", openProjects: "เปิดโปรเจค", clearAll: "ลบข้อมูลทั้งหมด", newProject: "โปรเจคใหม่", download: "ดาวน์โหลด", closeProject: "ปิดโปรเจค", upscale4k: "ขยายภาพ 4K", regenerate: "สร้างซ้ำ (เดิม)", veo: "สร้างวิดีโอ (Veo)", copy: "คัดลอก", copied: "คัดลอกแล้ว!", materialSpec: "สเปควัสดุ", batchAngles: "สร้างภาพ 4 มุมกล้อง (Batch)" },
     placeholders: { promptExterior: "อธิบายสิ่งที่ต้องการแก้ไข...", promptInterior: "อธิบายการตกแต่งภายใน...", promptPlan: "อธิบายรายละเอียดของแปลน...", promptMask: "วาดรูปร่างและอธิบายสิ่งที่ต้องการแก้ (เช่น 'ต่อเติมหลังคาหน้าจั่ว')...", customFlooring: "อธิบายลวดลายพื้นพิเศษ (เช่น 'กระเบื้องหกเหลี่ยมสีน้ำเงินสลับขาว')..." },
     modes: { general: "ทั่วไป", object: "เฉพาะจุด" },
     help: { title: "วิธีใช้งาน FAST AI", step1: "1. เริ่มต้นใช้งาน", step1desc: "กดไอคอนกุญแจเพื่อใส่ Gemini API Key (จำเป็น) จากนั้นกดปุ่ม 'โปรเจค' เพื่ออัปโหลดรูปภาพ", step2: "2. เลือกโหมด", step2desc: "เลือกแท็บ Exterior (ภายนอก), Interior (ภายใน), หรือ Plan (แปลน) จากเมนูด้านซ้ายตามประเภทงาน", step3: "3. การสั่งงาน", step3desc: "ใช้ 'คำสั่งด่วน' เพื่อเปลี่ยนสไตล์ในคลิกเดียว หรือพิมพ์คำสั่งเองในช่อง 'Prompt' ปรับความเข้มได้ตามต้องการ", step4: "4. โหมดเฉพาะจุด", step4desc: "เปลี่ยนเป็นโหมด 'เฉพาะจุด' (Object) เพื่อระบายสีพื้นที่ที่ต้องการแก้ไข (เช่น เปลี่ยนวัสดุพื้น หรือ ผนัง) โดย AI จะแก้เฉพาะส่วนนั้น" }
@@ -111,7 +112,22 @@ const translations = {
 };
 
 const styleOptions = [{name:'Cinematic'},{name:'Vintage'},{name:'Watercolor'},{name:'3D Render'},{name:'Pixel Art'},{name:'Neon Punk'},{name:'Sketch'},{name:'Pop Art'}];
-const cameraAngleOptions = [{name:'Eye-Level',prompt:'Re-render the scene from a realistic eye-level angle'},{name:'High Angle',prompt:'Re-render the scene from a high angle looking down'},{name:'Low Angle',prompt:'Re-render the scene from a low angle looking up'},{name:'Close-up',prompt:'Re-frame the image as a close-up shot'},{name:'Wide Shot',prompt:'Re-frame the image as a wide-angle shot'},{name:'Isometric',prompt:'Re-render the scene in an isometric 3D projection'},{name:'Bird\'s Eye View',prompt:'Re-render the scene from a top-down bird\'s eye view'},{name:'Dutch Angle',prompt:'Tilt the camera angle to create a dramatic Dutch angle'},{name:'Long Shot',prompt:'Re-render the scene from a distance (long shot)'}];
+const cameraAngleOptions = [
+    {name:'No Change', prompt: ''},
+    {name:'Front Elevation', prompt: 'Re-render the scene from a perfectly straight-on front elevation view, orthographic style.'},
+    {name:'Worm\'s Eye View', prompt: 'Re-render the scene from an extreme low angle (worm\'s eye view), looking up at the building to make it look grand and imposing.'},
+    {name:'Drone Shot', prompt: 'Re-render the scene as a cinematic drone shot, capturing the building and its immediate surroundings from a dynamic aerial perspective.'},
+    {name:'Corner View', prompt: 'Re-render the scene from a sharp corner angle (two-point perspective) to emphasize the building volume and depth.'},
+    {name:'Eye-Level',prompt:'Re-render the scene from a realistic eye-level angle'},
+    {name:'High Angle',prompt:'Re-render the scene from a high angle looking down'},
+    {name:'Low Angle',prompt:'Re-render the scene from a low angle looking up'},
+    {name:'Close-up',prompt:'Re-frame the image as a close-up shot'},
+    {name:'Wide Shot',prompt:'Re-frame the image as a wide-angle shot'},
+    {name:'Isometric',prompt:'Re-render the scene in an isometric 3D projection'},
+    {name:'Bird\'s Eye View',prompt:'Re-render the scene from a top-down bird\'s eye view'},
+    {name:'Dutch Angle',prompt:'Tilt the camera angle to create a dramatic Dutch angle'},
+    {name:'Long Shot',prompt:'Re-render the scene from a distance (long shot)'}
+];
 const gardenStyleOptions = [{name:'Thai Garden',description:'A lush, tropical rainforest garden featuring tall betel palms...'},{name:'Japanese Garden',description:'Reflects Zen philosophy...'},{name:'English Garden',description:'A romantic atmosphere...'},{name:'Tropical Garden',description:'Lush and jungle-like...'},{name:'Flower Garden',description:'A field of various flowers...'},{name:'Magical Garden',description:'A fairytale garden...'},{name:'Modern Tropical Garden',description:'Combines lush greenery with sharp, modern lines.'},{name:'Formal Garden',description:'Symmetrical, orderly...'},{name:'Modern Natural Garden',description:'Simple, clean...'},{name:'Tropical Pathway Garden',description:'A dense, resort-style pathway...'},{name:'Thai Stream Garden',description:'A clear stream flows...'},{name:'Tropical Stream Garden',description:'A lush rainforest garden...'}];
 const architecturalStyleOptions = [{name:'Modern',description:''},{name:'Loft',description:''},{name:'Classic',description:''},{name:'Minimalist',description:''},{name:'Contemporary',description:''},{name:'Modern Thai',description:''},{name:'3D Render',description:''},{name:'Modern Wood',description:''},{name:'Nordic',description:''},{name:'Tropical Modern',description:''},{name:'Mid-Century Modern',description:''},{name:'Neo-Classical',description:''},{name:'Futuristic',description:''},{name:'Mediterranean',description:''},{name:'Brutalist',description:''},{name:'Colonial',description:''}];
 const interiorStyleOptions = [{name:'Modern',description:''},{name:'Modern Luxury',description:''},{name:'Contemporary',description:''},{name:'Scandinavian',description:''},{name:'Japanese',description:''},{name:'Thai',description:''},{name:'Chinese',description:''},{name:'Moroccan',description:''},{name:'Classic',description:''},{name:'Industrial',description:''},{name:'Minimalist',description:''},{name:'Tropical',description:''},{name:'Mid-Century Modern',description:''},{name:'Bohemian',description:''},{name:'Rustic',description:''},{name:'Art Deco',description:''},{name:'Coastal',description:''},{name:'Zen',description:''}];
@@ -167,7 +183,7 @@ const QUICK_ACTION_PROMPTS: Record<string, string> = {
     luxurySpaBathroom: "ตกแต่งห้องน้ำให้เป็นสปาหรู ใช้กระเบื้องหินธรรมชาติ อ่างอาบน้ำแบบลอยตัว แสงไฟสลัวสร้างบรรยากาศผ่อนคลาย มีเทียนหอมและต้นไม้ประดับ",
     modernHomeOffice: "ตกแต่งห้องทำงานสไตล์โมเดิร์น โต๊ะทำงานดีไซน์เรียบเท่ เก้าอี้ Ergonomic ชั้นวางของเป็นระเบียบ แสงไฟสว่างพอเหมาะดูโปรดัคทีฟ",
     modernBedroom: "ตกแต่งห้องนอนสไตล์โมเดิร์น เตียงนอนหนานุ่ม หัวเตียงบุนวม ไฟซ่อนหัวเตียง บรรยากาศอบอุ่นน่านอน คุมโทนสีสบายตา",
-    modernLivingRoom: "ตกแต่งห้องนั่งเล่นสไตล์โมเดิร์น โซฟาผ้าตัวใหญ่ พรมลายนุ่มนวล โต๊ะกลางดีไซน์เก๋ ผนังตกแต่งด้วยกรอบรูปหรือทีวีจอใหญ่",
+    modernLivingRoom: "ตกแต่งห้องนั่งเล่นสไตล์โมเดิร์น โโซฟาผ้าตัวใหญ่ พรมลายนุ่มนวล โต๊ะกลางดีไซน์เก๋ ผนังตกแต่งด้วยกรอบรูปหรือทีวีจอใหญ่",
     luxuryDiningRoom: "ตกแต่งห้องทานอาหารให้หรูหรา โต๊ะทานข้าวขนาดยาว เก้าอี้บุหนังหรือกำมะหยี่ โคมไฟระย้า (Chandelier) อลังการกลางห้อง",
     darkMoodyLuxuryBedroom: "ตกแต่งห้องนอนสไตล์ Dark Luxury คุมโทนสีเข้ม ดำ เทา ตัดด้วยสีทอง แสงไฟสลัว ดูลึกลับและมีเสน่ห์",
     softModernSanctuary: "ตกแต่งห้องให้ดูนุ่มนวล ผ่อนคลาย ใช้เฟอร์นิเจอร์ทรงโค้งมน โทนสีพาสเทลหรือครีม แสงธรรมชาติเข้าถึงได้ดี",
@@ -238,11 +254,11 @@ const IntensitySlider: React.FC<{ value: number; onChange: (val: number) => void
     </div>
 );
 
-const ImageToolbar: React.FC<{ onUndo: () => void; onRedo: () => void; onClose: () => void; onDownload: () => void; onShare: () => void; onUpscale: () => void; onRegenerate: () => void; onTransform: (type: 'rotateLeft' | 'rotateRight' | 'flipHorizontal' | 'flipVertical') => void; onVeo: () => void; canUndo: boolean; canRedo: boolean; canClose: boolean; canUpscaleAndSave: boolean; canRegenerate: boolean; isLoading: boolean; t: any; }> = ({ onUndo, onRedo, onClose, onDownload, onShare, onUpscale, onRegenerate, onTransform, onVeo, canUndo, canRedo, canClose, canUpscaleAndSave, canRegenerate, isLoading, t }) => (
+const ImageToolbar: React.FC<{ onUndo: () => void; onRedo: () => void; onClose: () => void; onDownload: () => void; onShare: () => void; onUpscale: () => void; onRegenerate: () => void; onTransform: (type: 'rotateLeft' | 'rotateRight' | 'flipHorizontal' | 'flipVertical') => void; onVeo: () => void; onMaterialSpec: () => void; canUndo: boolean; canRedo: boolean; canClose: boolean; canUpscaleAndSave: boolean; canRegenerate: boolean; canDownload: boolean; isLoading: boolean; t: any; }> = ({ onUndo, onRedo, onClose, onDownload, onShare, onUpscale, onRegenerate, onTransform, onVeo, onMaterialSpec, canUndo, canRedo, canClose, canUpscaleAndSave, canRegenerate, canDownload, isLoading, t }) => (
     <div className="flex items-center gap-2 bg-gray-500/20 backdrop-blur-md p-2 rounded-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] transform hover:scale-[1.02] transition-transform duration-300">
         <div className="flex items-center gap-1 px-2 border-r border-white/10"><button onClick={onUndo} disabled={!canUndo || isLoading} title="Undo last action" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><UndoIcon className="w-4 h-4" /></button><button onClick={onRedo} disabled={!canRedo || isLoading} title="Redo last action" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><RedoIcon className="w-4 h-4" /></button></div>
         <div className="flex items-center gap-1 px-2 border-r border-white/10"><button onClick={() => onTransform('rotateLeft')} disabled={!canUpscaleAndSave || isLoading} title="Rotate 90° Left" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><RotateLeftIcon className="w-4 h-4" /></button><button onClick={() => onTransform('rotateRight')} disabled={!canUpscaleAndSave || isLoading} title="Rotate 90° Right" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><RotateRightIcon className="w-4 h-4" /></button><button onClick={() => onTransform('flipHorizontal')} disabled={!canUpscaleAndSave || isLoading} title="Flip Horizontal" className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg"><FlipHorizontalIcon className="w-4 h-4" /></button></div>
-        <div className="flex items-center gap-2 pl-2"><button onClick={onRegenerate} disabled={!canRegenerate || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg" title={t.buttons.regenerate}><ArrowPathIcon className="w-4 h-4" /></button><div className="w-px h-4 bg-white/10 mx-1"></div><button onClick={onUpscale} disabled={!canUpscaleAndSave || isLoading} className="p-2 text-zinc-200 hover:text-white disabled:opacity-30 transition-colors flex items-center gap-1 hover:bg-white/10 rounded-lg" title={t.buttons.upscale4k}><UpscaleIcon className="w-4 h-4" /><span className="text-[10px] font-extrabold uppercase hidden sm:inline tracking-wider">{t.buttons.upscale4k}</span></button><div className="w-px h-4 bg-white/10 mx-1"></div><button onClick={onVeo} disabled={!canUpscaleAndSave || isLoading} className="p-2 text-zinc-200 hover:text-white disabled:opacity-30 transition-colors flex items-center gap-1 hover:bg-white/10 rounded-lg" title={t.buttons.veo}><VideoCameraIcon className="w-4 h-4" /><span className="text-[10px] font-extrabold uppercase hidden sm:inline tracking-wider">Veo 3</span></button><button onClick={onShare} disabled={!canUpscaleAndSave || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg" title="Share Image"><ShareIcon className="w-4 h-4" /></button><button onClick={onDownload} disabled={!canUpscaleAndSave || isLoading} title={t.buttons.download} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-sm font-extrabold rounded-lg transition-all disabled:opacity-50 shadow-lg shadow-blue-900/30"><DownloadIcon className="w-3 h-3" /> {t.buttons.download}</button><button onClick={onClose} disabled={isLoading} className="p-2 text-red-500 hover:text-red-400 disabled:opacity-30 transition-colors hover:bg-red-500/10 rounded-lg" title={t.buttons.closeProject}><XMarkIcon className="w-4 h-4" /></button></div>
+        <div className="flex items-center gap-2 pl-2"><button onClick={onRegenerate} disabled={!canRegenerate || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg" title={t.buttons.regenerate}><ArrowPathIcon className="w-4 h-4" /></button><div className="w-px h-4 bg-white/10 mx-1"></div><button onClick={onUpscale} disabled={!canUpscaleAndSave || isLoading} className="p-2 text-zinc-200 hover:text-white disabled:opacity-30 transition-colors flex items-center gap-1 hover:bg-white/10 rounded-lg" title={t.buttons.upscale4k}><UpscaleIcon className="w-4 h-4" /><span className="text-[10px] font-extrabold uppercase hidden sm:inline tracking-wider">{t.buttons.upscale4k}</span></button><div className="w-px h-4 bg-white/10 mx-1"></div><button onClick={onMaterialSpec} disabled={!canUpscaleAndSave || isLoading} className="p-2 text-zinc-200 hover:text-white disabled:opacity-30 transition-colors flex items-center gap-1 hover:bg-white/10 rounded-lg" title={t.buttons.materialSpec}><SwatchIcon className="w-4 h-4" /><span className="text-[10px] font-extrabold uppercase hidden sm:inline tracking-wider">{t.buttons.materialSpec}</span></button><div className="w-px h-4 bg-white/10 mx-1"></div><button onClick={onVeo} disabled={!canUpscaleAndSave || isLoading} className="p-2 text-zinc-200 hover:text-white disabled:opacity-30 transition-colors flex items-center gap-1 hover:bg-white/10 rounded-lg" title={t.buttons.veo}><VideoCameraIcon className="w-4 h-4" /><span className="text-[10px] font-extrabold uppercase hidden sm:inline tracking-wider">Veo 3</span></button><button onClick={onShare} disabled={!canUpscaleAndSave || isLoading} className="p-2 text-zinc-400 hover:text-white disabled:opacity-30 transition-colors hover:bg-white/10 rounded-lg" title="Share Image"><ShareIcon className="w-4 h-4" /></button><button onClick={onDownload} disabled={!canDownload || isLoading} title={t.buttons.download} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-sm font-extrabold rounded-lg transition-all disabled:opacity-50 shadow-lg shadow-blue-900/30"><DownloadIcon className="w-3 h-3" /> {t.buttons.download}</button><button onClick={onClose} disabled={isLoading} className="p-2 text-red-500 hover:text-red-400 disabled:opacity-30 transition-colors hover:bg-red-500/10 rounded-lg" title={t.buttons.closeProject}><XMarkIcon className="w-4 h-4" /></button></div>
     </div>
 );
 
@@ -256,6 +272,7 @@ const ImageEditor: React.FC = () => {
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   
   const [language, setLanguage] = useState<'en' | 'th'>('th');
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
@@ -288,6 +305,7 @@ const ImageEditor: React.FC = () => {
   const [sketchIntensity, setSketchIntensity] = useState<number>(100);
   const [outputSize, setOutputSize] = useState<string>('Original');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [loadingStatusText, setLoadingStatusText] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [sceneType, setSceneType] = useState<SceneType>('exterior');
@@ -329,6 +347,11 @@ const ImageEditor: React.FC = () => {
   const [videoPrompt, setVideoPrompt] = useState('');
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
+
+  // Material Spec State
+  const [materialResults, setMaterialResults] = useState<MaterialInfo[]>([]);
+  const [isMaterialOverlayVisible, setIsMaterialOverlayVisible] = useState(false);
+  const [isAnalyzingMaterial, setIsAnalyzingMaterial] = useState(false);
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     prompt: true,
@@ -374,7 +397,6 @@ const ImageEditor: React.FC = () => {
   const [tempKey, setTempKey] = useState('');
   const [isKeyVisible, setIsKeyVisible] = useState(false);
 
-  // Ref for hidden main file input to trigger upload from empty state
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -383,7 +405,6 @@ const ImageEditor: React.FC = () => {
                const has = await (window as any).aistudio.hasSelectedApiKey();
                setHasApiKey(has);
           } else {
-              // SECURITY UPDATE: Only check local storage. Do not check process.env.
               const storedKey = localStorage.getItem('fast-ai-user-key');
               if (storedKey) {
                   setUserApiKey(storedKey);
@@ -396,10 +417,8 @@ const ImageEditor: React.FC = () => {
       checkKey();
   }, []);
 
-  // Helper to determine the actual key to use
   const getEffectiveApiKey = () => {
       if (userApiKey) return userApiKey;
-      // Only fallback to process.env.API_KEY if running inside Google AI Studio to prevent leaking local env vars in public builds
       if ((window as any).aistudio) {
           return process.env.API_KEY || '';
       }
@@ -420,9 +439,8 @@ const ImageEditor: React.FC = () => {
 
   const handleManualKeySubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      // Aggressive cleaning: remove spaces, newlines, quotes to fix "cannot put every key" issue
       const cleanKey = tempKey.replace(/[\s"']/g, ''); 
-      if (cleanKey.length > 5) { // Basic length check
+      if (cleanKey.length > 5) {
           localStorage.setItem('fast-ai-user-key', cleanKey);
           setUserApiKey(cleanKey);
           setHasApiKey(true);
@@ -448,7 +466,6 @@ const ImageEditor: React.FC = () => {
 
   const imageDisplayRef = useRef<ImageDisplayHandle>(null);
 
-  // Masking state
   const [brushSize, setBrushSize] = useState<number>(30);
   const [brushColor, setBrushColor] = useState<string>(brushColors[0].value);
   const [isMaskEmpty, setIsMaskEmpty] = useState<boolean>(true);
@@ -544,6 +561,8 @@ const ImageEditor: React.FC = () => {
     setContrast(100);
     setSaturation(100);
     setSharpness(100);
+    setMaterialResults([]);
+    setIsMaterialOverlayVisible(false);
   }, [activeImage?.id]);
 
   const handleImageChange = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -585,7 +604,6 @@ const ImageEditor: React.FC = () => {
           if (mountedRef.current) {
               const currentListSize = imageList.length;
               setImageList(prevList => [...prevList, ...newImages]);
-              // Set the newly added image (first one if multiple) as active
               setActiveImageIndex(currentListSize); 
               setIsProjectModalOpen(false); 
           }
@@ -638,7 +656,6 @@ const ImageEditor: React.FC = () => {
     setEditingMode('default');
     setSelectedQuickAction('');
     setPrompt(''); 
-    // ... reset all selections
     setSelectedStyle(''); setSelectedArchStyle(''); setSelectedGardenStyle(''); setSelectedInteriorStyle('');
     setSelectedInteriorLighting(''); setSelectedInteriorRoomType(''); setReferenceImage(null); 
     setSelectedBackgrounds([]); setSelectedForegrounds([]); setSelectedCameraAngle('');
@@ -698,7 +715,6 @@ const ImageEditor: React.FC = () => {
         const base64Data = sourceUrl.split(',')[1];
         const mimeType = sourceUrl.substring(5, sourceUrl.indexOf(';'));
 
-        // Use analyzeImage service
         const result = await analyzeImage(base64Data, mimeType, key);
         
         let autoPrompt = "";
@@ -716,6 +732,39 @@ const ImageEditor: React.FC = () => {
         }
     } finally {
         setIsAnalyzing(false);
+    }
+  };
+  
+  const handleAnalyzeMaterials = async () => {
+    if (!activeImage) return;
+    const key = getEffectiveApiKey();
+    if (!key) { setIsKeyModalOpen(true); return; }
+
+    if (isMaterialOverlayVisible && materialResults.length > 0) {
+        setIsMaterialOverlayVisible(!isMaterialOverlayVisible);
+        return;
+    }
+    
+    setIsAnalyzingMaterial(true);
+    setIsMaterialOverlayVisible(true); 
+    setMaterialResults([]);
+
+    try {
+        const sourceUrl = (activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null) ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex] : activeImage.dataUrl;
+        if (!sourceUrl) return;
+
+        const base64Data = sourceUrl.split(',')[1];
+        const mimeType = sourceUrl.substring(5, sourceUrl.indexOf(';'));
+
+        const materials = await identifyMaterials(base64Data, mimeType, key);
+        setMaterialResults(materials);
+        setIsMaterialOverlayVisible(true);
+
+    } catch (e) {
+        console.error("Material Analysis Failed", e);
+        setError("Could not analyze materials.");
+    } finally {
+        setIsAnalyzingMaterial(false);
     }
   };
 
@@ -828,13 +877,11 @@ const ImageEditor: React.FC = () => {
           const sourceBase64 = sourceDataUrl.split(',')[1];
           const refImg = (!size && referenceImage) ? referenceImage : null;
 
-          // Determine output size based on Model Selection if not explicitly provided (e.g. by upscale button)
           let targetSize = size;
           if (!targetSize && selectedModel === 'gemini-3-pro-4k') {
               targetSize = '4K';
           }
 
-          // Call API with Model Preference
           const result = await editImage(sourceBase64, sourceMimeType, promptForGeneration, maskBase64, targetSize, refImg, selectedModel, key);
           const generatedImageBase64 = result.data;
           const generatedMimeType = result.mimeType;
@@ -878,9 +925,81 @@ const ImageEditor: React.FC = () => {
           if (msg.toLowerCase().includes('key') || msg.toLowerCase().includes('expired') || msg.includes('403') || msg.includes('500') || msg.includes('429') || msg.toLowerCase().includes('quota')) {
               setIsKeyModalOpen(true);
           }
-      } finally { setIsLoading(false); }
+      } finally { setIsLoading(false); setLoadingStatusText(''); }
   };
   
+  const handleBatchGenerateAngles = async () => {
+    if (!activeImage) return;
+    const key = getEffectiveApiKey();
+    if (!key) { setIsKeyModalOpen(true); return; }
+
+    const anglesToGenerate = [
+        { name: 'Front Elevation', prompt: cameraAngleOptions.find(o => o.name === 'Front Elevation')?.prompt },
+        { name: 'Worm\'s Eye View', prompt: cameraAngleOptions.find(o => o.name === 'Worm\'s Eye View')?.prompt },
+        { name: 'Drone Shot', prompt: cameraAngleOptions.find(o => o.name === 'Drone Shot')?.prompt },
+        { name: 'Corner View', prompt: cameraAngleOptions.find(o => o.name === 'Corner View')?.prompt },
+    ].filter(a => a.prompt);
+
+    if (anglesToGenerate.length === 0) return;
+
+    const sourceDataUrl = (activeImage.history.length > 0 && activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null) ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex] : activeImage.dataUrl;
+    if (!sourceDataUrl) return;
+
+    const sourceMimeType = sourceDataUrl.substring(5, sourceDataUrl.indexOf(';'));
+    const sourceBase64 = sourceDataUrl.split(',')[1];
+
+    setIsLoading(true);
+    setError(null);
+    setIsRightSidebarOpen(true); // Open the gallery to show new items appearing
+
+    try {
+        for (let i = 0; i < anglesToGenerate.length; i++) {
+            const angle = anglesToGenerate[i];
+            setLoadingStatusText(`Generating ${i + 1}/${anglesToGenerate.length}: ${angle.name}...`);
+            
+            // Construct full prompt with style preservation
+            let fullPrompt = angle.prompt || "";
+            if (prompt) fullPrompt += ` ${prompt}`;
+            
+            // Use editImage directly (not executeGeneration) to create NEW projects
+            const result = await editImage(sourceBase64, sourceMimeType, fullPrompt, null, undefined, referenceImage, selectedModel, key);
+            
+            // Add as NEW Project
+            const newDataUrl = `data:${result.mimeType};base64,${result.data}`;
+            const newProject: ImageState = {
+                id: crypto.randomUUID(),
+                file: new File(["generated"], `${activeImage.file?.name || "Image"} - ${angle.name}.jpg`, { type: result.mimeType }),
+                base64: result.data,
+                mimeType: result.mimeType,
+                dataUrl: newDataUrl,
+                history: [], // Starts fresh
+                historyIndex: -1,
+                selectedResultIndex: null,
+                promptHistory: [],
+                apiPromptHistory: [],
+                lastGeneratedLabels: [],
+                generationTypeHistory: [],
+            };
+
+            setImageList(prev => [...prev, newProject]);
+        }
+        
+        setLoadingStatusText("Batch Generation Complete!");
+        // Removed explicit modal open, now relies on sidebar
+
+    } catch (err) {
+        console.error("Batch generation error:", err);
+        const msg = err instanceof Error ? err.message : "Batch generation failed.";
+        setError(msg);
+        if (msg.toLowerCase().includes('key') || msg.toLowerCase().includes('quota')) {
+            setIsKeyModalOpen(true);
+        }
+    } finally {
+        setIsLoading(false);
+        setLoadingStatusText('');
+    }
+  };
+
   const handleUpscale = () => { executeGeneration("Upscale this image to 4K resolution. Enhance details, clarity, and sharpness for large format display. Do not change the composition or aspect ratio.", "Upscale 4K", '4K', false); };
   
   const handleRegenerate = () => {
@@ -942,7 +1061,6 @@ const ImageEditor: React.FC = () => {
     const key = getEffectiveApiKey();
     if (!key) { setIsKeyModalOpen(true); return; }
     
-    // PRIMARY LOGIC CHANGE: Rely solely on the user-editable 'prompt' state.
     const promptParts: string[] = [];
     if (prompt.trim()) promptParts.push(prompt.trim());
     
@@ -977,8 +1095,6 @@ const ImageEditor: React.FC = () => {
         if (referenceImage) { promptParts.push("Use the provided reference image as a strict guide for the architectural style, flooring materials, and color palette of the floor plan."); constructedHistory += `, Moodboard: Attached`; }
     } else {
         if (selectedQuickAction) { 
-            // DO NOT push QUICK_ACTION_PROMPTS[selectedQuickAction] here if prompt is already populated.
-            // The prompt box already contains the text.
             if (!constructedHistory.includes("Quick Action")) constructedHistory = "Quick Action: " + selectedQuickAction; 
         }
         if (sceneType === 'interior' && selectedInteriorRoomType) { promptParts.push(`Transform the room into a ${selectedInteriorRoomType}.`); if (!constructedHistory.includes("Quick Action")) constructedHistory += `, Room: ${selectedInteriorRoomType}`; }
@@ -1016,11 +1132,39 @@ const ImageEditor: React.FC = () => {
   
   const handleDownload = async () => { 
       if (!activeImage) return;
-      const url = activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex] : activeImage.dataUrl;
-      if (url) {
-        if (url.startsWith('data:')) {
-             try { const base64Data = url.split(',')[1]; const mimeType = url.substring(5, url.indexOf(';')); downloadBase64AsFile(base64Data, `edited-image-${Date.now()}.${mimeType.split('/')[1]}`, mimeType); } catch (e) { console.error("Standard download failed:", e); const link = document.createElement('a'); link.href = url; link.download = `edited-image-${Date.now()}.jpg`; document.body.appendChild(link); link.click(); document.body.removeChild(link); }
-        } else { const link = document.createElement('a'); link.href = url; link.download = `edited-image-${Date.now()}.jpg`; document.body.appendChild(link); link.click(); document.body.removeChild(link); }
+      
+      try {
+          // Check if Material Overlay is active and we have a ref to the display component
+          if (isMaterialOverlayVisible && imageDisplayRef.current) {
+              const compositeImage = await imageDisplayRef.current.getCompositeImage();
+              if (compositeImage) {
+                 // Download the composite image (with overlay)
+                 const mimeType = 'image/jpeg';
+                 const base64Data = compositeImage.split(',')[1];
+                 downloadBase64AsFile(base64Data, `spec-sheet-${Date.now()}.jpg`, mimeType);
+                 return;
+              }
+          }
+
+          // Fallback to standard download (raw image)
+          const url = activeImage.historyIndex > -1 && activeImage.selectedResultIndex !== null ? activeImage.history[activeImage.historyIndex][activeImage.selectedResultIndex] : activeImage.dataUrl;
+          if (url) {
+            if (url.startsWith('data:')) {
+                 const base64Data = url.split(',')[1]; 
+                 const mimeType = url.substring(5, url.indexOf(';')); 
+                 downloadBase64AsFile(base64Data, `edited-image-${Date.now()}.${mimeType.split('/')[1]}`, mimeType); 
+            } else { 
+                const link = document.createElement('a'); 
+                link.href = url; 
+                link.download = `edited-image-${Date.now()}.jpg`; 
+                document.body.appendChild(link); 
+                link.click(); 
+                document.body.removeChild(link); 
+            }
+          }
+      } catch (e) {
+          console.error("Download failed:", e);
+          setError("Download failed.");
       }
   };
 
@@ -1055,6 +1199,7 @@ const ImageEditor: React.FC = () => {
                 <div className="h-8 w-px bg-white/10 mx-2 hidden sm:block"></div>
                 <div className="flex gap-2">
                     <button onClick={() => setIsProjectModalOpen(true)} title={t.buttons.openProjects} className="px-3 py-1.5 text-xs font-medium bg-zinc-800/50 hover:bg-zinc-700/50 text-zinc-300 rounded-lg border border-white/5 transition-all">{t.header.projects}</button>
+                    <button onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)} title="Toggle Gallery" className={`px-3 py-1.5 text-xs font-medium rounded-lg border border-white/5 transition-all flex items-center gap-2 ${isRightSidebarOpen ? 'bg-zinc-700 text-white' : 'bg-zinc-800/50 text-zinc-300'}`}><PhotoIcon className="w-3.5 h-3.5"/> {t.header.projects}</button>
                     <button onClick={handleClearAllProjects} title={t.buttons.clearAll} className="px-3 py-1.5 text-xs font-medium bg-zinc-800/50 hover:bg-red-900/20 text-zinc-300 hover:text-red-400 rounded-lg border border-white/5 transition-all">{t.buttons.clearAll}</button>
                 </div>
             </div>
@@ -1066,7 +1211,6 @@ const ImageEditor: React.FC = () => {
             </div>
         </header>
 
-        {/* Global Error Banner */}
         {error && !isKeyModalOpen && (
              <div className="bg-red-900/80 border-b border-red-500/50 p-2 text-center text-red-100 text-sm font-medium animate-fade-in relative z-40 backdrop-blur-md">
                  <span className="mr-2">⚠️</span> {error} 
@@ -1087,7 +1231,6 @@ const ImageEditor: React.FC = () => {
                 </div>
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
-                    {/* Common Prompt Section */}
                     <div className="bg-zinc-900/40 p-4 rounded-xl border border-zinc-800/50 space-y-3">
                         <div className="flex justify-between items-center"><label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">{t.sections.prompt}</label>
                             <div className="flex items-center gap-2">
@@ -1101,14 +1244,12 @@ const ImageEditor: React.FC = () => {
                         <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={sceneType === 'plan' ? t.placeholders.promptPlan : sceneType === 'interior' ? t.placeholders.promptInterior : t.placeholders.promptExterior} className="w-full h-28 bg-black/40 text-sm text-zinc-200 placeholder-zinc-600 rounded-lg p-3 resize-none border border-zinc-800 focus:border-zinc-600 focus:ring-1 focus:ring-zinc-600 outline-none transition-all" />
                     </div>
 
-                    {/* Moodboard / Reference (Moved Here) */}
                     <CollapsibleSection title={t.sections.moodboard} sectionKey="moodboard" isOpen={openSections.moodboard} onToggle={() => toggleSection('moodboard')} icon={<PhotoIcon className="w-3.5 h-3.5"/>}>
                         <div className="space-y-3">
                             <label className="block w-full cursor-pointer group"><div className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-zinc-700 rounded-xl hover:border-zinc-500 hover:bg-zinc-800/30 transition-all bg-black/20 group-hover:scale-[1.01]">{referenceImage ? (<div className="relative w-full h-full p-1"><img src={referenceImage.dataUrl} alt="Reference" className="w-full h-full object-cover rounded-lg" /><button onClick={(e) => { e.preventDefault(); setReferenceImage(null); }} title="Remove reference image" className="absolute top-1 right-1 p-1 bg-black/50 hover:bg-red-500/80 rounded-full text-white transition-colors"><XMarkIcon className="w-3 h-3" /></button></div>) : (<div className="text-center p-4"><PhotoIcon className="w-6 h-6 mx-auto text-zinc-500 mb-2 group-hover:text-zinc-400" /><span className="text-[10px] text-zinc-500 uppercase tracking-wide group-hover:text-zinc-400">Upload Reference Image</span></div>)}<input type="file" className="hidden" onChange={handleReferenceImageChange} accept="image/*" /></div></label>
                         </div>
                     </CollapsibleSection>
 
-                    {/* Scene Specific Sections */}
                     {sceneType === 'exterior' && (
                         <>
                            <CollapsibleSection title={t.sections.quickActions} sectionKey="quickActions" isOpen={openSections.quickActions} onToggle={() => toggleSection('quickActions')} icon={<SparklesIcon className="w-3.5 h-3.5" />}>
@@ -1116,7 +1257,12 @@ const ImageEditor: React.FC = () => {
                            </CollapsibleSection>
                            
                            <CollapsibleSection title={t.sections.cameraAngle} sectionKey="cameraAngle" isOpen={openSections.cameraAngle} onToggle={() => toggleSection('cameraAngle')} icon={<CameraAngleIcon className="w-3.5 h-3.5"/>}>
-                                <div className="grid grid-cols-3 gap-2">{cameraAngleOptions.map((option) => (<OptionButton key={option.name} option={option.name} isSelected={selectedCameraAngle === option.name} onClick={(opt) => setSelectedCameraAngle(selectedCameraAngle === opt ? '' : opt)} />))}</div>
+                                <div className="space-y-3">
+                                    <div className="grid grid-cols-3 gap-2">{cameraAngleOptions.map((option) => (<OptionButton key={option.name} option={option.name} isSelected={selectedCameraAngle === option.name} onClick={(opt) => setSelectedCameraAngle(selectedCameraAngle === opt ? '' : opt)} />))}</div>
+                                    <button onClick={handleBatchGenerateAngles} disabled={isLoading || !activeImage} className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-purple-900/20 disabled:opacity-50 flex items-center justify-center gap-2">
+                                        <SparklesIcon className="w-3.5 h-3.5" /> {t.buttons.batchAngles} <span className="text-[9px] opacity-70 normal-case">(~4x cost)</span>
+                                    </button>
+                                </div>
                            </CollapsibleSection>
                            
                            <CollapsibleSection title={t.sections.artStyle} sectionKey="artStyle" isOpen={openSections.artStyle} onToggle={() => toggleSection('artStyle')} icon={<PencilIcon className="w-3.5 h-3.5"/>}>
@@ -1206,7 +1352,6 @@ const ImageEditor: React.FC = () => {
                         </>
                     )}
 
-                    {/* Manual Adjustments */}
                     <CollapsibleSection title={t.sections.manualAdjustments} sectionKey="manualAdjustments" isOpen={openSections.manualAdjustments} onToggle={() => toggleSection('manualAdjustments')} icon={<AdjustmentsIcon className="w-3.5 h-3.5"/>}>
                          <div className="space-y-4">
                             {[
@@ -1221,7 +1366,6 @@ const ImageEditor: React.FC = () => {
                          </div>
                     </CollapsibleSection>
 
-                    {/* Brush Settings (Object Mode Only) */}
                     {editingMode === 'object' && (
                         <CollapsibleSection title={t.sections.brushSettings} sectionKey="brushTool" isOpen={openSections.brushTool} onToggle={() => toggleSection('brushTool')} icon={<BrushIcon className="w-3.5 h-3.5"/>}>
                             <div className="space-y-4">
@@ -1243,16 +1387,13 @@ const ImageEditor: React.FC = () => {
                 </div>
             </aside>
             
-            {/* Main Content */}
             <main className="flex-1 flex flex-col min-w-0 bg-[#0c0c0e] relative">
-                {/* Image Toolbar / Mode Selector */}
                 <div className="absolute top-4 left-4 right-4 z-40 flex justify-between items-start pointer-events-none">
                      <div className="pointer-events-auto bg-black/60 backdrop-blur-md p-1 rounded-xl border border-white/10 flex gap-1 shadow-2xl">
                         <ModeButton label={t.modes.general} icon={<AdjustmentsIcon className="w-4 h-4"/>} mode="default" activeMode={editingMode} onClick={changeEditingMode} />
                         <ModeButton label={t.modes.object} icon={<BrushIcon className="w-4 h-4"/>} mode="object" activeMode={editingMode} onClick={changeEditingMode} />
                      </div>
                      <div className="pointer-events-auto flex items-center gap-2">
-                        {/* Model Selection Dropdown */}
                         <div className="relative group">
                             <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value as any)} title="Select AI Model" className="appearance-none bg-black/60 backdrop-blur-md text-zinc-300 text-xs font-bold uppercase tracking-wider pl-3 pr-8 py-2 rounded-xl border border-white/10 hover:bg-zinc-800/80 focus:outline-none cursor-pointer">
                                 <option value="auto">Auto Model (Smart)</option>
@@ -1265,7 +1406,6 @@ const ImageEditor: React.FC = () => {
                      </div>
                 </div>
 
-                {/* Main Image Display */}
                 <div className="flex-1 p-4 flex items-center justify-center relative bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-fixed">
                      <div className="relative w-full h-full max-w-7xl flex flex-col">
                         <ImageDisplay 
@@ -1286,9 +1426,10 @@ const ImageEditor: React.FC = () => {
                             tolerance={tolerance}
                             onMaskChange={(isEmpty) => setIsMaskEmpty(isEmpty)}
                             onUpload={() => fileInputRef.current?.click()}
+                            materialResults={materialResults}
+                            showMaterialOverlay={isMaterialOverlayVisible}
                         />
                         
-                        {/* Hidden input for triggering upload from empty state */}
                         <input 
                             type="file" 
                             ref={fileInputRef} 
@@ -1297,7 +1438,6 @@ const ImageEditor: React.FC = () => {
                             onChange={handleImageChange} 
                         />
 
-                        {/* Bottom Toolbar */}
                         <div className="mt-4 flex justify-center">
                             <ImageToolbar 
                                 onUndo={handleUndo} 
@@ -1309,32 +1449,63 @@ const ImageEditor: React.FC = () => {
                                 onRegenerate={handleRegenerate}
                                 onTransform={handleTransform}
                                 onVeo={handleVeoClick}
+                                onMaterialSpec={handleAnalyzeMaterials}
                                 canUndo={!!activeImage && activeImage.historyIndex > -1} 
                                 canRedo={!!activeImage && activeImage.historyIndex < (activeImage.history.length - 1)} 
                                 canClose={!!activeImage}
                                 canUpscaleAndSave={!!activeImage && activeImage.historyIndex > -1}
                                 canRegenerate={!!activeImage && activeImage.apiPromptHistory?.length > 0}
-                                isLoading={isLoading}
+                                canDownload={!!activeImage}
+                                isLoading={isLoading || isAnalyzingMaterial}
                                 t={t}
                             />
                         </div>
 
-                         {/* Generate Button */}
                         <div className="absolute bottom-24 right-6 z-30">
                             <button onClick={handleSubmit} disabled={isLoading || !activeImage || (!hasTextPrompt && !hasEditInstruction && !selectedQuickAction)} title={t.buttons.generate} className="group relative flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(220,38,38,0.5)] hover:shadow-[0_20px_60px_-15px_rgba(220,38,38,0.6)] hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none overflow-hidden">
                                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-shimmer" />
-                                <span className="font-bold text-lg tracking-wide uppercase">{isLoading ? t.buttons.generating : t.buttons.generate}</span>
+                                <span className="font-bold text-lg tracking-wide uppercase">
+                                    {isLoading ? (loadingStatusText || t.buttons.generating) : t.buttons.generate}
+                                </span>
                                 {isLoading ? <Spinner className="w-6 h-6" /> : <SparklesIcon className="w-6 h-6 animate-pulse" />}
                             </button>
                         </div>
                      </div>
                 </div>
             </main>
+
+            {/* Right Sidebar - Gallery */}
+            {isRightSidebarOpen && (
+                <aside className="w-64 bg-[#0c0c0e] border-l border-white/5 flex flex-col z-20 shadow-2xl overflow-hidden hidden lg:flex">
+                     <div className="p-4 border-b border-white/5 flex items-center justify-between">
+                         <h3 className="text-xs font-bold text-zinc-300 uppercase tracking-wider">{t.header.projects} ({imageList.length})</h3>
+                         <button onClick={() => setIsRightSidebarOpen(false)} className="text-zinc-500 hover:text-white"><XMarkIcon className="w-4 h-4"/></button>
+                     </div>
+                     <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-3">
+                        <label className="flex items-center gap-3 p-3 bg-zinc-800/40 hover:bg-zinc-800 border border-zinc-700/50 hover:border-zinc-500 rounded-xl cursor-pointer transition-all group">
+                             <div className="p-2 bg-zinc-900 rounded-lg group-hover:scale-110 transition-transform"><PhotoIcon className="w-5 h-5 text-zinc-500 group-hover:text-zinc-300" /></div>
+                             <span className="text-xs font-bold text-zinc-400 group-hover:text-white uppercase tracking-wide">{t.buttons.newProject}</span>
+                             <input type="file" className="hidden" accept="image/*" multiple onChange={handleImageChange} />
+                        </label>
+                        {imageList.slice().reverse().map((img, idx) => {
+                            const originalIndex = imageList.length - 1 - idx;
+                            return (
+                                <div key={img.id} onClick={() => setActiveImageIndex(originalIndex)} className={`relative rounded-xl overflow-hidden cursor-pointer border-2 transition-all group hover:scale-[1.02] shadow-sm ${activeImageIndex === originalIndex ? 'border-red-500 ring-2 ring-red-500/20' : 'border-zinc-800 hover:border-zinc-500'}`}>
+                                    <div className="aspect-video w-full bg-black/20">
+                                        <img src={img.dataUrl || ''} alt="Thumbnail" className="w-full h-full object-cover" />
+                                    </div>
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2">
+                                        <p className="text-[10px] font-bold text-white truncate">{img.file?.name || "Untitled"}</p>
+                                    </div>
+                                    <button onClick={(e) => { e.stopPropagation(); handleRemoveImage(originalIndex); }} title="Delete" className="absolute top-1 right-1 p-1 bg-red-600/80 text-white rounded opacity-0 group-hover:opacity-100 hover:bg-red-500 transition-all z-10"><XMarkIcon className="w-3 h-3" /></button>
+                                </div>
+                            );
+                        })}
+                     </div>
+                </aside>
+            )}
         </div>
 
-        {/* --- MODALS --- */}
-        
-        {/* Project Modal */}
         {isProjectModalOpen && (
             <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
                 <div className="bg-[#0c0c0e] rounded-2xl border border-white/10 w-full max-w-3xl h-[80vh] flex flex-col shadow-2xl">
@@ -1350,7 +1521,7 @@ const ImageEditor: React.FC = () => {
                                     <p className="text-xs font-bold text-white truncate">{img.file?.name || "Untitled"}</p>
                                     <p className="text-[10px] text-zinc-400">{new Date().toLocaleDateString()}</p>
                                 </div>
-                                <button onClick={(e) => { e.stopPropagation(); handleRemoveImage(idx); }} title="Delete Project" className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-500 transition-all shadow-lg transform hover:scale-110"><XMarkIcon className="w-3.5 h-3.5" /></button>
+                                <button onClick={(e) => { e.stopPropagation(); handleRemoveImage(idx); }} title="Delete Project" className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-500 transition-all shadow-lg shadow-red-900/40 transform hover:scale-110 z-10"><XMarkIcon className="w-3.5 h-3.5" /></button>
                             </div>
                         ))}
                     </div>
@@ -1358,7 +1529,6 @@ const ImageEditor: React.FC = () => {
             </div>
         )}
 
-        {/* API Key Modal */}
         {isKeyModalOpen && (
             <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
                 <div className="bg-[#0c0c0e] rounded-2xl border border-red-500/30 w-full max-w-md p-8 shadow-[0_0_50px_rgba(220,38,38,0.1)] relative overflow-hidden">
@@ -1402,7 +1572,6 @@ const ImageEditor: React.FC = () => {
             </div>
         )}
 
-        {/* Video Generation Modal (Veo) */}
         {isVideoModalOpen && (
             <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
                 <div className="bg-[#0c0c0e] rounded-2xl border border-white/10 w-full max-w-lg p-6 shadow-2xl">
@@ -1435,7 +1604,6 @@ const ImageEditor: React.FC = () => {
             </div>
         )}
         
-        {/* Help Modal */}
         {isHelpModalOpen && (
             <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
                 <div className="bg-[#0c0c0e] rounded-2xl border border-white/10 w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
